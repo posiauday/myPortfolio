@@ -35,12 +35,12 @@ jobs:
           # Set this repository variable to "/myPortfolio/" for a project
           # site; leave it unset for a custom domain or user site.
           VITE_BASE_PATH: ${{ vars.VITE_BASE_PATH }}
+      # Requires Pages to already be enabled with Source = GitHub Actions
+      # (Settings -> Pages). This step cannot turn it on: creating a Pages
+      # site needs repo admin, which GITHUB_TOKEN never has, so
+      # `enablement: true` fails with "Resource not accessible by
+      # integration" no matter what permissions the workflow requests.
       - uses: actions/configure-pages@v5
-        # Turns Pages on via the API rather than requiring someone to set
-        # Settings -> Pages -> Source by hand. Needs Pages to be available
-        # for the repository (a private repo requires a paid plan).
-        with:
-          enablement: true
       - uses: actions/upload-pages-artifact@v3
         with:
           path: dist

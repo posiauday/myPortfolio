@@ -97,10 +97,13 @@ Pages → Run workflow**.
 
 Two settings it depends on:
 
-- **Pages must be available for the repository.** The workflow turns Pages on
-  itself (`configure-pages` runs with `enablement: true`), but GitHub only
-  serves Pages from a private repository on a paid plan — on a free account the
-  repository has to be public, or the site has to be hosted somewhere else.
+- **Pages must be enabled by hand, once:** Settings → Pages → Source →
+  **GitHub Actions**. The workflow cannot do this for you — creating a Pages
+  site requires repository admin, which `GITHUB_TOKEN` never has. Until it is
+  set, the `configure-pages` step fails with "Resource not accessible by
+  integration".
+- GitHub serves Pages from a **private** repository only on a paid plan. On a
+  free account the repository must be public, or the site hosted elsewhere.
 - Repository variable `VITE_BASE_PATH` controls the asset base path: set it to
   `/myPortfolio/` for a project site at `<user>.github.io/myPortfolio/`, or
   leave it unset for a custom domain or user site, in which case the build
