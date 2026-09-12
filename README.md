@@ -97,8 +97,10 @@ Pages → Run workflow**.
 
 Two settings it depends on:
 
-- **Settings → Pages → Source** must be set to **GitHub Actions**. Without it
-  the deploy job fails.
+- **Pages must be available for the repository.** The workflow turns Pages on
+  itself (`configure-pages` runs with `enablement: true`), but GitHub only
+  serves Pages from a private repository on a paid plan — on a free account the
+  repository has to be public, or the site has to be hosted somewhere else.
 - Repository variable `VITE_BASE_PATH` controls the asset base path: set it to
   `/myPortfolio/` for a project site at `<user>.github.io/myPortfolio/`, or
   leave it unset for a custom domain or user site, in which case the build
