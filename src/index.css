@@ -1,0 +1,131 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ============================================================
+   Only the rules Tailwind cannot express as a utility live here.
+   Every bracket-value class in the JSX (rounded-[26px], bg-[#168326],
+   grid-cols-[1fr_.7fr] and friends) is compiled by Tailwind itself,
+   so no hand-authored escaped-selector shim is needed in this build.
+   ============================================================ */
+
+:root {
+  color-scheme: light;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  margin: 0;
+  font-family: theme("fontFamily.sans");
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Gradients and clamped type — multi-stop values that read better as
+   named classes than as very long arbitrary utilities. */
+.grad-hero-text {
+  background-image: linear-gradient(to right, #168326, #0f6cbd, #5b5bd6);
+}
+.grad-brand-br {
+  background-image: linear-gradient(to bottom right, #168326, #0f6cbd);
+}
+.grad-dark-br {
+  background-image: linear-gradient(to bottom right, #17201b, #21482a);
+}
+.hero-mesh {
+  background-image:
+    radial-gradient(circle at 15% 15%, rgba(22, 131, 38, 0.18), transparent 28%),
+    radial-gradient(circle at 85% 30%, rgba(15, 108, 189, 0.16), transparent 30%);
+}
+.hero-title-size {
+  font-size: clamp(3.5rem, 8vw, 7rem);
+}
+
+/* Motion. A keyed remount replays these animations on its own, which is
+   why the carousel needs no animation library. */
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateX(24px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+.slide-in {
+  animation: slideIn 0.35s ease both;
+}
+.lift-hover {
+  transition: transform 0.2s ease;
+}
+.lift-hover:hover {
+  transform: translateY(-6px);
+}
+.bar-grow {
+  transition: height 0.7s ease;
+}
+
+/* YAML / docs code panel and its copy affordance. */
+.code-panel {
+  background: #0b1220;
+  color: #d7e3f4;
+  border-radius: 18px;
+  padding: 1.25rem;
+  font-family: theme("fontFamily.mono");
+  font-size: 12.5px;
+  line-height: 1.7;
+  overflow: auto;
+  white-space: pre;
+  max-height: 520px;
+}
+.copy-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border-radius: 999px;
+  padding: 0.5rem 1rem;
+  font-size: 0.8rem;
+  font-weight: 700;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  background: rgba(255, 255, 255, 0.06);
+  color: inherit;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+.copy-btn:hover {
+  background: rgba(255, 255, 255, 0.12);
+}
+.copy-btn.light {
+  border-color: #e2e8f0;
+  background: #f8fafc;
+  color: #17201b;
+}
+.copy-btn.light:hover {
+  background: #f1f5f9;
+}
+
+/* Keyboard focus stays visible everywhere, including on the many
+   rounded pill buttons. */
+:focus-visible {
+  outline: 2px solid #168326;
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+  .slide-in {
+    animation: none;
+  }
+  .lift-hover:hover {
+    transform: none;
+  }
+  .bar-grow {
+    transition: none;
+  }
+}
