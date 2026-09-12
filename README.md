@@ -91,9 +91,18 @@ The component id is passed through as a `component=<id>` launch parameter.
 ## Deployment
 
 `.github/workflows/deploy.yml` builds and publishes to GitHub Pages on every
-push to `main`. For a project site served from `/myPortfolio/`, set the
-repository variable `VITE_BASE_PATH` to `/myPortfolio/`; for a custom domain or
-user site, leave it unset and the build uses `/`.
+push to the repository's **default** branch (whatever it is currently named),
+and can also be run manually from any branch via **Actions → Deploy to GitHub
+Pages → Run workflow**.
+
+Two settings it depends on:
+
+- **Settings → Pages → Source** must be set to **GitHub Actions**. Without it
+  the deploy job fails.
+- Repository variable `VITE_BASE_PATH` controls the asset base path: set it to
+  `/myPortfolio/` for a project site at `<user>.github.io/myPortfolio/`, or
+  leave it unset for a custom domain or user site, in which case the build
+  uses `/`.
 
 Any static host works — `npm run build` and serve `dist/`.
 
