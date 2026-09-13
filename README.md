@@ -13,6 +13,7 @@ SVG and CSS.
 | --- | --- |
 | **Hero** | Multi-layer parallax backdrop (`useParallax`) plus a reveal-on-scroll KPI panel (`useReveal`). |
 | **Projects** (`#projects`) | Seven project showcases in a rail-and-window layout: pick a project from the rail, page through its screens in a window-framed preview. Every project is presented under a generic name and every number shown is synthetic. |
+| **Experience** (`#experience`) | A career timeline of real employers, roles and dates, each with a collapsible highlight list. |
 | **Components** (`#components`) | Searchable, category-filtered catalog of 25 components. |
 | **Component detail** | Per-component page with Preview, Variants, Properties, Events, Architecture, Examples, Accessibility and Limitations tabs, generated YAML, copyable docs, and an optional live Power Apps embed. |
 | **Recognition** (`#recognition`) | Awards and delivery-scale highlights. |
@@ -36,8 +37,9 @@ npm run lint
 ```
 src/
   components/
-    Portfolio.jsx        page shell: nav, parallax hero, projects, catalog, recognition, footer
+    Portfolio.jsx        page shell: nav, parallax hero, projects, experience, catalog, recognition, footer
     ProjectsSection.jsx  project rail + windowed screen preview for all seven showcases
+    ExperienceSection.jsx career timeline with collapsible per-role highlights
     ComponentDetail.jsx  per-component reference page (tabs, YAML, docs, embed)
     ComponentPreview.jsx the small in-page mockup for a single component
     ProjectScreen.jsx    every project screen recreation, switched on slide `kind`
@@ -46,6 +48,7 @@ src/
     componentLibrary.js  categories, icons, per-category defaults, per-component
                          overrides, and the derived component catalog
     projectShowcases.js  the seven projects (under generic names) and their slides
+    experience.js        real employers, roles, dates and highlights
   lib/
     componentDocs.js     YAML + markdown docs generated from the catalog
   hooks/
@@ -81,6 +84,16 @@ name and acronym (e.g. "WSMS — Work Scope Management System") rather than the
 name of the real engagement it recreates. Keep it that way when editing: don't
 reintroduce a real client, product or system name into a title, subtitle,
 slide label, or the text rendered inside a `ProjectScreen` mockup.
+
+Unlike the project showcase, `src/data/experience.js` is *not* masked — it's
+the résumé's own real employers, roles and dates, meant to be shown as-is.
+
+### Adding a role
+
+Add an entry to the `experience` array in `src/data/experience.js` — `org`,
+`role`, `location`, `start`, `end` (use `"Present"` for a current role),
+`color`, and a `highlights` array. `ExperienceSection.jsx` shows the first
+three highlights and collapses the rest behind "Show more".
 
 ## Live Power Apps embed (optional)
 

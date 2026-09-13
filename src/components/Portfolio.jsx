@@ -5,14 +5,15 @@ import { CONTACT } from "../config.js";
 import useReveal from "../hooks/useReveal.js";
 import useParallax from "../hooks/useParallax.js";
 import ProjectsSection from "./ProjectsSection.jsx";
+import ExperienceSection from "./ExperienceSection.jsx";
 import Detail from "./ComponentDetail.jsx";
 
 /* ============================================================
    MAIN PORTFOLIO
-   Nav labels match the real section ids (Projects / Components /
-   Recognition). The hero's depth, the reveal-on-scroll bars and
-   the card hover lift are all CSS plus the useParallax / useReveal
-   hooks, so there is still no animation dependency.
+   Nav labels match the real section ids (Projects / Experience /
+   Components / Recognition). The hero's depth, the reveal-on-scroll
+   bars and the card hover lift are all CSS plus the useParallax /
+   useReveal hooks, so there is still no animation dependency.
    ============================================================ */
 export default function Portfolio() {
   const [dark, setDark] = useState(false);
@@ -43,7 +44,7 @@ export default function Portfolio() {
             <div><b className="block text-sm">{CONTACT.name}</b><span className="text-[9px] uppercase tracking-widest text-slate-500">{CONTACT.tagline}</span></div>
           </div>
           <div className="hidden gap-1 md:flex">
-            {["Projects", "Components", "Recognition"].map(x => <a key={x} href={`#${x.toLowerCase()}`} className="rounded-full px-4 py-2 text-sm font-bold hover:bg-green-50 hover:text-[#168326] dark:hover:bg-white/10">{x}</a>)}
+            {["Projects", "Experience", "Components", "Recognition"].map(x => <a key={x} href={`#${x.toLowerCase()}`} className="rounded-full px-4 py-2 text-sm font-bold hover:bg-green-50 hover:text-[#168326] dark:hover:bg-white/10">{x}</a>)}
           </div>
           <button onClick={() => setDark(!dark)} className="grid h-10 w-10 place-items-center rounded-full">{dark ? <Sun size={18} /> : <Moon size={18} />}</button>
         </div>
@@ -93,6 +94,8 @@ export default function Portfolio() {
       </section>
 
       <ProjectsSection />
+
+      <ExperienceSection />
 
       <section id="components" className="mx-auto max-w-7xl px-5 py-24">
         <div className="grad-dark-br rounded-[38px] p-7 text-white sm:p-10">
