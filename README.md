@@ -11,10 +11,10 @@ SVG and CSS.
 
 | Section | What it does |
 | --- | --- |
-| **Hero** | Multi-layer parallax backdrop (`useParallax`) plus a reveal-on-scroll KPI panel (`useReveal`). |
+| **Hero** | Multi-layer parallax backdrop (`useParallax`), a reveal-on-scroll KPI panel (`useReveal`), and a mouse-tracked 3D tilt + cursor glare on the KPI card itself (`useTilt`). |
 | **Platform** | Microsoft's own official Power Platform product icons orbiting a central hub in two counter-rotating rings — pure CSS, no animation library (see `PlatformOrbit.jsx`). |
 | **Projects** (`#projects`) | Seven project showcases in a rail-and-window layout: pick a project from the rail, page through its screens in a window-framed preview. Every project is presented under a generic name and every number shown is synthetic. |
-| **Experience** (`#experience`) | A career timeline of real employers, roles and dates, each with a collapsible highlight list. |
+| **Experience** (`#experience`) | An animated career timeline: a gradient rail draws itself in as you scroll past it (`useScrollFill`), each entry fades up into view the first time it's reached (`useRevealEach`), and its dot lights up in the role's color once revealed. Real employers, roles and dates, each with a collapsible highlight list. |
 | **Components** (`#components`) | Searchable, category-filtered catalog of 25 components. |
 | **Component detail** | Per-component page with Preview, Variants, Properties, Events, Architecture, Examples, Accessibility and Limitations tabs, generated YAML, copyable docs, and an optional live Power Apps embed. |
 | **Recognition** (`#recognition`) | Awards and delivery-scale highlights. |
@@ -59,7 +59,10 @@ src/
   hooks/
     useCopyFeedback.js   clipboard write + short-lived "Copied" label
     useReveal.js         one-shot IntersectionObserver reveal
-    useParallax.js        throttled scroll offset, frozen under reduced motion
+    useRevealEach.js     useReveal for a data-driven list — one ref/observer per item
+    useParallax.js       throttled scroll offset, frozen under reduced motion
+    useScrollFill.js     0-1 scroll progress, for a rail that draws itself in
+    useTilt.js           mouse-tracked 3D tilt + cursor glare for a card
   config.js              contact details and the Power Apps embed configuration
 ```
 
@@ -122,7 +125,20 @@ of the file.
 Add an entry to the `experience` array in `src/data/experience.js` — `org`,
 `role`, `location`, `start`, `end` (use `"Present"` for a current role),
 `color`, and a `highlights` array. `ExperienceSection.jsx` shows the first
-three highlights and collapses the rest behind "Show more".
+three highlights and collapses the rest behind "Show more", and a new entry
+is picked up by the scroll-fill rail and its own reveal/dot-activation
+automatically — nothing else to wire up.
+
+### Hero card 3D tilt
+
+`useTilt` listens for `mousemove`/`mouseleave` on one element and writes the
+`rotateX/rotateY/scale` transform to a *different*, nested one. That split
+matters: rotating or scaling an element moves its own rendered bounding box,
+so if the same element both listens and tilts, a still cursor can end up
+outside that shifted box mid-gesture and the browser fires a spurious
+`mouseleave` — worst at the corners, which is also where the tilt is
+strongest. Keep future tilt effects on this same two-element pattern rather
+than applying the transform to the listening element directly.
 
 ## Live Power Apps embed (optional)
 

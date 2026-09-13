@@ -4,6 +4,7 @@ import { categories, icons, components } from "../data/componentLibrary.js";
 import { CONTACT } from "../config.js";
 import useReveal from "../hooks/useReveal.js";
 import useParallax from "../hooks/useParallax.js";
+import useTilt from "../hooks/useTilt.js";
 import ProjectsSection from "./ProjectsSection.jsx";
 import ExperienceSection from "./ExperienceSection.jsx";
 import PlatformOrbit from "./PlatformOrbit.jsx";
@@ -23,6 +24,7 @@ export default function Portfolio() {
   const [selected, setSelected] = useState(null);
   const [barsRef, barsIn] = useReveal();
   const scrolled = useParallax();
+  const { wrapperRef: heroWrapperRef, cardRef: heroCardRef, glareRef: heroGlareRef } = useTilt({ max: 9 });
 
   // Clamped so the layers stop drifting once the hero is off screen; each
   // factor is how much a layer lags (positive) or leads (negative) the page.
@@ -76,18 +78,30 @@ export default function Portfolio() {
           </div>
 
           <div className="grad-brand-br rounded-[42px] p-4 shadow-2xl" style={layer(-0.07)}>
-            <div className="rounded-[32px] bg-white p-6 text-slate-900">
-              <div className="flex justify-between">
+            {/* Static hit-test surface for useTilt — see the hook's own
+                comment for why listening here (rather than on the card
+                that actually rotates) matters. */}
+            <div ref={heroWrapperRef} className="[perspective:1000px]">
+              <div
+                ref={heroCardRef}
+                className="relative overflow-hidden rounded-[32px] bg-white p-6 text-slate-900 [transform-style:preserve-3d]"
+              >
+                {/* Cursor-tracked glare — see useTilt. Purely decorative,
+                    opacity/background are driven directly by the hook. */}
+                <div ref={heroGlareRef} aria-hidden="true" className="pointer-events-none absolute inset-0 opacity-0" />
+
+                <div className="flex justify-between">
                 <div><span className="text-xs font-black uppercase tracking-widest text-slate-400">Portfolio command</span><h2 className="mt-2 text-2xl font-black">Executive overview</h2></div>
                 <BarChart3 className="text-[#168326]" />
               </div>
               <div className="mt-6 grid grid-cols-3 gap-3">
                 {[["Health", "74%"], ["Active", "32"], ["At risk", "06"]].map(([a, b], i) => (
-                  <div key={a} className="rounded-2xl bg-slate-50 p-4"><span className="text-xs text-slate-500">{a}</span><b className="mt-2 block text-2xl" style={{ color: i === 2 ? "#D13438" : "#168326" }}>{b}</b></div>
+                  <div key={a} className="lift-hover rounded-2xl bg-slate-50 p-4"><span className="text-xs text-slate-500">{a}</span><b className="mt-2 block text-2xl" style={{ color: i === 2 ? "#D13438" : "#168326" }}>{b}</b></div>
                 ))}
               </div>
               <div ref={barsRef} className="mt-4 flex h-40 items-end gap-2 rounded-2xl bg-[#F0F5F1] p-5">
                 {[42, 56, 48, 70, 62, 82, 76, 94].map((h, i) => <div key={i} className="bar-grow flex-1 rounded-t-lg" style={{ height: barsIn ? `${h}%` : "0%", background: i === 7 ? "#168326" : "#73C184" }} />)}
+                </div>
               </div>
             </div>
           </div>
