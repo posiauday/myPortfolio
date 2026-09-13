@@ -1,5 +1,6 @@
 import { platformStack } from "../data/platformStack.js";
 import { CONTACT } from "../config.js";
+import RevealHeading from "./RevealHeading.jsx";
 
 /* ============================================================
    PLATFORM ORBIT
@@ -48,11 +49,11 @@ function PlatformOrbit() {
   const outer = platformStack.filter(item => item.ring === "outer");
 
   return (
-    <section className="mx-auto max-w-7xl px-5 py-20">
-      <div className="grid items-center gap-12 lg:grid-cols-2">
+    <section className="mx-auto max-w-7xl px-5 py-14 sm:py-16 lg:py-20">
+      <div className="grid items-center gap-8 sm:gap-10 lg:grid-cols-2 lg:gap-12">
         <div>
           <p className="text-xs font-black uppercase tracking-[.2em] text-[#168326]">Platform</p>
-          <h2 className="mt-3 text-4xl font-black sm:text-5xl">One platform. Every capability.</h2>
+          <RevealHeading className="mt-3 text-4xl font-black sm:text-5xl">One platform. Every capability.</RevealHeading>
           <p className="mt-5 max-w-lg text-base leading-7 text-slate-600 dark:text-slate-300">
             Every system on this page is built on the same core: Power Apps and Power Automate for the
             experience and the workflow, Dataverse underneath, Copilot Studio, AI Builder and Power Pages

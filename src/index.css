@@ -43,6 +43,40 @@ body {
   font-size: clamp(3.5rem, 8vw, 7rem);
 }
 
+/* Aurora background (hero, Portfolio.jsx) — the mesh gradient breathes
+   opacity slowly and each blurred blob drifts a few pixels, so the
+   backdrop reads as alive rather than a static painted image. Each blob
+   drifts on its own *inner* div, nested inside the div that carries the
+   scroll-parallax `translate3d` (written as an inline style — see
+   `layer()` in Portfolio.jsx): animating `transform` on the same node
+   that already has an inline transform would just override it for the
+   animation's duration, the same reason useTilt and the hero-float
+   layer keep their own transforms on separate elements. */
+@keyframes hero-mesh-breathe {
+  0%, 100% {
+    opacity: 0.85;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+@keyframes aurora-drift-a {
+  0%, 100% {
+    transform: translate(0, 0);
+  }
+  50% {
+    transform: translate(30px, -20px);
+  }
+}
+@keyframes aurora-drift-b {
+  0%, 100% {
+    transform: translate(0, 0);
+  }
+  50% {
+    transform: translate(-24px, 26px);
+  }
+}
+
 /* Idle float for the hero KPI card (Portfolio.jsx) — a slow ambient bob
    so the card reads as lifted off the page even at rest, independent of
    the useTilt hook's own rotate/scale transform on a separate nested

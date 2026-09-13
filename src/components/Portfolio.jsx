@@ -8,10 +8,13 @@ import useReveal from "../hooks/useReveal.js";
 import useParallax from "../hooks/useParallax.js";
 import useTilt from "../hooks/useTilt.js";
 import useComponentRoute from "../hooks/useComponentRoute.js";
+import useScrollThreshold from "../hooks/useScrollThreshold.js";
+import useMagnetic from "../hooks/useMagnetic.js";
 import ProjectsSection from "./ProjectsSection.jsx";
 import ExperienceSection from "./ExperienceSection.jsx";
 import PlatformOrbit from "./PlatformOrbit.jsx";
 import NumberTicker from "./NumberTicker.jsx";
+import RevealHeading from "./RevealHeading.jsx";
 import Detail from "./ComponentDetail.jsx";
 
 /* Real, already-stated figures pulled together into one skimmable strip
@@ -45,12 +48,17 @@ export default function Portfolio() {
   const [menuOpen, setMenuOpen] = useState(false);
   const [barsRef, barsIn] = useReveal();
   const scrolled = useParallax();
+  const scrolledPastHero = useScrollThreshold(40);
   const {
     wrapperRef: heroWrapperRef,
     cardRef: heroCardRef,
     glareRef: heroGlareRef,
     shadowRef: heroShadowRef
   } = useTilt({ max: 14 });
+  const exploreMagnetRef = useMagnetic();
+  const browseMagnetRef = useMagnetic();
+  const emailMagnetRef = useMagnetic();
+  const linkedinMagnetRef = useMagnetic();
 
   // Clamped so the layers stop drifting once the hero is off screen; each
   // factor is how much a layer lags (positive) or leads (negative) the page.
@@ -82,12 +90,35 @@ export default function Portfolio() {
 
   return (
     <main className={dark ? "dark min-h-screen bg-[#0B1110] text-white" : "min-h-screen bg-[#FBFDFB] text-[#17201B]"}>
-      <nav className="fixed inset-x-0 top-0 z-30 p-3">
+      <nav
+        className={`fixed inset-x-0 top-0 z-30 transition-[padding] duration-300 motion-reduce:transition-none ${scrolledPastHero ? "p-2" : "p-3"}`}
+      >
         <div className="mx-auto max-w-7xl">
-          <div className="flex h-16 items-center justify-between rounded-2xl border border-white/70 bg-white/90 px-4 shadow-xl backdrop-blur dark:border-white/10 dark:bg-[#101816]/90">
+          <div
+            className={`flex items-center justify-between rounded-2xl border px-4 backdrop-blur transition-all duration-300 motion-reduce:transition-none dark:border-white/10 ${
+              scrolledPastHero
+                ? "h-12 border-white/80 bg-white/95 shadow-lg backdrop-blur-md dark:bg-[#101816]/95"
+                : "h-16 border-white/70 bg-white/90 shadow-xl dark:bg-[#101816]/90"
+            }`}
+          >
             <div className="flex items-center gap-3">
-              <span className="grid h-10 w-10 place-items-center rounded-2xl bg-[#168326] font-black text-white">{CONTACT.initials}</span>
-              <div><b className="block text-sm">{CONTACT.name}</b><span className="text-[9px] uppercase tracking-widest text-slate-500">{CONTACT.tagline}</span></div>
+              <span
+                className={`grid place-items-center rounded-2xl bg-[#168326] font-black text-white transition-all duration-300 motion-reduce:transition-none ${
+                  scrolledPastHero ? "h-8 w-8 text-sm" : "h-10 w-10"
+                }`}
+              >
+                {CONTACT.initials}
+              </span>
+              <div>
+                <b className="block text-sm">{CONTACT.name}</b>
+                <span
+                  className={`block overflow-hidden text-[9px] uppercase tracking-widest text-slate-500 transition-all duration-300 motion-reduce:transition-none ${
+                    scrolledPastHero ? "max-h-0 opacity-0" : "max-h-4 opacity-100"
+                  }`}
+                >
+                  {CONTACT.tagline}
+                </span>
+              </div>
             </div>
             <div className="hidden gap-1 md:flex">
               {["Projects", "Experience", "Components", "Recognition"].map(x => <a key={x} href={`#${x.toLowerCase()}`} className="rounded-full px-4 py-2 text-sm font-bold hover:bg-green-50 hover:text-[#168326] dark:hover:bg-white/10">{x}</a>)}
@@ -126,27 +157,35 @@ export default function Portfolio() {
         </div>
       </nav>
 
-      <section className="relative overflow-hidden pt-28">
-        {/* Parallax backdrop: three layers drifting at different rates. */}
+      <section className="relative overflow-hidden pt-24 sm:pt-28">
+        {/* Parallax backdrop: three layers drifting at different rates,
+            each also breathing/drifting in place (see the aurora
+            keyframes in index.css) so the backdrop isn't a static
+            painted image. Each blob's own drift lives on an *inner* div
+            nested inside the div carrying the scroll-parallax transform
+            — animating transform on the same node the parallax already
+            writes an inline transform to would just override it, the
+            same split useTilt and the hero-float layer use. */}
         <div className="pointer-events-none absolute inset-0 -z-10" aria-hidden="true">
-          <div className="hero-mesh absolute inset-0 scale-125" style={layer(0.42)} />
           <div
-            className="absolute -left-24 top-10 h-[26rem] w-[26rem] rounded-full bg-[#168326]/20 blur-3xl"
-            style={layer(0.26)}
+            className="hero-mesh absolute inset-0 scale-125 motion-safe:animate-[hero-mesh-breathe_9s_ease-in-out_infinite]"
+            style={layer(0.42)}
           />
-          <div
-            className="absolute -right-20 top-56 h-[22rem] w-[22rem] rounded-full bg-[#0F6CBD]/20 blur-3xl"
-            style={layer(0.14)}
-          />
+          <div className="absolute -left-24 top-10 h-[26rem] w-[26rem]" style={layer(0.26)}>
+            <div className="h-full w-full rounded-full bg-[#168326]/20 blur-3xl motion-safe:animate-[aurora-drift-a_70s_ease-in-out_infinite]" />
+          </div>
+          <div className="absolute -right-20 top-56 h-[22rem] w-[22rem]" style={layer(0.14)}>
+            <div className="h-full w-full rounded-full bg-[#0F6CBD]/20 blur-3xl motion-safe:animate-[aurora-drift-b_85s_ease-in-out_infinite]" />
+          </div>
         </div>
-        <div className="relative mx-auto grid min-h-[700px] max-w-7xl items-center gap-12 px-5 py-16 lg:grid-cols-2">
+        <div className="relative mx-auto grid max-w-7xl items-center gap-8 px-5 py-10 sm:min-h-[560px] sm:gap-10 sm:py-12 lg:min-h-[700px] lg:grid-cols-2 lg:gap-12 lg:py-16">
           <div style={layer(0.1)}>
             <span className="inline-flex items-center gap-2 rounded-full border bg-white/80 px-4 py-2 text-xs font-black text-[#168326] dark:border-white/10 dark:bg-white/10"><Sparkles size={14} /> POWER PLATFORM + MICROSOFT 365</span>
             <h1 className="hero-title-size mt-7 font-black leading-[.96] tracking-[-.065em]">I build systems<br /><span className="grad-hero-text bg-clip-text pb-2 text-transparent">people trust.</span></h1>
             <p className="mt-7 max-w-2xl text-lg leading-8 text-slate-600 dark:text-slate-300">Secure, scalable applications, automation, data, analytics and governance, designed from discovery through long-term operations.</p>
             <div className="mt-8 flex flex-wrap gap-3">
-              <a href="#projects" className="rounded-full bg-[#168326] px-6 py-3 font-bold text-white">Explore projects</a>
-              <a href="#components" className="rounded-full border border-slate-300 bg-white/70 px-6 py-3 font-bold dark:border-white/20 dark:bg-white/5">Browse design system</a>
+              <a ref={exploreMagnetRef} href="#projects" className="rounded-full bg-[#168326] px-6 py-3 font-bold text-white">Explore projects</a>
+              <a ref={browseMagnetRef} href="#components" className="rounded-full border border-slate-300 bg-white/70 px-6 py-3 font-bold dark:border-white/20 dark:bg-white/5">Browse design system</a>
             </div>
           </div>
 
@@ -192,7 +231,7 @@ export default function Portfolio() {
         </div>
       </section>
 
-      <section className="mx-auto max-w-7xl px-5 pb-16" aria-label="Impact at a glance">
+      <section className="mx-auto max-w-7xl px-5 pb-10 sm:pb-14 lg:pb-16" aria-label="Impact at a glance">
         <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
           {IMPACT_STATS.map(stat => (
             <div key={stat.label} className="rounded-[24px] border border-slate-200 bg-white p-5 text-center dark:border-white/10 dark:bg-white/5">
@@ -216,10 +255,10 @@ export default function Portfolio() {
 
       <ExperienceSection />
 
-      <section id="components" className="mx-auto max-w-7xl px-5 py-24">
+      <section id="components" className="mx-auto max-w-7xl px-5 py-14 sm:py-20 lg:py-24">
         <div className="grad-dark-br rounded-[38px] p-7 text-white sm:p-10">
           <p className="text-xs font-black uppercase tracking-[.2em] text-green-400">Uday enterprise design system</p>
-          <h2 className="mt-3 text-4xl font-black sm:text-6xl">Reusable components.<br />Built to feel complete.</h2>
+          <RevealHeading className="mt-3 text-4xl font-black sm:text-6xl">Reusable components.<br />Built to feel complete.</RevealHeading>
           <div className="mt-8 grid grid-cols-2 gap-3 sm:grid-cols-4">
             {[[components.length, "Components"], [categories.length - 1, "Categories"], ["100%", "Responsive"], ["Original", "PMO patterns"]].map(([a, b]) => (
               <div key={b} className="rounded-2xl bg-white/10 p-4"><b className="text-2xl">{a}</b><span className="block text-xs text-white/60">{b}</span></div>
@@ -276,7 +315,7 @@ export default function Portfolio() {
         )}
       </section>
 
-      <section id="recognition" className="mx-auto grid max-w-7xl gap-5 px-5 py-24 lg:grid-cols-2">
+      <section id="recognition" className="mx-auto grid max-w-7xl gap-5 px-5 py-14 sm:py-20 lg:grid-cols-2 lg:py-24">
         <div className="grad-brand-br rounded-[34px] p-8 text-white">
           <Award />
           <h2 className="mt-16 text-3xl font-black">Deputy Minister&rsquo;s Award</h2>
@@ -310,9 +349,9 @@ export default function Portfolio() {
         })}
       </section>
 
-      <section className="mx-auto max-w-7xl px-5 pb-24">
+      <section className="mx-auto max-w-7xl px-5 pb-14 sm:pb-20 lg:pb-24">
         <p className="text-xs font-black uppercase tracking-[.2em] text-[#168326]">Skills</p>
-        <h2 className="mt-3 text-4xl font-black sm:text-5xl">Endorsed by people I&rsquo;ve worked with.</h2>
+        <RevealHeading className="mt-3 text-4xl font-black sm:text-5xl">Endorsed by people I&rsquo;ve worked with.</RevealHeading>
         <p className="mt-5 max-w-2xl text-base leading-7 text-slate-600 dark:text-slate-300">
           Straight from LinkedIn &mdash; the checked ones have been endorsed by a colleague.
         </p>
@@ -343,10 +382,10 @@ export default function Portfolio() {
 
       <footer className="mx-auto max-w-7xl px-5 pb-8">
         <div className="rounded-[34px] bg-[#E7F6EA] p-8 dark:bg-[#112319] sm:p-12">
-          <h2 className="text-4xl font-black sm:text-6xl">Let&rsquo;s turn complexity into clarity.</h2>
+          <RevealHeading className="text-4xl font-black sm:text-6xl">Let&rsquo;s turn complexity into clarity.</RevealHeading>
           <div className="mt-7 flex flex-wrap gap-3">
-            <a href={`mailto:${CONTACT.email}`} className="rounded-full bg-[#168326] px-6 py-3 font-bold text-white">Email Uday</a>
-            <a href={CONTACT.linkedin} target="_blank" rel="noreferrer" className="rounded-full bg-white px-6 py-3 font-bold text-[#17201B]">LinkedIn</a>
+            <a ref={emailMagnetRef} href={`mailto:${CONTACT.email}`} className="rounded-full bg-[#168326] px-6 py-3 font-bold text-white">Email Uday</a>
+            <a ref={linkedinMagnetRef} href={CONTACT.linkedin} target="_blank" rel="noreferrer" className="rounded-full bg-white px-6 py-3 font-bold text-[#17201B]">LinkedIn</a>
           </div>
         </div>
       </footer>

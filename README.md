@@ -195,6 +195,68 @@ Two more pieces sell the depth beyond a single rotated plane:
   hero's scroll-parallax transform — each lives on its own nesting level
   so the three transforms never collide on one element.
 
+### Responsive section spacing
+
+Every section's vertical padding scales with the viewport
+(`py-14 sm:py-20 lg:py-24` and similar) rather than a single flat value —
+measured before this change, the same desktop-scale `py-24`/`py-20`
+applied unmodified at every width was adding up to real, avoidable
+scroll length on a phone. Desktop (`lg:`) values are left exactly as
+they were, so nothing changes above that breakpoint; only mobile and
+tablet get tighter. This alone is a modest win, not a dramatic one — the
+bulk of mobile scroll length comes from stacked single-column content
+(the Components catalog and Experience timeline especially), not
+padding, so don't expect this by itself to make the page dramatically
+shorter on a phone.
+
+### Nav that compacts on scroll
+
+`useScrollThreshold` reports a plain boolean — has the page scrolled past
+a threshold — rather than a continuous offset like `useParallax`, and
+deliberately isn't frozen under `prefers-reduced-motion`: a compacting
+nav bar is a discrete density change, not drifting motion, so it should
+still work either way. Past the threshold, the nav bar shrinks, the
+avatar shrinks, the tagline line collapses away, and the blur/shadow
+both increase — paired with `motion-reduce:transition-none` so the
+change snaps instantly instead of animating when reduced motion is on.
+
+### Aurora background
+
+The hero's mesh gradient breathes opacity slowly and each blurred blob
+drifts a few pixels (`hero-mesh-breathe`, `aurora-drift-a/b` in
+`index.css`), all `motion-safe:` only. Each blob's drift lives on an
+*inner* div nested inside the div that already carries the
+scroll-parallax `translate3d` as an inline style (see `layer()` in
+Portfolio.jsx) — animating `transform` on that same outer node would
+just override the inline parallax transform for the animation's
+duration, the same reason `useTilt` and the hero-float layer keep their
+own transforms on separate elements.
+
+### Magnetic buttons
+
+`useMagnetic` eases an element a few pixels toward the cursor while the
+pointer is near it (capped by `max`), on the primary hero and footer
+CTAs. Unlike `useTilt`/`useSpotlight`, it listens and transforms the
+*same* element — a translation of only a few pixels is nowhere near
+enough to move the element's own hit-test box out from under a
+stationary cursor the way a multi-degree rotate/scale can, so the
+split-element pattern those hooks need doesn't apply here.
+
+### Heading reveal wipe, and a real clip-path + IntersectionObserver bug
+
+`RevealHeading` wraps a section's `<h2>` and reveals it with a
+left-to-right `clip-path` wipe the first time it scrolls into view.
+The first version put the animated `clip-path` directly on the observed
+element itself — and never revealed a single heading, in any browser
+tested, no matter how far the page was scrolled. Confirmed with an
+isolated repro: `clip-path: inset(0 100% 0 0)` collapses the target's
+effective intersection rect to zero-area in Chromium, so
+`entry.isIntersecting` never turns true and the reveal that's supposed
+to remove the clip can never fire — a self-defeating loop. The fix
+observes a plain, unclipped `<h2>` and puts the `clip-path` on an inner
+`<span>` instead, so IntersectionObserver reads the real, unclipped
+geometry. Keep that split for any future clip-path-based reveal effect.
+
 ## Live Power Apps embed (optional)
 
 The component detail page has a **Show live Power Apps runtime** toggle. With no

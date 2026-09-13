@@ -5,6 +5,7 @@ import useScrollFill from "../hooks/useScrollFill.js";
 import useRevealEach from "../hooks/useRevealEach.js";
 import useSpotlight from "../hooks/useSpotlight.js";
 import NumberTicker from "./NumberTicker.jsx";
+import RevealHeading from "./RevealHeading.jsx";
 
 /* ============================================================
    EXPERIENCE
@@ -126,9 +127,9 @@ function ExperienceSection() {
   const [itemRefs, revealed] = useRevealEach(experience.length);
 
   return (
-    <section id="experience" className="mx-auto max-w-7xl px-5 py-24">
+    <section id="experience" className="mx-auto max-w-7xl px-5 py-14 sm:py-20 lg:py-24">
       <p className="text-xs font-black uppercase tracking-[.2em] text-[#168326]">Career timeline</p>
-      <h2 className="mt-3 text-4xl font-black sm:text-6xl">Where the systems got built.</h2>
+      <RevealHeading className="mt-3 text-4xl font-black sm:text-6xl">Where the systems got built.</RevealHeading>
       <p className="mt-5 max-w-3xl text-base leading-7 text-slate-600 dark:text-slate-300">
         <NumberTicker value={5} className="text-lg font-black text-[#168326]" />+ years architecting Power Platform
         and Microsoft 365 solutions for the public sector.

@@ -2,6 +2,7 @@ import { useRef, useState } from "react";
 import { ArrowLeft, ArrowRight } from "lucide-react";
 import { projectShowcases } from "../data/projectShowcases.js";
 import ProjectScreen from "./ProjectScreen.jsx";
+import RevealHeading from "./RevealHeading.jsx";
 
 /* ============================================================
    PROJECTS
@@ -61,9 +62,9 @@ function ProjectsSection() {
 
   return (
     <section id="projects" className="bg-[#17201B] text-white">
-      <div className="mx-auto max-w-7xl px-5 py-24">
+      <div className="mx-auto max-w-7xl px-5 py-14 sm:py-20 lg:py-24">
         <p className="text-xs font-black uppercase tracking-[.2em] text-green-400">Project showcase</p>
-        <h2 className="mt-3 text-4xl font-black sm:text-6xl">See the systems in motion.</h2>
+        <RevealHeading className="mt-3 text-4xl font-black sm:text-6xl">See the systems in motion.</RevealHeading>
         <p className="mt-5 max-w-3xl text-base leading-7 text-white/60">
           Interface recreations of delivered Power Platform solutions, shown under generic names.
           Every figure on every screen is synthetic.
