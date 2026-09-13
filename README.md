@@ -23,6 +23,22 @@ Dark mode is a class toggle on the page's own `<main>`, which is why
 `tailwind.config.js` sets `darkMode: "class"` rather than relying on the media
 strategy.
 
+The nav collapses to a hamburger menu below the `md` breakpoint (a dropdown
+panel under the pill bar, closes on link click or Escape) — the desktop link
+row is genuinely hidden at that width, not just visually tucked away, so this
+is the only way to reach a section on a phone without scrolling.
+
+## Social preview
+
+`public/og-image.png` (1200×630, generated from `src/index.css`'s own hero
+gradient/mesh treatment plus the six Power Platform icons) is what a shared
+link shows in Slack, LinkedIn, iMessage, etc. `index.html`'s `og:image`,
+`og:url` and `twitter:image` are hardcoded absolute URLs rather than
+root-relative paths — crawlers fetch those directly, so (unlike `href`/`src`,
+which Vite rewrites for the configured base path at build time) they have to
+already be fully qualified. Update them, and regenerate the image, if the
+site ever moves to a different domain or path.
+
 ## Getting started
 
 ```bash

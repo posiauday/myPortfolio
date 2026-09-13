@@ -1,5 +1,5 @@
-import { useMemo, useState } from "react";
-import { Award, ArrowRight, BarChart3, Moon, Search, Sparkles, Sun } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
+import { Award, ArrowRight, BarChart3, Menu, Moon, Search, Sparkles, Sun, X } from "lucide-react";
 import { categories, icons, components } from "../data/componentLibrary.js";
 import { CONTACT } from "../config.js";
 import useReveal from "../hooks/useReveal.js";
@@ -22,6 +22,7 @@ export default function Portfolio() {
   const [query, setQuery] = useState("");
   const [category, setCategory] = useState("All");
   const [selected, setSelected] = useState(null);
+  const [menuOpen, setMenuOpen] = useState(false);
   const [barsRef, barsIn] = useReveal();
   const scrolled = useParallax();
   const { wrapperRef: heroWrapperRef, cardRef: heroCardRef, glareRef: heroGlareRef } = useTilt({ max: 9 });
@@ -36,20 +37,59 @@ export default function Portfolio() {
     [query, category]
   );
 
+  // Escape closes the mobile menu, same as any other overlay on the page.
+  useEffect(() => {
+    if (!menuOpen) return;
+    const onKeyDown = e => e.key === "Escape" && setMenuOpen(false);
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [menuOpen]);
+
   if (selected) return <Detail item={selected} dark={dark} onBack={() => setSelected(null)} />;
 
   return (
     <main className={dark ? "dark min-h-screen bg-[#0B1110] text-white" : "min-h-screen bg-[#FBFDFB] text-[#17201B]"}>
       <nav className="fixed inset-x-0 top-0 z-30 p-3">
-        <div className="mx-auto flex h-16 max-w-7xl items-center justify-between rounded-2xl border border-white/70 bg-white/90 px-4 shadow-xl backdrop-blur dark:border-white/10 dark:bg-[#101816]/90">
-          <div className="flex items-center gap-3">
-            <span className="grid h-10 w-10 place-items-center rounded-2xl bg-[#168326] font-black text-white">{CONTACT.initials}</span>
-            <div><b className="block text-sm">{CONTACT.name}</b><span className="text-[9px] uppercase tracking-widest text-slate-500">{CONTACT.tagline}</span></div>
+        <div className="mx-auto max-w-7xl">
+          <div className="flex h-16 items-center justify-between rounded-2xl border border-white/70 bg-white/90 px-4 shadow-xl backdrop-blur dark:border-white/10 dark:bg-[#101816]/90">
+            <div className="flex items-center gap-3">
+              <span className="grid h-10 w-10 place-items-center rounded-2xl bg-[#168326] font-black text-white">{CONTACT.initials}</span>
+              <div><b className="block text-sm">{CONTACT.name}</b><span className="text-[9px] uppercase tracking-widest text-slate-500">{CONTACT.tagline}</span></div>
+            </div>
+            <div className="hidden gap-1 md:flex">
+              {["Projects", "Experience", "Components", "Recognition"].map(x => <a key={x} href={`#${x.toLowerCase()}`} className="rounded-full px-4 py-2 text-sm font-bold hover:bg-green-50 hover:text-[#168326] dark:hover:bg-white/10">{x}</a>)}
+            </div>
+            <div className="flex items-center gap-1">
+              <button onClick={() => setDark(!dark)} className="grid h-10 w-10 place-items-center rounded-full" aria-label={dark ? "Switch to light mode" : "Switch to dark mode"}>{dark ? <Sun size={18} /> : <Moon size={18} />}</button>
+              <button
+                onClick={() => setMenuOpen(v => !v)}
+                className="grid h-10 w-10 place-items-center rounded-full md:hidden"
+                aria-label={menuOpen ? "Close menu" : "Open menu"}
+                aria-expanded={menuOpen}
+                aria-controls="mobile-nav-menu"
+              >
+                {menuOpen ? <X size={18} /> : <Menu size={18} />}
+              </button>
+            </div>
           </div>
-          <div className="hidden gap-1 md:flex">
-            {["Projects", "Experience", "Components", "Recognition"].map(x => <a key={x} href={`#${x.toLowerCase()}`} className="rounded-full px-4 py-2 text-sm font-bold hover:bg-green-50 hover:text-[#168326] dark:hover:bg-white/10">{x}</a>)}
-          </div>
-          <button onClick={() => setDark(!dark)} className="grid h-10 w-10 place-items-center rounded-full">{dark ? <Sun size={18} /> : <Moon size={18} />}</button>
+
+          {menuOpen && (
+            <div
+              id="mobile-nav-menu"
+              className="mt-2 flex flex-col gap-1 rounded-2xl border border-white/70 bg-white/95 p-2 shadow-xl backdrop-blur dark:border-white/10 dark:bg-[#101816]/95 md:hidden"
+            >
+              {["Projects", "Experience", "Components", "Recognition"].map(x => (
+                <a
+                  key={x}
+                  href={`#${x.toLowerCase()}`}
+                  onClick={() => setMenuOpen(false)}
+                  className="rounded-xl px-4 py-3 text-sm font-bold hover:bg-green-50 hover:text-[#168326] dark:hover:bg-white/10"
+                >
+                  {x}
+                </a>
+              ))}
+            </div>
+          )}
         </div>
       </nav>
 
