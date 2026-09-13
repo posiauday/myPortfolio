@@ -70,7 +70,7 @@ const baseByCategory = {
     properties: [["Items", "Table", "Required", "Project, risk, milestone or decision records"], ["ProjectId", "Text", "Blank", "Optional project filter"], ["StatusConfig", "Table", "Default", "Status and tone mapping"]],
     events: [["OnSelect", "Returns the selected PMO record"], ["OnAction", "Returns the selected action and key"]],
     architecture: ["PMO source data remains outside the component", "A shaped collection forms the component contract", "Outputs drive drill-through or host actions"],
-    examples: ["PDSR project drill-through", "Risk review", "Milestone governance"],
+    examples: ["Portfolio project drill-through", "Risk review", "Milestone governance"],
     accessibility: ["RAG status includes a text label", "Counts have descriptive labels", "Selection is available from keyboard controls"],
     limitations: ["The component does not Patch a data source", "Delegable filtering belongs in the host app"]
   },

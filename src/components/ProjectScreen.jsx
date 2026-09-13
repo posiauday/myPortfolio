@@ -20,17 +20,17 @@ function ProjectScreen({ kind, color }) {
     </div>
   );
 
-  if (kind === "awds-dashboard") {
+  if (kind === "wsms-dashboard") {
     return (
       <div className="h-full bg-[#F4F6F8] p-4 text-slate-900">
         <div className="flex items-center justify-between rounded-xl bg-white p-3 shadow-sm">
-          <div><b className="block text-sm">Client Projects</b><span className="text-[9px] text-slate-400">Automated Work Description System</span></div>
+          <div><b className="block text-sm">Client Projects</b><span className="text-[9px] text-slate-400">Work Scope Management System</span></div>
           <button className="rounded-lg px-3 py-2 text-[9px] font-black text-white" style={{ background: color }}>+ Add client</button>
         </div>
         <div className="mt-3 grid grid-cols-3 gap-2"><Metric label="Clients" value="128" /><Metric label="Active" value="42" /><Metric label="Pending" value="07" /></div>
         <div className="mt-3 rounded-xl bg-white p-3 shadow-sm">
           <div className="mb-2 h-8 rounded-lg bg-slate-100" />
-          {["Prairie Health Centre", "North Service Complex", "Central Operations"].map((x, i) => (
+          {["Northgate Medical Centre", "Eastside Service Depot", "Civic Operations Hub"].map((x, i) => (
             <div key={x} className="grid grid-cols-[1fr_.5fr_.4fr] border-t border-slate-100 py-2 text-[9px]">
               <b>{x}</b><span>Account {210 + i}</span><span className="font-bold text-green-700">Active</span>
             </div>
@@ -40,12 +40,12 @@ function ProjectScreen({ kind, color }) {
     );
   }
 
-  if (kind.startsWith("awds-")) {
-    const active = kind === "awds-client" ? 0 : kind === "awds-work" ? 1 : 3;
+  if (kind.startsWith("wsms-")) {
+    const active = kind === "wsms-client" ? 0 : kind === "wsms-work" ? 1 : 3;
     return (
       <div className="h-full bg-[#F4F6F8] p-4 text-slate-900">
         <div className="flex justify-between">
-          <div><span className="text-[9px] font-black uppercase tracking-wider" style={{ color }}>AWDS workspace</span><b className="block text-lg">{kind === "awds-client" ? "Client Information" : kind === "awds-work" ? "Work Specification" : "Inspection Request"}</b></div>
+          <div><span className="text-[9px] font-black uppercase tracking-wider" style={{ color }}>WSMS workspace</span><b className="block text-lg">{kind === "wsms-client" ? "Client Information" : kind === "wsms-work" ? "Work Specification" : "Inspection Request"}</b></div>
           <span className="rounded-full bg-white px-3 py-1 text-[9px] font-bold shadow-sm">Draft</span>
         </div>
         <div className="mt-3 flex gap-1 rounded-xl bg-white p-1 shadow-sm">
@@ -54,9 +54,9 @@ function ProjectScreen({ kind, color }) {
           ))}
         </div>
         <div className="mt-3 grid gap-3 rounded-xl bg-white p-4 shadow-sm md:grid-cols-2">
-          {kind === "awds-client" ? (
+          {kind === "wsms-client" ? (
             <><Field label="Client name" /><Field label="Account" /><Field label="Address" wide /><Field label="Building" /><Field label="Status" /></>
-          ) : kind === "awds-work" ? (
+          ) : kind === "wsms-work" ? (
             <>
               <div className="space-y-2 rounded-lg bg-slate-50 p-2">{["Floor care", "Window cleaning", "Waste removal"].map(x => <div key={x} className="rounded-lg bg-white p-2 text-[9px] font-bold">{x}</div>)}</div>
               <div className="grid grid-cols-2 gap-2"><Field label="Work item" /><Field label="Title" /><Field label="Material cost" /><Field label="Labour cost" /><Field label="Description" wide /></div>
@@ -69,7 +69,7 @@ function ProjectScreen({ kind, color }) {
     );
   }
 
-  if (kind === "pdsr-risk") {
+  if (kind === "dpmr-risk") {
     return (
       <div className="h-full bg-[#F3F7F4] p-4 text-slate-900">
         <b className="text-lg">Portfolio Risk Intelligence</b>
@@ -83,7 +83,7 @@ function ProjectScreen({ kind, color }) {
     );
   }
 
-  if (kind === "pdsr-milestone") {
+  if (kind === "dpmr-milestone") {
     return (
       <div className="h-full bg-[#F3F7F4] p-4 text-slate-900">
         <b className="text-lg">Milestone Delivery</b>
@@ -99,11 +99,11 @@ function ProjectScreen({ kind, color }) {
     );
   }
 
-  if (kind.startsWith("pdsr-")) {
+  if (kind.startsWith("dpmr-")) {
     return (
       <div className="h-full bg-[#F3F7F4] p-4 text-slate-900">
         <div className="flex justify-between">
-          <div><span className="text-[9px] font-black uppercase tracking-wider" style={{ color }}>Portfolio command</span><b className="block text-lg">{kind === "pdsr-project" ? "Project Drill-through" : "Executive Overview"}</b></div>
+          <div><span className="text-[9px] font-black uppercase tracking-wider" style={{ color }}>Portfolio command</span><b className="block text-lg">{kind === "dpmr-project" ? "Project Drill-through" : "Executive Overview"}</b></div>
           <BarChart3 style={{ color }} />
         </div>
         <div className="mt-3 grid grid-cols-3 gap-2"><Metric label="Health" value="74%" /><Metric label="Active" value="32" /><Metric label="At risk" value="06" /></div>
@@ -115,7 +115,7 @@ function ProjectScreen({ kind, color }) {
     );
   }
 
-  if (kind === "governance-storage") {
+  if (kind === "collab-gov-storage") {
     return (
       <div className="h-full bg-[#F1F6FB] p-4 text-slate-900">
         <b className="text-lg">Storage Analytics</b>
@@ -138,14 +138,14 @@ function ProjectScreen({ kind, color }) {
     );
   }
 
-  if (kind === "governance-inactive" || kind === "governance-owner") {
+  if (kind === "collab-gov-inactive" || kind === "collab-gov-owner") {
     return (
       <div className="h-full bg-[#F1F6FB] p-4 text-slate-900">
-        <b className="text-lg">{kind === "governance-inactive" ? "Inactive Sites" : "Ownership Coverage"}</b>
+        <b className="text-lg">{kind === "collab-gov-inactive" ? "Inactive Sites" : "Ownership Coverage"}</b>
         <div className="mt-4 overflow-hidden rounded-xl bg-white shadow-sm">
           {["Finance Collaboration", "Regional Operations", "Legacy Program", "Digital Services"].map((x, i) => (
             <div key={x} className="grid grid-cols-[1.2fr_.6fr_.6fr] border-b border-slate-100 p-3 text-[9px]">
-              <b>{x}</b><span>{kind === "governance-owner" ? [0, 2, 0, 3][i] : `${90 + i * 42} days`}</span><span style={{ color: i % 2 ? "#168326" : "#D13438" }}>{i % 2 ? "Covered" : "Action"}</span>
+              <b>{x}</b><span>{kind === "collab-gov-owner" ? [0, 2, 0, 3][i] : `${90 + i * 42} days`}</span><span style={{ color: i % 2 ? "#168326" : "#D13438" }}>{i % 2 ? "Covered" : "Action"}</span>
             </div>
           ))}
         </div>
@@ -153,19 +153,19 @@ function ProjectScreen({ kind, color }) {
     );
   }
 
-  if (kind.startsWith("acwp-")) {
+  if (kind.startsWith("cirp-")) {
     return (
       <div className="h-full bg-[#FBF3FA] p-4 text-slate-900">
         <div className="flex justify-between">
-          <div><span className="text-[9px] font-black uppercase tracking-wider" style={{ color }}>Client services workspace</span><b className="block text-lg">{kind === "acwp-intake" ? "Guided Client Intake" : kind === "acwp-workspace" ? "Case Workspace" : kind === "acwp-workflow" ? "Workflow Tracking" : "Operations Dashboard"}</b></div>
+          <div><span className="text-[9px] font-black uppercase tracking-wider" style={{ color }}>Client services workspace</span><b className="block text-lg">{kind === "cirp-intake" ? "Guided Client Intake" : kind === "cirp-workspace" ? "Case Workspace" : kind === "cirp-workflow" ? "Workflow Tracking" : "Operations Dashboard"}</b></div>
           <Workflow style={{ color }} />
         </div>
-        {kind === "acwp-dashboard" ? (
+        {kind === "cirp-dashboard" ? (
           <>
             <div className="mt-3 grid grid-cols-3 gap-2"><Metric label="Open cases" value="48" /><Metric label="In review" value="17" /><Metric label="Completed" value="86%" /></div>
             <div className="mt-3 flex h-32 items-end gap-2 rounded-xl bg-white p-4 shadow-sm">{[45, 62, 54, 76, 69, 88, 82].map((h, i) => <i key={i} className="flex-1 rounded-t" style={{ height: `${h}%`, background: i === 5 ? color : `${color}66` }} />)}</div>
           </>
-        ) : kind === "acwp-workflow" ? (
+        ) : kind === "cirp-workflow" ? (
           <div className="mt-5 space-y-2">
             {["Intake", "Review", "Approval", "Complete"].map((x, i) => (
               <div key={x} className="flex items-center gap-3 rounded-xl bg-white p-3 shadow-sm">
@@ -184,25 +184,25 @@ function ProjectScreen({ kind, color }) {
     );
   }
 
-  if (kind.startsWith("pdo-architecture-")) {
+  if (kind.startsWith("portfolio-insights-")) {
     return (
       <div className="h-full bg-[#FFF6F0] p-4 text-slate-900">
         <div className="flex justify-between">
-          <div><span className="text-[9px] font-black uppercase tracking-wider" style={{ color }}>Portfolio architecture</span><b className="block text-lg">{kind === "pdo-architecture-health" ? "Portfolio Health" : kind === "pdo-architecture-feasibility" ? "Feasibility Matrix" : kind === "pdo-architecture-model" ? "Data Model Boundaries" : "Delivery Roadmap"}</b></div>
+          <div><span className="text-[9px] font-black uppercase tracking-wider" style={{ color }}>Portfolio architecture</span><b className="block text-lg">{kind === "portfolio-insights-health" ? "Portfolio Health" : kind === "portfolio-insights-feasibility" ? "Feasibility Matrix" : kind === "portfolio-insights-model" ? "Data Model Boundaries" : "Delivery Roadmap"}</b></div>
           <Layers3 style={{ color }} />
         </div>
-        {kind === "pdo-architecture-health" ? (
+        {kind === "portfolio-insights-health" ? (
           <>
             <div className="mt-3 grid grid-cols-3 gap-2"><Metric label="Healthy" value="71%" /><Metric label="Active" value="28" /><Metric label="Attention" value="05" /></div>
             <div className="mt-3 flex h-28 items-end gap-2 rounded-xl bg-white p-3 shadow-sm">{[52, 64, 58, 78, 71, 86].map((h, i) => <i key={i} className="flex-1 rounded-t" style={{ height: `${h}%`, background: i === 5 ? color : `${color}55` }} />)}</div>
           </>
-        ) : kind === "pdo-architecture-feasibility" ? (
+        ) : kind === "portfolio-insights-feasibility" ? (
           <div className="mt-4 overflow-hidden rounded-xl bg-white shadow-sm">
             {[["Portfolio overview", "Supported"], ["Financial metrics", "Conditional"], ["Historical trends", "New architecture"], ["Resource capacity", "New architecture"]].map(([a, b], i) => (
               <div key={a} className="grid grid-cols-[1.3fr_.7fr] border-b border-slate-100 p-3 text-[10px]"><b>{a}</b><span style={{ color: i === 0 ? "#168326" : i === 1 ? "#CA5010" : "#D13438" }}>{b}</span></div>
             ))}
           </div>
-        ) : kind === "pdo-architecture-model" ? (
+        ) : kind === "portfolio-insights-model" ? (
           <div className="mt-8 flex items-center gap-2">
             {["Operational lists", "Current-state model", "Executive reporting"].map((x, i) => (
               <React.Fragment key={x}>
@@ -225,19 +225,19 @@ function ProjectScreen({ kind, color }) {
     );
   }
 
-  if (kind.startsWith("site-owners-")) {
+  if (kind.startsWith("workspace-owners-")) {
     return (
       <div className="h-full bg-[#F1F6FB] p-4 text-slate-900">
         <div className="flex justify-between">
-          <div><span className="text-[9px] font-black uppercase tracking-wider" style={{ color }}>Ownership governance</span><b className="block text-lg">{kind === "site-owners-overview" ? "Ownership Overview" : kind === "site-owners-explorer" ? "Workspace Explorer" : kind === "site-owners-exceptions" ? "Governance Exceptions" : "Collection Pipeline"}</b></div>
+          <div><span className="text-[9px] font-black uppercase tracking-wider" style={{ color }}>Ownership governance</span><b className="block text-lg">{kind === "workspace-owners-overview" ? "Ownership Overview" : kind === "workspace-owners-explorer" ? "Workspace Explorer" : kind === "workspace-owners-exceptions" ? "Governance Exceptions" : "Collection Pipeline"}</b></div>
           <ShieldCheck style={{ color }} />
         </div>
-        {kind === "site-owners-overview" ? (
+        {kind === "workspace-owners-overview" ? (
           <>
             <div className="mt-3 grid grid-cols-3 gap-2"><Metric label="Workspaces" value="6K+" /><Metric label="Covered" value="92%" /><Metric label="Action" value="146" /></div>
             <div className="mt-3 rounded-xl bg-white p-3 shadow-sm"><div className="h-3 rounded-full bg-slate-100"><div className="h-full w-4/5 rounded-full" style={{ background: color }} /></div></div>
           </>
-        ) : kind === "site-owners-pipeline" ? (
+        ) : kind === "workspace-owners-pipeline" ? (
           <div className="mt-8 flex items-center gap-2">
             {["PnP collection", "Transform", "Dataset", "Action queue"].map((x, i) => (
               <React.Fragment key={x}>
@@ -250,7 +250,7 @@ function ProjectScreen({ kind, color }) {
           <div className="mt-4 overflow-hidden rounded-xl bg-white shadow-sm">
             {["Workspace Alpha", "Service Hub 12", "Program Archive", "Regional Portal"].map((x, i) => (
               <div key={x} className="grid grid-cols-[1.2fr_.6fr_.6fr] border-b border-slate-100 p-3 text-[9px]">
-                <b>{x}</b><span>{kind === "site-owners-explorer" ? `${12 + i * 9} GB` : i % 2 ? "Covered" : "Missing owner"}</span><span style={{ color: i % 2 ? "#168326" : "#D13438" }}>{i % 2 ? "Healthy" : "Review"}</span>
+                <b>{x}</b><span>{kind === "workspace-owners-explorer" ? `${12 + i * 9} GB` : i % 2 ? "Covered" : "Missing owner"}</span><span style={{ color: i % 2 ? "#168326" : "#D13438" }}>{i % 2 ? "Healthy" : "Review"}</span>
               </div>
             ))}
           </div>
@@ -259,14 +259,14 @@ function ProjectScreen({ kind, color }) {
     );
   }
 
-  if (kind.startsWith("bid-automation-")) {
+  if (kind.startsWith("tender-automation-")) {
     return (
       <div className="h-full bg-[#F4F7FB] p-4 text-slate-900">
         <div className="flex justify-between">
-          <div><span className="text-[9px] font-black uppercase tracking-wider" style={{ color }}>Document automation</span><b className="block text-lg">{kind === "bid-automation-readiness" ? "Report Readiness" : kind === "bid-automation-invitation" ? "Invitation to Bid" : kind === "bid-automation-approved" ? "Approved Work List" : "Generation Pipeline"}</b></div>
+          <div><span className="text-[9px] font-black uppercase tracking-wider" style={{ color }}>Document automation</span><b className="block text-lg">{kind === "tender-automation-readiness" ? "Report Readiness" : kind === "tender-automation-invitation" ? "Request for Quote" : kind === "tender-automation-approved" ? "Approved Scope List" : "Generation Pipeline"}</b></div>
           <FileText style={{ color }} />
         </div>
-        {kind === "bid-automation-pipeline" ? (
+        {kind === "tender-automation-pipeline" ? (
           <div className="mt-8 flex items-center gap-2">
             {["Validate", "Build HTML", "Create PDF", "Store & notify"].map((x, i) => (
               <React.Fragment key={x}>
@@ -278,7 +278,7 @@ function ProjectScreen({ kind, color }) {
         ) : (
           <div className="mt-4 rounded-xl bg-white p-4 shadow-sm">
             <div className="flex justify-between border-b border-slate-100 pb-3">
-              <div><b className="text-sm">{kind === "bid-automation-readiness" ? "Generation checklist" : kind === "bid-automation-invitation" ? "Masked contractor package" : "Masked client package"}</b><span className="block text-[8px] text-slate-400">Reference DEMO-1042</span></div>
+              <div><b className="text-sm">{kind === "tender-automation-readiness" ? "Generation checklist" : kind === "tender-automation-invitation" ? "Sample contractor package" : "Sample client package"}</b><span className="block text-[8px] text-slate-400">Reference DEMO-1042</span></div>
               <span className="rounded-full bg-green-50 px-2 py-1 text-[9px] font-bold text-green-700">Synthetic</span>
             </div>
             {["Exterior repair package", "Mechanical allowance", "Finishing work"].map((x, i) => (

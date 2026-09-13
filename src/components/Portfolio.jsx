@@ -1,17 +1,18 @@
 import { useMemo, useState } from "react";
 import { Award, ArrowRight, BarChart3, Moon, Search, Sparkles, Sun } from "lucide-react";
 import { categories, icons, components } from "../data/componentLibrary.js";
-import { projectShowcases } from "../data/projectShowcases.js";
 import { CONTACT } from "../config.js";
 import useReveal from "../hooks/useReveal.js";
-import ProjectCarousel from "./ProjectCarousel.jsx";
+import useParallax from "../hooks/useParallax.js";
+import ProjectsSection from "./ProjectsSection.jsx";
 import Detail from "./ComponentDetail.jsx";
 
 /* ============================================================
    MAIN PORTFOLIO
    Nav labels match the real section ids (Projects / Components /
-   Recognition). Reveal-on-scroll and hover lift are CSS + the
-   useReveal hook rather than an animation dependency.
+   Recognition). The hero's depth, the reveal-on-scroll bars and
+   the card hover lift are all CSS plus the useParallax / useReveal
+   hooks, so there is still no animation dependency.
    ============================================================ */
 export default function Portfolio() {
   const [dark, setDark] = useState(false);
@@ -19,6 +20,12 @@ export default function Portfolio() {
   const [category, setCategory] = useState("All");
   const [selected, setSelected] = useState(null);
   const [barsRef, barsIn] = useReveal();
+  const scrolled = useParallax();
+
+  // Clamped so the layers stop drifting once the hero is off screen; each
+  // factor is how much a layer lags (positive) or leads (negative) the page.
+  const p = Math.min(scrolled, 900);
+  const layer = (factor, extra = "") => ({ transform: `translate3d(0,${p * factor}px,0)${extra}` });
 
   const shown = useMemo(
     () => components.filter(c => (category === "All" || c.category === category) && `${c.title} ${c.category} ${c.summary}`.toLowerCase().includes(query.toLowerCase())),
@@ -42,9 +49,21 @@ export default function Portfolio() {
         </div>
       </nav>
 
-      <section className="hero-mesh relative overflow-hidden pt-28">
+      <section className="relative overflow-hidden pt-28">
+        {/* Parallax backdrop: three layers drifting at different rates. */}
+        <div className="pointer-events-none absolute inset-0 -z-10" aria-hidden="true">
+          <div className="hero-mesh absolute inset-0 scale-125" style={layer(0.42)} />
+          <div
+            className="absolute -left-24 top-10 h-[26rem] w-[26rem] rounded-full bg-[#168326]/20 blur-3xl"
+            style={layer(0.26)}
+          />
+          <div
+            className="absolute -right-20 top-56 h-[22rem] w-[22rem] rounded-full bg-[#0F6CBD]/20 blur-3xl"
+            style={layer(0.14)}
+          />
+        </div>
         <div className="relative mx-auto grid min-h-[700px] max-w-7xl items-center gap-12 px-5 py-16 lg:grid-cols-2">
-          <div>
+          <div style={layer(0.1)}>
             <span className="inline-flex items-center gap-2 rounded-full border bg-white/80 px-4 py-2 text-xs font-black text-[#168326] dark:border-white/10 dark:bg-white/10"><Sparkles size={14} /> POWER PLATFORM + MICROSOFT 365</span>
             <h1 className="hero-title-size mt-7 font-black leading-[.88] tracking-[-.065em]">I build systems<br /><span className="grad-hero-text bg-clip-text text-transparent">people trust.</span></h1>
             <p className="mt-7 max-w-2xl text-lg leading-8 text-slate-600 dark:text-slate-300">Secure, scalable applications, automation, data, analytics and governance, designed from discovery through long-term operations.</p>
@@ -54,7 +73,7 @@ export default function Portfolio() {
             </div>
           </div>
 
-          <div className="grad-brand-br rounded-[42px] p-4 shadow-2xl">
+          <div className="grad-brand-br rounded-[42px] p-4 shadow-2xl" style={layer(-0.07)}>
             <div className="rounded-[32px] bg-white p-6 text-slate-900">
               <div className="flex justify-between">
                 <div><span className="text-xs font-black uppercase tracking-widest text-slate-400">Portfolio command</span><h2 className="mt-2 text-2xl font-black">Executive overview</h2></div>
@@ -73,14 +92,7 @@ export default function Portfolio() {
         </div>
       </section>
 
-      <section id="projects" className="bg-[#17201B] text-white">
-        <div className="mx-auto max-w-7xl px-5 py-24">
-          <p className="text-xs font-black uppercase tracking-[.2em] text-green-400">Project showcase</p>
-          <h2 className="mt-3 text-4xl font-black sm:text-6xl">See the systems in motion.</h2>
-          <p className="mt-5 max-w-3xl text-base leading-7 text-white/60">High-fidelity interface recreations based on the Power Platform solutions, showing how each experience progresses from overview to operational detail.</p>
-          <div className="mt-12 space-y-8">{projectShowcases.map(project => <ProjectCarousel key={project.id} project={project} />)}</div>
-        </div>
-      </section>
+      <ProjectsSection />
 
       <section id="components" className="mx-auto max-w-7xl px-5 py-24">
         <div className="grad-dark-br rounded-[38px] p-7 text-white sm:p-10">

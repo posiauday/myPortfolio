@@ -11,8 +11,8 @@ SVG and CSS.
 
 | Section | What it does |
 | --- | --- |
-| **Hero** | Reveal-on-scroll KPI panel driven by `useReveal` + a CSS height transition. |
-| **Projects** (`#projects`) | Seven project showcases, each a keyboard-reachable carousel of high-fidelity screen recreations. Every number shown is synthetic. |
+| **Hero** | Multi-layer parallax backdrop (`useParallax`) plus a reveal-on-scroll KPI panel (`useReveal`). |
+| **Projects** (`#projects`) | Seven project showcases in a rail-and-window layout: pick a project from the rail, page through its screens in a window-framed preview. Every project is presented under a generic name and every number shown is synthetic. |
 | **Components** (`#components`) | Searchable, category-filtered catalog of 25 components. |
 | **Component detail** | Per-component page with Preview, Variants, Properties, Events, Architecture, Examples, Accessibility and Limitations tabs, generated YAML, copyable docs, and an optional live Power Apps embed. |
 | **Recognition** (`#recognition`) | Awards and delivery-scale highlights. |
@@ -36,21 +36,22 @@ npm run lint
 ```
 src/
   components/
-    Portfolio.jsx        page shell: nav, hero, projects, catalog, recognition, footer
+    Portfolio.jsx        page shell: nav, parallax hero, projects, catalog, recognition, footer
+    ProjectsSection.jsx  project rail + windowed screen preview for all seven showcases
     ComponentDetail.jsx  per-component reference page (tabs, YAML, docs, embed)
     ComponentPreview.jsx the small in-page mockup for a single component
-    ProjectCarousel.jsx  slide navigation for one project showcase
     ProjectScreen.jsx    every project screen recreation, switched on slide `kind`
     PowerAppsEmbed.jsx   live runtime embed, with an honest not-connected state
   data/
     componentLibrary.js  categories, icons, per-category defaults, per-component
                          overrides, and the derived component catalog
-    projectShowcases.js  the seven projects and their slides
+    projectShowcases.js  the seven projects (under generic names) and their slides
   lib/
     componentDocs.js     YAML + markdown docs generated from the catalog
   hooks/
     useCopyFeedback.js   clipboard write + short-lived "Copied" label
     useReveal.js         one-shot IntersectionObserver reveal
+    useParallax.js        throttled scroll offset, frozen under reduced motion
   config.js              contact details and the Power Apps embed configuration
 ```
 
@@ -72,6 +73,14 @@ so the YAML and the Properties/Events tabs can never drift apart.
 Add a slide to `src/data/projectShowcases.js` with a `kind` prefixed by the
 project's own `id`, then handle that `kind` in `ProjectScreen.jsx`. Unmatched
 kinds fall through to a generic governance overview rather than rendering blank.
+
+### Project names are stand-ins
+
+Every project in `src/data/projectShowcases.js` is presented under a generic
+name and acronym (e.g. "WSMS — Work Scope Management System") rather than the
+name of the real engagement it recreates. Keep it that way when editing: don't
+reintroduce a real client, product or system name into a title, subtitle,
+slide label, or the text rendered inside a `ProjectScreen` mockup.
 
 ## Live Power Apps embed (optional)
 
