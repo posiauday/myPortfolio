@@ -17,7 +17,7 @@ SVG and CSS.
 | **Experience** (`#experience`) | An animated career timeline: a gradient rail draws itself in as you scroll past it (`useScrollFill`), each entry fades up into view the first time it's reached (`useRevealEach`), and its dot lights up in the role's color once revealed. Real employers, roles and dates, each with a collapsible highlight list. |
 | **Components** (`#components`) | Searchable, category-filtered catalog of 25 components. |
 | **Component detail** | Per-component page with Preview, Variants, Properties, Events, Architecture, Examples, Accessibility and Limitations tabs, generated YAML, copyable docs, and an optional live Power Apps embed. Lives at `#components/<id>` (`useComponentRoute`), so the browser back button closes it and a direct link opens straight to that component. |
-| **Recognition** (`#recognition`) | Awards and delivery-scale highlights. |
+| **Recognition** (`#recognition`) | Awards, delivery-scale highlights, and certifications — a status pill reads "Certified" (green) or whatever else is in progress (amber). |
 
 Dark mode is a class toggle on the page's own `<main>`, which is why
 `tailwind.config.js` sets `darkMode: "class"` rather than relying on the media
@@ -67,6 +67,7 @@ src/
                          overrides, and the derived component catalog
     projectShowcases.js  the seven projects (under generic names) and their slides
     experience.js        real employers, roles, dates and highlights
+    certifications.js    name, code and status ("Certified" / "In Progress") per cert
     platformStack.js     the icons PlatformOrbit renders (name, icon import, ring)
   assets/
     logos/                Microsoft's official Power Platform SVG icons + NOTICE.md

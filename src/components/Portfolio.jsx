@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
-import { Award, ArrowRight, BarChart3, Menu, Moon, Search, Sparkles, Sun, X } from "lucide-react";
+import { Award, ArrowRight, BadgeCheck, BarChart3, Menu, Moon, Search, Sparkles, Sun, X } from "lucide-react";
 import { categories, icons, components } from "../data/componentLibrary.js";
+import { certifications } from "../data/certifications.js";
 import { CONTACT } from "../config.js";
 import useReveal from "../hooks/useReveal.js";
 import useParallax from "../hooks/useParallax.js";
@@ -208,6 +209,27 @@ export default function Portfolio() {
           <h2 className="mt-16 text-3xl font-black">Enterprise-scale governance</h2>
           <p className="mt-2 text-slate-500">Secure and maintainable delivery supporting 5,000+ users.</p>
         </div>
+        {certifications.map(cert => {
+          const inProgress = cert.status !== "Certified";
+          return (
+            <div key={cert.code} className="rounded-[34px] border border-slate-200 bg-white p-8 dark:border-white/10 dark:bg-white/5">
+              <div className="flex items-start justify-between">
+                <BadgeCheck className="text-[#168326]" />
+                <span
+                  className={`rounded-full px-3 py-1 text-xs font-black ${
+                    inProgress
+                      ? "bg-amber-50 text-amber-700 dark:bg-amber-900/20 dark:text-amber-300"
+                      : "bg-green-50 text-green-700 dark:bg-green-900/20 dark:text-green-300"
+                  }`}
+                >
+                  {cert.status}
+                </span>
+              </div>
+              <h2 className="mt-14 text-3xl font-black">{cert.name}</h2>
+              <p className="mt-2 text-slate-500">Microsoft Certified &middot; {cert.code}</p>
+            </div>
+          );
+        })}
       </section>
 
       <footer className="mx-auto max-w-7xl px-5 pb-8">
