@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useState } from "react";
-import { Award, ArrowRight, BadgeCheck, BarChart3, Menu, Moon, Search, Sparkles, Sun, X } from "lucide-react";
+import { Award, ArrowRight, BadgeCheck, BarChart3, Check, Menu, Moon, Search, Sparkles, Sun, X } from "lucide-react";
 import { categories, icons, components } from "../data/componentLibrary.js";
 import { certifications } from "../data/certifications.js";
+import { skills } from "../data/skills.js";
 import { CONTACT } from "../config.js";
 import useReveal from "../hooks/useReveal.js";
 import useParallax from "../hooks/useParallax.js";
@@ -230,6 +231,37 @@ export default function Portfolio() {
             </div>
           );
         })}
+      </section>
+
+      <section className="mx-auto max-w-7xl px-5 pb-24">
+        <p className="text-xs font-black uppercase tracking-[.2em] text-[#168326]">Skills</p>
+        <h2 className="mt-3 text-4xl font-black sm:text-5xl">Endorsed by people I&rsquo;ve worked with.</h2>
+        <p className="mt-5 max-w-2xl text-base leading-7 text-slate-600 dark:text-slate-300">
+          Straight from LinkedIn &mdash; the checked ones have been endorsed by a colleague.
+        </p>
+        <ul className="mt-8 flex flex-wrap gap-3" aria-label="Skills endorsed on LinkedIn">
+          {skills.map(skill => (
+            <li
+              key={skill.name}
+              className="inline-flex items-center gap-2 rounded-full border border-slate-200 px-4 py-2 text-sm font-bold text-slate-700 dark:border-white/10 dark:text-slate-200"
+            >
+              {skill.endorsements > 0 && (
+                <span className="grid h-4 w-4 shrink-0 place-items-center rounded-full bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300">
+                  <Check size={10} strokeWidth={3} />
+                </span>
+              )}
+              {skill.name}
+            </li>
+          ))}
+        </ul>
+        <a
+          href={CONTACT.linkedin}
+          target="_blank"
+          rel="noreferrer"
+          className="mt-6 inline-flex items-center gap-2 text-sm font-bold text-[#168326] hover:underline"
+        >
+          View skills on LinkedIn <ArrowRight size={14} />
+        </a>
       </section>
 
       <footer className="mx-auto max-w-7xl px-5 pb-8">

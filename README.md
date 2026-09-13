@@ -18,6 +18,7 @@ SVG and CSS.
 | **Components** (`#components`) | Searchable, category-filtered catalog of 25 components. |
 | **Component detail** | Per-component page with Preview, Variants, Properties, Events, Architecture, Examples, Accessibility and Limitations tabs, generated YAML, copyable docs, and an optional live Power Apps embed. Lives at `#components/<id>` (`useComponentRoute`), so the browser back button closes it and a direct link opens straight to that component. |
 | **Recognition** (`#recognition`) | Awards, delivery-scale highlights, and certifications — a status pill reads "Certified" (green) or whatever else is in progress (amber). |
+| **Skills** | LinkedIn's real skill list with a checkmark on the ones actually endorsed — not composed testimonials, since no written quotes exist to use. |
 
 Dark mode is a class toggle on the page's own `<main>`, which is why
 `tailwind.config.js` sets `darkMode: "class"` rather than relying on the media
@@ -68,6 +69,7 @@ src/
     projectShowcases.js  the seven projects (under generic names) and their slides
     experience.js        real employers, roles, dates and highlights
     certifications.js    name, code and status ("Certified" / "In Progress") per cert
+    skills.js             LinkedIn skill names with their real endorsement count
     platformStack.js     the icons PlatformOrbit renders (name, icon import, ring)
   assets/
     logos/                Microsoft's official Power Platform SVG icons + NOTICE.md
@@ -222,3 +224,9 @@ against a published reference component; entries marked **Original** are design
 specifications whose executable YAML has not yet been built and tested in Power
 Apps Studio. Every figure in the project recreations is synthetic — no real
 client, tenant or personal data appears anywhere in this repository.
+
+`src/data/skills.js` is real LinkedIn endorsement data, not composed
+testimonials — there are no written recommendations to draw from, and this
+project doesn't fabricate quotes attributed to real people. If actual
+testimonial text becomes available, it belongs in its own data file and
+section rather than folded into this one.
