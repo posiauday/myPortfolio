@@ -28,7 +28,12 @@ export default function Portfolio() {
   const [menuOpen, setMenuOpen] = useState(false);
   const [barsRef, barsIn] = useReveal();
   const scrolled = useParallax();
-  const { wrapperRef: heroWrapperRef, cardRef: heroCardRef, glareRef: heroGlareRef } = useTilt({ max: 9 });
+  const {
+    wrapperRef: heroWrapperRef,
+    cardRef: heroCardRef,
+    glareRef: heroGlareRef,
+    shadowRef: heroShadowRef
+  } = useTilt({ max: 14 });
 
   // Clamped so the layers stop drifting once the hero is off screen; each
   // factor is how much a layer lags (positive) or leads (negative) the page.
@@ -112,7 +117,7 @@ export default function Portfolio() {
         <div className="relative mx-auto grid min-h-[700px] max-w-7xl items-center gap-12 px-5 py-16 lg:grid-cols-2">
           <div style={layer(0.1)}>
             <span className="inline-flex items-center gap-2 rounded-full border bg-white/80 px-4 py-2 text-xs font-black text-[#168326] dark:border-white/10 dark:bg-white/10"><Sparkles size={14} /> POWER PLATFORM + MICROSOFT 365</span>
-            <h1 className="hero-title-size mt-7 font-black leading-[.88] tracking-[-.065em]">I build systems<br /><span className="grad-hero-text bg-clip-text text-transparent">people trust.</span></h1>
+            <h1 className="hero-title-size mt-7 font-black leading-[.96] tracking-[-.065em]">I build systems<br /><span className="grad-hero-text bg-clip-text pb-2 text-transparent">people trust.</span></h1>
             <p className="mt-7 max-w-2xl text-lg leading-8 text-slate-600 dark:text-slate-300">Secure, scalable applications, automation, data, analytics and governance, designed from discovery through long-term operations.</p>
             <div className="mt-8 flex flex-wrap gap-3">
               <a href="#projects" className="rounded-full bg-[#168326] px-6 py-3 font-bold text-white">Explore projects</a>
@@ -120,30 +125,41 @@ export default function Portfolio() {
             </div>
           </div>
 
-          <div className="grad-brand-br rounded-[42px] p-4 shadow-2xl" style={layer(-0.07)}>
-            {/* Static hit-test surface for useTilt — see the hook's own
-                comment for why listening here (rather than on the card
-                that actually rotates) matters. */}
-            <div ref={heroWrapperRef} className="[perspective:1000px]">
-              <div
-                ref={heroCardRef}
-                className="relative overflow-hidden rounded-[32px] bg-white p-6 text-slate-900 [transform-style:preserve-3d]"
-              >
-                {/* Cursor-tracked glare — see useTilt. Purely decorative,
-                    opacity/background are driven directly by the hook. */}
-                <div ref={heroGlareRef} aria-hidden="true" className="pointer-events-none absolute inset-0 opacity-0" />
+          <div ref={heroShadowRef} className="grad-brand-br rounded-[42px] p-4 shadow-2xl" style={layer(-0.07)}>
+            {/* Idle float — a slow ambient bob so the card reads as
+                lifted off the page even before the cursor ever touches
+                it, on its own layer so it never fights the parallax
+                transform above it or the tilt transform below it. */}
+            <div className="motion-safe:animate-[hero-float_6s_ease-in-out_infinite]">
+              {/* Static hit-test surface for useTilt — see the hook's own
+                  comment for why listening here (rather than on the card
+                  that actually rotates) matters. */}
+              <div ref={heroWrapperRef} className="[perspective:1000px]">
+                <div
+                  ref={heroCardRef}
+                  className="relative overflow-hidden rounded-[32px] bg-white p-6 text-slate-900 [transform-style:preserve-3d]"
+                >
+                  {/* Cursor-tracked glare — see useTilt. Purely decorative,
+                      opacity/background are driven directly by the hook. */}
+                  <div ref={heroGlareRef} aria-hidden="true" className="pointer-events-none absolute inset-0 opacity-0" />
 
-                <div className="flex justify-between">
-                <div><span className="text-xs font-black uppercase tracking-widest text-slate-400">Portfolio command</span><h2 className="mt-2 text-2xl font-black">Executive overview</h2></div>
-                <BarChart3 className="text-[#168326]" />
-              </div>
-              <div className="mt-6 grid grid-cols-3 gap-3">
-                {[["Health", "74%"], ["Active", "32"], ["At risk", "06"]].map(([a, b], i) => (
-                  <div key={a} className="lift-hover rounded-2xl bg-slate-50 p-4"><span className="text-xs text-slate-500">{a}</span><b className="mt-2 block text-2xl" style={{ color: i === 2 ? "#D13438" : "#168326" }}>{b}</b></div>
-                ))}
-              </div>
-              <div ref={barsRef} className="mt-4 flex h-40 items-end gap-2 rounded-2xl bg-[#F0F5F1] p-5">
-                {[42, 56, 48, 70, 62, 82, 76, 94].map((h, i) => <div key={i} className="bar-grow flex-1 rounded-t-lg" style={{ height: barsIn ? `${h}%` : "0%", background: i === 7 ? "#168326" : "#73C184" }} />)}
+                  {/* Each block sits at its own translateZ inside the
+                      card's preserve-3d space, so as useTilt rotates the
+                      whole card toward the cursor, the chart visibly pops
+                      further forward than the header — real parallax
+                      inside the card, not just a single rotated plane. */}
+                  <div className="flex justify-between [transform:translateZ(20px)]">
+                    <div><span className="text-xs font-black uppercase tracking-widest text-slate-400">Portfolio command</span><h2 className="mt-2 text-2xl font-black">Executive overview</h2></div>
+                    <BarChart3 className="text-[#168326] [transform:translateZ(35px)]" />
+                  </div>
+                  <div className="mt-6 grid grid-cols-3 gap-3 [transform:translateZ(28px)]">
+                    {[["Health", "74%"], ["Active", "32"], ["At risk", "06"]].map(([a, b], i) => (
+                      <div key={a} className="lift-hover rounded-2xl bg-slate-50 p-4"><span className="text-xs text-slate-500">{a}</span><b className="mt-2 block text-2xl" style={{ color: i === 2 ? "#D13438" : "#168326" }}>{b}</b></div>
+                    ))}
+                  </div>
+                  <div ref={barsRef} className="mt-4 flex h-40 items-end gap-2 rounded-2xl bg-[#F0F5F1] p-5 [transform:translateZ(42px)]">
+                    {[42, 56, 48, 70, 62, 82, 76, 94].map((h, i) => <div key={i} className="bar-grow flex-1 rounded-t-lg" style={{ height: barsIn ? `${h}%` : "0%", background: i === 7 ? "#168326" : "#73C184" }} />)}
+                  </div>
                 </div>
               </div>
             </div>

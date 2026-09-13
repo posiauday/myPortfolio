@@ -11,10 +11,10 @@ SVG and CSS.
 
 | Section | What it does |
 | --- | --- |
-| **Hero** | Multi-layer parallax backdrop (`useParallax`), a reveal-on-scroll KPI panel (`useReveal`), and a mouse-tracked 3D tilt + cursor glare on the KPI card itself (`useTilt`). |
+| **Hero** | Multi-layer parallax backdrop (`useParallax`), a reveal-on-scroll KPI panel (`useReveal`), and a mouse-tracked 3D tilt + cursor glare + cast shadow on the KPI card itself (`useTilt`). The card's header, stat tiles and chart each sit at their own depth inside the tilt's 3D space, so the whole thing visibly parallaxes as it rotates, and it idly bobs even at rest so it never reads as flat. |
 | **Platform** | Microsoft's own official Power Platform product icons orbiting a central hub in two counter-rotating rings — pure CSS, no animation library (see `PlatformOrbit.jsx`). |
 | **Projects** (`#projects`) | Seven project showcases in a rail-and-window layout: pick a project from the rail, page through its screens in a window-framed preview. Every project is presented under a generic name and every number shown is synthetic. |
-| **Experience** (`#experience`) | An animated career timeline: a gradient rail draws itself in as you scroll past it (`useScrollFill`), each entry fades up into view the first time it's reached (`useRevealEach`), and its dot lights up in the role's color once revealed. Real employers, roles and dates, each with a collapsible highlight list. |
+| **Experience** (`#experience`) | An animated career timeline: a gradient rail draws itself in as you scroll past it (`useScrollFill`) with a glowing beam riding the same progress down the rail, each entry fades up into view the first time it's reached (`useRevealEach`), the current role's card traces a rotating border-beam, and every card gets a cursor-tracked spotlight glow (`useSpotlight`). A number ticker counts up the years of experience on scroll-in, and "Show more" expands a card's remaining highlights via a smooth grid-row transition rather than popping open. Real employers, roles and dates, each with a collapsible highlight list. |
 | **Components** (`#components`) | Searchable, category-filtered catalog of 25 components. |
 | **Component detail** | Per-component page with Preview, Variants, Properties, Events, Architecture, Examples, Accessibility and Limitations tabs, generated YAML, copyable docs, and an optional live Power Apps embed. Lives at `#components/<id>` (`useComponentRoute`), so the browser back button closes it and a direct link opens straight to that component. |
 | **Recognition** (`#recognition`) | Awards, delivery-scale highlights, and certifications — a status pill reads "Certified" (green) or whatever else is in progress (amber). |
@@ -177,6 +177,22 @@ outside that shifted box mid-gesture and the browser fires a spurious
 `mouseleave` — worst at the corners, which is also where the tilt is
 strongest. Keep future tilt effects on this same two-element pattern rather
 than applying the transform to the listening element directly.
+
+Two more pieces sell the depth beyond a single rotated plane:
+
+- An optional `shadowRef` (a third element the hook accepts) gets a cast
+  shadow that grows and shifts opposite the cursor as the card rotates
+  toward it. Without it a rotated flat plane still reads as flat — nothing
+  else in the image implies it has lifted off the page.
+- Inside the tilting card, the header, stat tiles and chart panel each sit
+  at their own `translateZ` in the card's own `preserve-3d` space, so they
+  visibly separate from each other as the whole card rotates — real
+  parallax inside the card, not just one plane turning as a unit.
+- A separate idle-float layer (a slow CSS `translateY` bob, `motion-safe:`
+  only) sits *outside* the tilt's own wrapper/card pair so the card reads
+  as lifted even at rest, without fighting the tilt transform or the
+  hero's scroll-parallax transform — each lives on its own nesting level
+  so the three transforms never collide on one element.
 
 ## Live Power Apps embed (optional)
 

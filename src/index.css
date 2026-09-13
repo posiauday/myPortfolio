@@ -43,6 +43,21 @@ body {
   font-size: clamp(3.5rem, 8vw, 7rem);
 }
 
+/* Idle float for the hero KPI card (Portfolio.jsx) — a slow ambient bob
+   so the card reads as lifted off the page even at rest, independent of
+   the useTilt hook's own rotate/scale transform on a separate nested
+   element. Applied via Tailwind's `motion-safe:` variant rather than a
+   rule here, so it's simply absent from the DOM under
+   prefers-reduced-motion instead of needing an override to cancel it. */
+@keyframes hero-float {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-10px);
+  }
+}
+
 /* Motion. A keyed remount replays these animations on its own, which is
    why the carousel needs no animation library. */
 @keyframes slideIn {
@@ -139,6 +154,93 @@ body {
   animation-direction: reverse;
 }
 
+/* Border beam (MagicUI's signature effect): a slice of a rotating
+   conic-gradient traces the card's own border. A padding-box/border-box
+   mask leaves only that thin ring visible so the fill underneath is
+   untouched; @property registers the angle as an animatable <angle>, so
+   the gradient actually sweeps smoothly around the ring instead of
+   jumping between two flat states the way an unregistered custom
+   property would. Applied to whichever timeline card is the current
+   role, so the active entry reads as the focal point. */
+@property --border-beam-angle {
+  syntax: "<angle>";
+  initial-value: 0deg;
+  inherits: false;
+}
+.border-beam::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  border-radius: inherit;
+  padding: 1.5px;
+  background: conic-gradient(
+    from var(--border-beam-angle),
+    transparent 0deg,
+    transparent 300deg,
+    #168326 330deg,
+    #5b5bd6 348deg,
+    transparent 360deg
+  );
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  pointer-events: none;
+  animation: border-beam-spin 4s linear infinite;
+}
+@keyframes border-beam-spin {
+  to {
+    --border-beam-angle: 360deg;
+  }
+}
+
+/* Traveling beam (ExperienceSection): a small glowing dot riding the
+   timeline rail at the same 0-1 scroll progress that already draws the
+   gradient fill in (useScrollFill), so the rail reads as a single beam
+   travelling down rather than just a line filling in behind it. */
+.rail-beam {
+  position: absolute;
+  width: 11px;
+  height: 11px;
+  border-radius: 999px;
+  transform: translate(-50%, -50%);
+  background: radial-gradient(circle, #fff 0%, #168326 60%, transparent 100%);
+  transition: top 0.3s ease-out;
+  animation: rail-beam-pulse 1.8s ease-in-out infinite;
+}
+@keyframes rail-beam-pulse {
+  0%, 100% {
+    box-shadow: 0 0 10px 3px rgba(22, 131, 38, 0.5), 0 0 20px 6px rgba(15, 108, 189, 0.2);
+  }
+  50% {
+    box-shadow: 0 0 16px 6px rgba(22, 131, 38, 0.75), 0 0 30px 10px rgba(15, 108, 189, 0.35);
+  }
+}
+
+/* Cursor spotlight (ExperienceSection cards): a soft radial glow that
+   follows the pointer, written to --spot-x/--spot-y by useSpotlight.
+   --spotlight-color is a space-separated r g b triple so the same layer
+   can read a different color in dark mode via a Tailwind arbitrary
+   property (`dark:[--spotlight-color:...]`) on the card itself, rather
+   than a hand-written `.dark` selector here. */
+.spotlight-layer {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  border-radius: inherit;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  background: radial-gradient(
+    240px circle at var(--spot-x, 50%) var(--spot-y, 50%),
+    rgb(var(--spotlight-color, 22 131 38) / 0.14),
+    transparent 70%
+  );
+}
+.group:hover > .spotlight-layer {
+  opacity: 1;
+}
+
 @media (prefers-reduced-motion: reduce) {
   html {
     scroll-behavior: auto;
@@ -156,5 +258,12 @@ body {
     animation: none;
     transform: rotate(calc(var(--angle) * 1deg)) translateX(var(--radius))
       rotate(calc(var(--angle) * -1deg));
+  }
+  .border-beam::after {
+    animation: none;
+  }
+  .rail-beam {
+    animation: none;
+    transition: none;
   }
 }

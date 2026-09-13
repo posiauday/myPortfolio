@@ -3,24 +3,32 @@ import { Briefcase, MapPin } from "lucide-react";
 import { experience } from "../data/experience.js";
 import useScrollFill from "../hooks/useScrollFill.js";
 import useRevealEach from "../hooks/useRevealEach.js";
+import useSpotlight from "../hooks/useSpotlight.js";
+import NumberTicker from "./NumberTicker.jsx";
 
 /* ============================================================
    EXPERIENCE
    A MagicUI-style animated timeline: a single rail runs the full
    height of the list, a gradient "fill" line draws itself over the
-   plain track as you scroll (useScrollFill), and each card fades
-   and slides up the first time it enters view (useRevealEach) —
-   both pure CSS/IntersectionObserver, no animation library, and
-   both settle into their finished state under
-   prefers-reduced-motion instead of leaving anything stuck hidden.
+   plain track as you scroll (useScrollFill), a glowing dot rides that
+   same progress down the rail like a travelling beam, each card fades
+   and slides up the first time it enters view (useRevealEach), the
+   current role's card traces a rotating border-beam, and every card
+   gets a cursor-tracked spotlight glow on hover (useSpotlight). All of
+   it is pure CSS/IntersectionObserver/rAF, no animation library, and
+   all of it settles into a finished resting state under
+   prefers-reduced-motion instead of leaving anything stuck mid-motion.
 
    Highlights start collapsed past the third line so the section
-   doesn't dominate the page — "Show more" reveals the rest.
+   doesn't dominate the page — "Show more" expands the rest via a
+   grid-template-rows transition, which animates to/from an unmeasured
+   auto height without any JS height-measuring.
    ============================================================ */
 function ExperienceEntry({ item, revealed, itemRef }) {
   const [expanded, setExpanded] = useState(false);
-  const visibleHighlights = expanded ? item.highlights : item.highlights.slice(0, 3);
-  const hiddenCount = item.highlights.length - visibleHighlights.length;
+  const { cardRef, layerRef } = useSpotlight();
+  const visibleHighlights = item.highlights.slice(0, 3);
+  const extraHighlights = item.highlights.slice(3);
   const current = item.end === "Present";
 
   return (
@@ -41,7 +49,16 @@ function ExperienceEntry({ item, revealed, itemRef }) {
         />
       </span>
 
-      <div className="rounded-[24px] border border-slate-200 bg-white p-6 dark:border-white/10 dark:bg-white/5 sm:p-7">
+      <div
+        ref={cardRef}
+        className={`group relative rounded-[24px] border border-slate-200 bg-white p-6 dark:border-white/10 dark:bg-white/5 sm:p-7 [--spotlight-color:22_131_38] dark:[--spotlight-color:255_255_255] ${
+          current ? "border-beam" : ""
+        }`}
+      >
+        {/* Cursor-tracked spotlight — see useSpotlight. Purely decorative,
+            position/opacity are driven directly by the hook and CSS. */}
+        <span ref={layerRef} aria-hidden="true" className="spotlight-layer" />
+
         <div className="flex flex-wrap items-center gap-2">
           <span
             className="rounded-full px-3 py-1 text-xs font-black"
@@ -75,22 +92,29 @@ function ExperienceEntry({ item, revealed, itemRef }) {
           ))}
         </ul>
 
-        {hiddenCount > 0 && (
-          <button
-            onClick={() => setExpanded(true)}
-            className="mt-4 text-sm font-bold hover:underline"
-            style={{ color: item.color }}
-          >
-            Show {hiddenCount} more
-          </button>
-        )}
-        {expanded && item.highlights.length > 3 && (
-          <button
-            onClick={() => setExpanded(false)}
-            className="mt-4 text-sm font-bold text-slate-400 hover:underline"
-          >
-            Show less
-          </button>
+        {extraHighlights.length > 0 && (
+          <>
+            <div
+              className="grid transition-[grid-template-rows] duration-500 ease-out motion-reduce:transition-none"
+              style={{ gridTemplateRows: expanded ? "1fr" : "0fr" }}
+            >
+              <ul className="space-y-2.5 overflow-hidden pt-2.5">
+                {extraHighlights.map(point => (
+                  <li key={point} className="flex gap-3 text-sm leading-6 text-slate-600 dark:text-slate-300">
+                    <span className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full" style={{ background: item.color }} />
+                    {point}
+                  </li>
+                ))}
+              </ul>
+            </div>
+            <button
+              onClick={() => setExpanded(value => !value)}
+              className="mt-4 text-sm font-bold hover:underline"
+              style={{ color: item.color }}
+            >
+              {expanded ? "Show less" : `Show ${extraHighlights.length} more`}
+            </button>
+          </>
         )}
       </div>
     </div>
@@ -106,7 +130,8 @@ function ExperienceSection() {
       <p className="text-xs font-black uppercase tracking-[.2em] text-[#168326]">Career timeline</p>
       <h2 className="mt-3 text-4xl font-black sm:text-6xl">Where the systems got built.</h2>
       <p className="mt-5 max-w-3xl text-base leading-7 text-slate-600 dark:text-slate-300">
-        5+ years architecting Power Platform and Microsoft 365 solutions for the public sector.
+        <NumberTicker value={5} className="text-lg font-black text-[#168326]" />+ years architecting Power Platform
+        and Microsoft 365 solutions for the public sector.
       </p>
 
       <div ref={lineRef} className="relative mt-12">
@@ -118,6 +143,14 @@ function ExperienceSection() {
           aria-hidden="true"
           className="absolute left-[7px] top-0 w-px bg-gradient-to-b from-[#168326] via-[#0F6CBD] to-[#5B5BD6] transition-[height] duration-300 ease-out motion-reduce:transition-none sm:left-[11px]"
           style={{ height: `${progress * 100}%` }}
+        />
+        {/* Travelling beam — a glowing dot riding the same 0-1 progress as
+            the fill line above, so the rail reads as a beam moving down
+            rather than just a line drawing itself in behind it. */}
+        <span
+          aria-hidden="true"
+          className="rail-beam absolute left-[7px] sm:left-[11px]"
+          style={{ top: `${progress * 100}%` }}
         />
 
         <div className="space-y-8">
