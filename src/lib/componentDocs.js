@@ -73,8 +73,15 @@ function pushFormulaProperty(lines, indent, name, rawValue, dataType) {
 
 /* The reusable component *definition* — what you paste into Power
    Apps Studio's Components pane (New component > Import from code) to
-   create the component itself, once. */
-function buildComponentYaml(item) {
+   create the component itself, once.
+
+   `valueOverrides` (name -> live value) lets the component detail
+   page's configurator regenerate this exact YAML as someone edits
+   property values, rather than always showing only the catalog's
+   static defaults — a value not present here just falls back to the
+   catalog default, so a partially-filled-in configurator still
+   produces complete, valid YAML. */
+function buildComponentYaml(item, valueOverrides = {}) {
   const pascal = pascalCase(item.title);
   const lines = [
     `# ${item.title} — ${item.category}`,
@@ -87,11 +94,12 @@ function buildComponentYaml(item) {
   ];
   item.properties.forEach(([name, type, def]) => {
     const dataType = TYPE_TO_DATATYPE[type] || "Text";
+    const value = valueOverrides[name] ?? def;
     lines.push(`      ${name}:`);
     lines.push(`        PropertyKind: Input`);
     lines.push(`        DisplayName: "${name}"`);
     lines.push(`        DataType: ${dataType}`);
-    pushFormulaProperty(lines, "        ", "Default", def, dataType);
+    pushFormulaProperty(lines, "        ", "Default", value, dataType);
   });
   item.events.forEach(([name]) => {
     lines.push(`      ${name}:`);
@@ -105,8 +113,11 @@ function buildComponentYaml(item) {
    this into a screen's node in the tree view once the component
    itself already exists (from buildComponentYaml above). A screen
    control instance's own `Control:` value is simply the component's
-   name, the same way any other control reference works. */
-function buildScreenControlYaml(item) {
+   name, the same way any other control reference works.
+
+   Takes the same `valueOverrides` as buildComponentYaml, so the two
+   panels of the configurator always describe the same edited values. */
+function buildScreenControlYaml(item, valueOverrides = {}) {
   const pascal = pascalCase(item.title);
   const lines = [
     `# ${item.title} — one instance on a screen`,
@@ -120,7 +131,8 @@ function buildScreenControlYaml(item) {
     `    Y: =40`
   ];
   item.properties.forEach(([name, type, def]) => {
-    pushFormulaProperty(lines, "    ", name, def, TYPE_TO_DATATYPE[type] || "Text");
+    const value = valueOverrides[name] ?? def;
+    pushFormulaProperty(lines, "    ", name, value, TYPE_TO_DATATYPE[type] || "Text");
   });
   return lines.join("\n");
 }

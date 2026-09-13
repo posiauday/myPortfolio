@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { ArrowLeft, ArrowRight, Check, CheckCircle2, Code2, Copy, Sparkles, X } from "lucide-react";
 import { icons } from "../data/componentLibrary.js";
 import { pascalCase, buildComponentYaml, buildScreenControlYaml, buildComponentDocs } from "../lib/componentDocs.js";
@@ -19,13 +19,29 @@ function Detail({ item, dark, onBack }) {
   const [tab, setTab] = useState("Preview");
   const [previewView, setPreviewView] = useState("mock");
   const [showLive, setShowLive] = useState(false);
+  const [overrides, setOverrides] = useState({});
   const [copied, copy] = useCopyFeedback();
   const tabs = ["Preview", "Variants", "Properties", "Events", "Architecture", "Examples", "Accessibility", "Limitations"];
   const Icon = icons[item.category] || Sparkles;
   const pascal = useMemo(() => pascalCase(item.title), [item.title]);
-  const yamlText = useMemo(() => buildComponentYaml(item), [item]);
-  const controlYamlText = useMemo(() => buildScreenControlYaml(item), [item]);
+  const yamlText = useMemo(() => buildComponentYaml(item, overrides), [item, overrides]);
+  const controlYamlText = useMemo(() => buildScreenControlYaml(item, overrides), [item, overrides]);
   const docsText = useMemo(() => buildComponentDocs(item), [item]);
+  const previewValues = useMemo(() => {
+    const resolved = {};
+    item.properties.forEach(([name, , def]) => { resolved[name] = overrides[name] ?? def; });
+    return resolved;
+  }, [item, overrides]);
+  const setOverride = (name, value) => setOverrides(prev => ({ ...prev, [name]: value }));
+
+  // Detail doesn't always remount between components — a direct hash
+  // navigation from one #components/<id> straight to another (rather
+  // than closing back to the catalog first) swaps `item` on the same
+  // mounted instance. Without this, an edited value could silently
+  // carry over and describe the wrong component's YAML.
+  useEffect(() => {
+    setOverrides({});
+  }, [item.id]);
 
   const Panel = ({ title, children }) => (
     <section className="mt-8 rounded-[28px] border border-slate-200 bg-white p-7 dark:border-white/10 dark:bg-white/5">
@@ -55,7 +71,7 @@ function Detail({ item, dark, onBack }) {
                       <div><span className="text-[10px] font-black uppercase tracking-widest text-slate-400">Live preview</span><h2 className="mt-2 text-2xl font-black">{item.title}</h2></div>
                       <Icon style={{ color: item.color }} />
                     </div>
-                    <ComponentPreview item={item} />
+                    <ComponentPreview item={item} values={previewValues} />
                   </article>
                 </div>
                 <aside className="rounded-[26px] bg-white p-6 dark:bg-[#17201B]">
@@ -65,14 +81,56 @@ function Detail({ item, dark, onBack }) {
                     <b style={{ color: item.color }}>{item.maturity}</b>
                     <span className="mt-1 block text-slate-500">{item.yamlStatus}</span>
                   </div>
-                  <h3 className="mt-7 font-black">Key properties</h3>
-                  <div className="mt-3 space-y-2">{item.properties.slice(0, 4).map(([name, type]) => <div key={name} className="flex items-center justify-between rounded-xl bg-slate-100 px-3 py-2.5 text-sm dark:bg-white/10"><b>{name}</b><span className="text-xs text-slate-500">{type}</span></div>)}</div>
+
+                  <div className="mt-7 flex items-center justify-between">
+                    <h3 className="font-black">Configure</h3>
+                    <button onClick={() => setOverrides({})} className="text-xs font-bold text-slate-400 hover:text-slate-600 dark:hover:text-slate-200">
+                      Reset to defaults
+                    </button>
+                  </div>
+                  <div className="mt-3 space-y-3">
+                    {item.properties.map(([name, type]) => {
+                      const value = previewValues[name];
+                      return (
+                        <label key={name} className="block">
+                          <span className="flex items-center justify-between text-xs font-bold text-slate-500">
+                            <span>{name}</span>
+                            <span className="text-slate-400">{type}</span>
+                          </span>
+                          {type === "Boolean" ? (
+                            <button
+                              type="button"
+                              onClick={() => setOverride(name, value === "true" ? "false" : "true")}
+                              className={`mt-1.5 w-full rounded-xl px-3 py-2 text-left text-sm font-bold ${
+                                value === "true" ? "bg-green-50 text-green-700" : "bg-slate-100 text-slate-500 dark:bg-white/10"
+                              }`}
+                            >
+                              {value === "true" ? "True" : "False"}
+                            </button>
+                          ) : (
+                            <input
+                              type={type === "Number" ? "number" : "text"}
+                              value={value ?? ""}
+                              onChange={e => setOverride(name, e.target.value)}
+                              className="mt-1.5 w-full rounded-xl bg-slate-100 px-3 py-2 text-sm font-bold outline-none focus:ring-2 focus:ring-[#168326] dark:bg-white/10 dark:text-white"
+                            />
+                          )}
+                        </label>
+                      );
+                    })}
+                  </div>
+                  <p className="mt-4 text-xs leading-5 text-slate-400">
+                    The YAML on the next tab always reflects these exact values. The mockup above only
+                    updates live for components whose preview is wired to real properties (Executive KPI
+                    Card, for now) — everything else keeps its illustrative default view regardless of what
+                    you change here.
+                  </p>
                 </aside>
               </div>
             ) : (
               <div className="mt-5">
                 <div className="flex items-center justify-between">
-                  <span className="text-xs font-bold text-slate-500">cmp{pascal}.yaml &mdash; illustrative, generated from this page&rsquo;s own property and event contract</span>
+                  <span className="text-xs font-bold text-slate-500">cmp{pascal}.yaml &mdash; generated from this page&rsquo;s property and event contract, live-updated from the Configure panel on the Preview tab</span>
                   <button className="copy-btn light" onClick={() => copy(yamlText, "yaml")}>{copied === "yaml" ? <Check size={14} /> : <Copy size={14} />} {copied === "yaml" ? "Copied" : "Copy YAML"}</button>
                 </div>
                 <pre className="code-panel mt-3"><code>{yamlText}</code></pre>

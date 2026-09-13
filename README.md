@@ -17,7 +17,7 @@ SVG and CSS.
 | **Projects** (`#projects`) | Seven project showcases in a rail-and-window layout: pick a project from the rail, page through its screens in a window-framed preview. Every project is presented under a generic name and every number shown is synthetic. |
 | **Experience** (`#experience`) | An animated career timeline: a gradient rail draws itself in as you scroll past it (`useScrollFill`) with a glowing beam riding the same progress down the rail, each entry fades up into view the first time it's reached (`useRevealEach`), the current role's card traces a rotating border-beam, and every card gets a cursor-tracked spotlight glow (`useSpotlight`). A number ticker counts up the years of experience on scroll-in, and "Show more" expands a card's remaining highlights via a smooth grid-row transition rather than popping open. Real employers, roles and dates, each with a collapsible highlight list. |
 | **Components** (`#components`) | Searchable, category-filtered catalog of 25 components. The unfiltered view defaults to 6 curated flagship picks (`FEATURED_IDS`) rather than all 25 at once — a "Browse all 25" toggle expands it, and searching or picking a category always searches/shows the full catalog regardless of the toggle. A "Copy brand theme YAML" button generates a real Power Apps Studio theme (Themes panel > Add a theme > Paste theme) seeded from the site's own brand green. |
-| **Component detail** | Per-component page with Preview, Variants, Properties, Events, Architecture, Examples, Accessibility and Limitations tabs, generated YAML in two schema-conformant forms (a component definition and a screen-control instance of it — see below), copyable docs, and an optional live Power Apps embed. Lives at `#components/<id>` (`useComponentRoute`), so the browser back button closes it and a direct link opens straight to that component. |
+| **Component detail** | Per-component page with Preview, Variants, Properties, Events, Architecture, Examples, Accessibility and Limitations tabs, a live property configurator that regenerates the generated YAML (in two schema-conformant forms — see below) as you edit values, copyable docs, and an optional live Power Apps embed. Lives at `#components/<id>` (`useComponentRoute`), so the browser back button closes it and a direct link opens straight to that component. |
 | **Recognition** (`#recognition`) | Awards, delivery-scale highlights, and certifications — a status pill reads "Certified" (green) or whatever else is in progress (amber). |
 | **Skills** | LinkedIn's real skill list with a checkmark on the ones actually endorsed — not composed testimonials, since no written quotes exist to use. |
 
@@ -149,6 +149,35 @@ site's own "Inter" isn't guaranteed to be there the way "Segoe UI" is).
 None of this can launch Power Apps Studio itself to confirm a real paste
 succeeds — short of that, schema-conformant real YAML parsing is the
 strongest available check.
+
+### Live property configurator
+
+The component detail page's "Configure" panel (next to the mockup, on the
+Preview tab) renders one input per property — a checkbox-styled toggle for
+`Boolean`, a number input for `Number`, text for everything else — seeded
+from that property's catalog default. Editing a value re-renders both
+generated YAML panels (`buildComponentYaml`/`buildScreenControlYaml` both
+take an optional `valueOverrides` map, name → live value, falling back to
+the catalog default for anything not touched) through the exact same
+formatting rules the schema-conformance check enforces — a `Number` typed as
+`"12.4"` stays a bare Power Fx literal, everything else gets quoted as text.
+
+This does **not** mean every component's mockup visually reacts to its own
+properties — `ComponentPreview.jsx` is a small, mostly generic illustration,
+and only Executive KPI Card's mockup is actually wired to read
+`Label`/`Value`/`Trend`/`Status` from the live values. Wiring every
+component's own bespoke rendering to its own properties would mean
+hand-authoring a real renderer per component rather than a documentation
+mockup; the panel says so explicitly rather than implying more visual
+fidelity than it has. The generated YAML, unlike the mockup, is accurate for
+every property on every component regardless.
+
+`Detail` resets the configurator's edited values on `item.id` change — worth
+keeping given the page doesn't always remount between components: closing
+back to the catalog and reopening a different one does remount it, but a
+direct hash navigation from one `#components/<id>` straight to another swaps
+`item` on the same mounted instance, and without the reset an edited value
+would silently carry over and describe the wrong component's YAML.
 
 ### Component detail routing
 
