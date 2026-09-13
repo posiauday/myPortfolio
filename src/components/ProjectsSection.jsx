@@ -14,7 +14,24 @@ import ProjectScreen from "./ProjectScreen.jsx";
    so it reads as a product screenshot, and the slide controls sit
    in a bar beneath the frame where they name the slide they move
    to instead of showing anonymous dots.
+
+   ProjectScreen renders at a fixed minimum width (SCREEN_MIN_WIDTH)
+   inside a horizontally scrollable viewport, rather than fluid or
+   scaled. Several mockups have a flex header with an unshrinkable
+   button, or a multi-column table, that cannot reflow below a few
+   hundred pixels without overlapping — and shrinking the whole
+   mockup down to fit a phone width makes its already-small text
+   illegible. Keeping it at native size and letting a narrow
+   viewport scroll to see the rest (like a wide screenshot or table)
+   keeps every mockup legible everywhere, and never forces its grid
+   ancestor wider than the page: an element with overflow set to
+   anything but `visible` is treated as having zero minimum width in
+   flex/grid sizing, which is what actually stops the blowout —
+   `min-w-0` below is the same fix applied one level up, as
+   defense-in-depth against a future change reintroducing it.
    ============================================================ */
+const SCREEN_MIN_WIDTH = 680;
+
 function ProjectsSection() {
   const [projectIndex, setProjectIndex] = useState(0);
   const [slideIndex, setSlideIndex] = useState(0);
@@ -91,7 +108,7 @@ function ProjectsSection() {
           className="slide-in mt-6 overflow-hidden rounded-[34px] border border-white/10 bg-white/[.06] shadow-2xl"
         >
           <div className="grid lg:grid-cols-[1.45fr_.55fr]">
-            <div className="p-4 sm:p-6">
+            <div className="min-w-0 p-4 sm:p-6">
               {/* Window frame */}
               <div className="overflow-hidden rounded-[20px] border border-white/10 bg-white shadow-2xl">
                 <div className="flex items-center gap-3 border-b border-slate-200 bg-[#F4F6F8] px-4 py-2.5">
@@ -110,8 +127,14 @@ function ProjectsSection() {
                     Synthetic data
                   </span>
                 </div>
-                <div key={slide.kind} className="slide-in aspect-[16/10] w-full bg-white">
-                  <ProjectScreen kind={slide.kind} color={project.color} />
+                <div className="overflow-x-auto bg-white">
+                  <div
+                    key={slide.kind}
+                    className="slide-in min-h-[380px] bg-white"
+                    style={{ minWidth: SCREEN_MIN_WIDTH }}
+                  >
+                    <ProjectScreen kind={slide.kind} color={project.color} />
+                  </div>
                 </div>
               </div>
 
