@@ -6,6 +6,7 @@ import useReveal from "../hooks/useReveal.js";
 import useParallax from "../hooks/useParallax.js";
 import ProjectsSection from "./ProjectsSection.jsx";
 import ExperienceSection from "./ExperienceSection.jsx";
+import PlatformOrbit from "./PlatformOrbit.jsx";
 import Detail from "./ComponentDetail.jsx";
 
 /* ============================================================
@@ -92,6 +93,8 @@ export default function Portfolio() {
           </div>
         </div>
       </section>
+
+      <PlatformOrbit />
 
       <ProjectsSection />
 

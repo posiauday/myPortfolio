@@ -12,6 +12,7 @@ SVG and CSS.
 | Section | What it does |
 | --- | --- |
 | **Hero** | Multi-layer parallax backdrop (`useParallax`) plus a reveal-on-scroll KPI panel (`useReveal`). |
+| **Platform** | Power Platform / Microsoft 365 badges orbiting a central hub in two counter-rotating rings — pure CSS, no animation library (see `PlatformOrbit.jsx`). |
 | **Projects** (`#projects`) | Seven project showcases in a rail-and-window layout: pick a project from the rail, page through its screens in a window-framed preview. Every project is presented under a generic name and every number shown is synthetic. |
 | **Experience** (`#experience`) | A career timeline of real employers, roles and dates, each with a collapsible highlight list. |
 | **Components** (`#components`) | Searchable, category-filtered catalog of 25 components. |
@@ -37,7 +38,8 @@ npm run lint
 ```
 src/
   components/
-    Portfolio.jsx        page shell: nav, parallax hero, projects, experience, catalog, recognition, footer
+    Portfolio.jsx        page shell: nav, parallax hero, platform orbit, projects, experience, catalog, recognition, footer
+    PlatformOrbit.jsx    orbiting Power Platform / M365 badge diagram
     ProjectsSection.jsx  project rail + windowed screen preview for all seven showcases
     ExperienceSection.jsx career timeline with collapsible per-role highlights
     ComponentDetail.jsx  per-component reference page (tabs, YAML, docs, embed)
@@ -49,6 +51,7 @@ src/
                          overrides, and the derived component catalog
     projectShowcases.js  the seven projects (under generic names) and their slides
     experience.js        real employers, roles, dates and highlights
+    platformStack.js     the badges PlatformOrbit renders (name, initials, color, ring)
   lib/
     componentDocs.js     YAML + markdown docs generated from the catalog
   hooks/
@@ -87,6 +90,20 @@ slide label, or the text rendered inside a `ProjectScreen` mockup.
 
 Unlike the project showcase, `src/data/experience.js` is *not* masked — it's
 the résumé's own real employers, roles and dates, meant to be shown as-is.
+
+### Platform orbit badges
+
+`PlatformOrbit.jsx` renders each entry in `src/data/platformStack.js` as a
+colored-initials badge — not an official product logo, the same convention
+`PowerAppsEmbed.jsx` already uses for its own "PA" placeholder — orbiting a
+central hub. The motion is pure CSS: the `orbit` keyframe in `src/index.css`
+rotates each badge around the center at its ring's `--radius` while
+counter-rotating it by the same amount so it stays upright, the standard
+CSS-only "orbiting circles" technique. It freezes in place under
+`prefers-reduced-motion: reduce`. To add a badge, add an entry to
+`platformStack.js` with a `ring` of `"inner"` or `"outer"`; `PlatformOrbit.jsx`
+spaces each ring's badges evenly and picks their orbit radius and speed from
+the `RING` constant at the top of the file.
 
 ### Adding a role
 

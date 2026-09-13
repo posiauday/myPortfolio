@@ -115,6 +115,30 @@ body {
   border-radius: 4px;
 }
 
+/* Orbiting badges (PlatformOrbit). Each badge sits at the circle's
+   center, then a single `transform` both walks it around at `--radius`
+   px and counter-rotates it by the same amount, so the ring itself
+   turns while the badge stays upright — the standard CSS-only orbit
+   trick, no animation library needed. `--angle` staggers each badge's
+   starting position around the ring. */
+@keyframes orbit {
+  from {
+    transform: rotate(calc(var(--angle) * 1deg)) translateX(var(--radius))
+      rotate(calc(var(--angle) * -1deg));
+  }
+  to {
+    transform: rotate(calc(var(--angle) * 1deg + 360deg)) translateX(var(--radius))
+      rotate(calc((var(--angle) * -1deg) - 360deg));
+  }
+}
+.orbit-item {
+  animation: orbit linear infinite;
+  animation-duration: var(--duration, 20s);
+}
+.orbit-item.orbit-reverse {
+  animation-direction: reverse;
+}
+
 @media (prefers-reduced-motion: reduce) {
   html {
     scroll-behavior: auto;
@@ -127,5 +151,10 @@ body {
   }
   .bar-grow {
     transition: none;
+  }
+  .orbit-item {
+    animation: none;
+    transform: rotate(calc(var(--angle) * 1deg)) translateX(var(--radius))
+      rotate(calc(var(--angle) * -1deg));
   }
 }
