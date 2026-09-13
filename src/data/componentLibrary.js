@@ -202,6 +202,24 @@ const overrides = {
   }
 };
 
+// The catalog's default view (no search, no category filter) shows only
+// these, in this order, rather than all 25 at once — a hiring-manager
+// skim shouldn't have to work through the full catalog to see the range
+// on offer. Picked for category breadth and documentation depth (mostly
+// "Verified" entries, which carry the richest overrides above), plus one
+// deliberate callback: Portfolio Command Card is the same component the
+// hero's own "Executive overview" card is built from. Filtering by
+// search or category still searches/shows the complete 25 — this only
+// narrows the unfiltered "All" view.
+const FEATURED_IDS = [
+  "portfolio-command-card",
+  "executive-kpi-card",
+  "enterprise-data-table",
+  "governed-file-upload",
+  "enterprise-calendar",
+  "enterprise-mega-menu"
+];
+
 const components = raw.map(([title, category, maturity], i) => {
   const id = title.toLowerCase().replace(/[^a-z0-9]+/g, "-");
   const base = baseByCategory[category];
@@ -226,4 +244,4 @@ const components = raw.map(([title, category, maturity], i) => {
   };
 });
 
-export { categories, icons, components };
+export { categories, icons, components, FEATURED_IDS };

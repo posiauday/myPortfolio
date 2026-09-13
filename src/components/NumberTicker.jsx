@@ -33,7 +33,7 @@ function NumberTicker({ value, duration = 1200, className }) {
 
   return (
     <span ref={ref} className={className}>
-      {display}
+      {display.toLocaleString()}
     </span>
   );
 }

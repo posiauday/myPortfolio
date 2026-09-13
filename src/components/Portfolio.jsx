@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { Award, ArrowRight, BadgeCheck, BarChart3, Check, Menu, Moon, Search, Sparkles, Sun, X } from "lucide-react";
-import { categories, icons, components } from "../data/componentLibrary.js";
+import { categories, icons, components, FEATURED_IDS } from "../data/componentLibrary.js";
 import { certifications } from "../data/certifications.js";
 import { skills } from "../data/skills.js";
 import { CONTACT } from "../config.js";
@@ -11,7 +11,23 @@ import useComponentRoute from "../hooks/useComponentRoute.js";
 import ProjectsSection from "./ProjectsSection.jsx";
 import ExperienceSection from "./ExperienceSection.jsx";
 import PlatformOrbit from "./PlatformOrbit.jsx";
+import NumberTicker from "./NumberTicker.jsx";
 import Detail from "./ComponentDetail.jsx";
+
+/* Real, already-stated figures pulled together into one skimmable strip
+   right under the hero, rather than left scattered across Experience and
+   Recognition where a quick skim can miss them. Nothing here is a new
+   claim — years comes from experience.js's own earliest start date, the
+   users/productivity figures are the same ones already stated in the
+   Recognition and Experience copy, and PL-300 is the same cert listed
+   in certifications.js. `value` is numeric and gets NumberTicker's
+   count-up; `display` is a plain string for the one non-numeric stat. */
+const IMPACT_STATS = [
+  { value: 5, suffix: "+", label: "Years in Power Platform & M365" },
+  { value: 5000, suffix: "+", label: "Users under governed delivery" },
+  { value: 35, suffix: "%+", label: "Productivity lift, automated workflows" },
+  { display: "PL-300", label: "Microsoft Certified" }
+];
 
 /* ============================================================
    MAIN PORTFOLIO
@@ -24,6 +40,7 @@ export default function Portfolio() {
   const [dark, setDark] = useState(false);
   const [query, setQuery] = useState("");
   const [category, setCategory] = useState("All");
+  const [showAllComponents, setShowAllComponents] = useState(false);
   const [selected, selectComponent, clearSelected] = useComponentRoute(components);
   const [menuOpen, setMenuOpen] = useState(false);
   const [barsRef, barsIn] = useReveal();
@@ -40,10 +57,18 @@ export default function Portfolio() {
   const p = Math.min(scrolled, 900);
   const layer = (factor, extra = "") => ({ transform: `translate3d(0,${p * factor}px,0)${extra}` });
 
-  const shown = useMemo(
-    () => components.filter(c => (category === "All" || c.category === category) && `${c.title} ${c.category} ${c.summary}`.toLowerCase().includes(query.toLowerCase())),
-    [query, category]
-  );
+  // The unfiltered "All" view defaults to a curated FEATURED_IDS subset
+  // rather than dumping all 25 cards on first scroll — searching or
+  // picking a category always searches/shows the complete catalog
+  // regardless of this toggle, since narrowing an explicit filter down
+  // further would just hide matches the visitor asked for.
+  const isDefaultBrowse = category === "All" && query.trim() === "";
+  const shown = useMemo(() => {
+    if (isDefaultBrowse && !showAllComponents) {
+      return FEATURED_IDS.map(id => components.find(c => c.id === id)).filter(Boolean);
+    }
+    return components.filter(c => (category === "All" || c.category === category) && `${c.title} ${c.category} ${c.summary}`.toLowerCase().includes(query.toLowerCase()));
+  }, [query, category, showAllComponents, isDefaultBrowse]);
 
   // Escape closes the mobile menu, same as any other overlay on the page.
   useEffect(() => {
@@ -167,6 +192,24 @@ export default function Portfolio() {
         </div>
       </section>
 
+      <section className="mx-auto max-w-7xl px-5 pb-16" aria-label="Impact at a glance">
+        <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
+          {IMPACT_STATS.map(stat => (
+            <div key={stat.label} className="rounded-[24px] border border-slate-200 bg-white p-5 text-center dark:border-white/10 dark:bg-white/5">
+              <p className="text-2xl font-black text-[#168326] sm:text-3xl">
+                {stat.display || (
+                  <>
+                    <NumberTicker value={stat.value} />
+                    {stat.suffix}
+                  </>
+                )}
+              </p>
+              <p className="mt-1 text-xs font-bold text-slate-500 dark:text-slate-400">{stat.label}</p>
+            </div>
+          ))}
+        </div>
+      </section>
+
       <PlatformOrbit />
 
       <ProjectsSection />
@@ -184,7 +227,14 @@ export default function Portfolio() {
           </div>
         </div>
 
-        <div className="mt-8 flex flex-col gap-3 lg:flex-row lg:justify-between">
+        <p className="mt-6 max-w-3xl text-sm leading-6 text-slate-500 dark:text-slate-400">
+          A personal design-system exercise, not shipped production code: {components.length} original and
+          reference-verified Power Apps components, each documented down to properties, events, architecture and
+          generated YAML.
+          {isDefaultBrowse && !showAllComponents && " Six flagship picks below — browse the full catalog to see the rest."}
+        </p>
+
+        <div className="mt-6 flex flex-col gap-3 lg:flex-row lg:justify-between">
           <label className="flex min-h-12 w-full max-w-xl items-center gap-3 rounded-full border border-slate-200 px-5 dark:border-white/10">
             <Search size={18} />
             <input value={query} onChange={e => setQuery(e.target.value)} placeholder="Search components" className="w-full bg-transparent outline-none" />
@@ -213,6 +263,17 @@ export default function Portfolio() {
             );
           })}
         </div>
+
+        {isDefaultBrowse && (
+          <div className="mt-8 text-center">
+            <button
+              onClick={() => setShowAllComponents(value => !value)}
+              className="rounded-full border border-slate-300 bg-white px-6 py-3 font-bold dark:border-white/20 dark:bg-white/5"
+            >
+              {showAllComponents ? "Show featured only" : `Browse all ${components.length} components`}
+            </button>
+          </div>
+        )}
       </section>
 
       <section id="recognition" className="mx-auto grid max-w-7xl gap-5 px-5 py-24 lg:grid-cols-2">
