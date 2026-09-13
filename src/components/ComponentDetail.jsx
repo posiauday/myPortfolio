@@ -1,7 +1,7 @@
 import React, { useMemo, useState } from "react";
 import { ArrowLeft, ArrowRight, Check, CheckCircle2, Code2, Copy, Sparkles, X } from "lucide-react";
 import { icons } from "../data/componentLibrary.js";
-import { pascalCase, buildComponentYaml, buildComponentDocs } from "../lib/componentDocs.js";
+import { pascalCase, buildComponentYaml, buildScreenControlYaml, buildComponentDocs } from "../lib/componentDocs.js";
 import useCopyFeedback from "../hooks/useCopyFeedback.js";
 import PowerAppsEmbed from "./PowerAppsEmbed.jsx";
 import ComponentPreview from "./ComponentPreview.jsx";
@@ -24,6 +24,7 @@ function Detail({ item, dark, onBack }) {
   const Icon = icons[item.category] || Sparkles;
   const pascal = useMemo(() => pascalCase(item.title), [item.title]);
   const yamlText = useMemo(() => buildComponentYaml(item), [item]);
+  const controlYamlText = useMemo(() => buildScreenControlYaml(item), [item]);
   const docsText = useMemo(() => buildComponentDocs(item), [item]);
 
   const Panel = ({ title, children }) => (
@@ -183,9 +184,13 @@ function Detail({ item, dark, onBack }) {
           <code className="text-xs font-bold text-slate-500">cmp{pascal}.yaml</code>
           <span className="hidden text-slate-300 sm:inline">&middot;</span>
           <button className="copy-btn light" onClick={() => copy(yamlText, "yaml-top")}>{copied === "yaml-top" ? <Check size={14} /> : <Copy size={14} />} {copied === "yaml-top" ? "Copied" : "Copy YAML"}</button>
+          <button className="copy-btn light" onClick={() => copy(controlYamlText, "control-yaml")}>{copied === "control-yaml" ? <Check size={14} /> : <Copy size={14} />} {copied === "control-yaml" ? "Copied" : "Copy as screen control"}</button>
           <button className="copy-btn light" onClick={() => copy(docsText, "docs")}>{copied === "docs" ? <Check size={14} /> : <Copy size={14} />} {copied === "docs" ? "Copied" : "Copy Docs"}</button>
-          <span className="ml-auto text-xs text-slate-400">1. Components tab &rarr; New component &nbsp; 2. Import from code &nbsp; 3. Paste the YAML &nbsp; 4. Press F5 to preview</span>
         </div>
+        <p className="mt-2 text-xs text-slate-400">
+          <b className="font-bold text-slate-500 dark:text-slate-300">Copy YAML</b> defines the component once &mdash; Components tab &rarr; New component &rarr; Import from code.{" "}
+          <b className="font-bold text-slate-500 dark:text-slate-300">Copy as screen control</b> drops one instance of it onto a screen afterward &mdash; paste directly into the tree view. Press F5 to preview either way.
+        </p>
 
         <nav className="mt-8 flex gap-1 overflow-x-auto border-b border-slate-200 dark:border-white/10">
           {tabs.map(x => <button key={x} onClick={() => setTab(x)} className={`shrink-0 border-b-2 px-4 py-4 text-sm font-bold ${tab === x ? "border-[#168326] text-[#168326]" : "border-transparent text-slate-500"}`}>{x}</button>)}

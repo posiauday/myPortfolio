@@ -1,8 +1,9 @@
 import { useEffect, useMemo, useState } from "react";
-import { Award, ArrowRight, BadgeCheck, BarChart3, Check, Menu, Moon, Search, Sparkles, Sun, X } from "lucide-react";
+import { Award, ArrowRight, BadgeCheck, BarChart3, Check, Copy, Menu, Moon, Search, Sparkles, Sun, X } from "lucide-react";
 import { categories, icons, components, FEATURED_IDS } from "../data/componentLibrary.js";
 import { certifications } from "../data/certifications.js";
 import { skills } from "../data/skills.js";
+import { buildBrandThemeYaml } from "../lib/themeYaml.js";
 import { CONTACT } from "../config.js";
 import useReveal from "../hooks/useReveal.js";
 import useParallax from "../hooks/useParallax.js";
@@ -10,6 +11,7 @@ import useTilt from "../hooks/useTilt.js";
 import useComponentRoute from "../hooks/useComponentRoute.js";
 import useScrollThreshold from "../hooks/useScrollThreshold.js";
 import useMagnetic from "../hooks/useMagnetic.js";
+import useCopyFeedback from "../hooks/useCopyFeedback.js";
 import ProjectsSection from "./ProjectsSection.jsx";
 import ExperienceSection from "./ExperienceSection.jsx";
 import PlatformOrbit from "./PlatformOrbit.jsx";
@@ -59,6 +61,8 @@ export default function Portfolio() {
   const browseMagnetRef = useMagnetic();
   const emailMagnetRef = useMagnetic();
   const linkedinMagnetRef = useMagnetic();
+  const [themeCopied, copyTheme] = useCopyFeedback();
+  const themeYamlText = useMemo(() => buildBrandThemeYaml(), []);
 
   // Clamped so the layers stop drifting once the hero is off screen; each
   // factor is how much a layer lags (positive) or leads (negative) the page.
@@ -272,6 +276,13 @@ export default function Portfolio() {
           generated YAML.
           {isDefaultBrowse && !showAllComponents && " Six flagship picks below — browse the full catalog to see the rest."}
         </p>
+        <button
+          onClick={() => copyTheme(themeYamlText, "theme")}
+          className="copy-btn light mt-4"
+          title="A real Power Apps Studio theme, seeded from this site's own brand green — paste into Themes panel > Add a theme > Paste theme."
+        >
+          {themeCopied === "theme" ? <Check size={14} /> : <Copy size={14} />} {themeCopied === "theme" ? "Copied" : "Copy brand theme YAML"}
+        </button>
 
         <div className="mt-6 flex flex-col gap-3 lg:flex-row lg:justify-between">
           <label className="flex min-h-12 w-full max-w-xl items-center gap-3 rounded-full border border-slate-200 px-5 dark:border-white/10">

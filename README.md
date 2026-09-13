@@ -16,8 +16,8 @@ SVG and CSS.
 | **Platform** | Microsoft's own official Power Platform product icons orbiting a central hub in two counter-rotating rings — pure CSS, no animation library (see `PlatformOrbit.jsx`). |
 | **Projects** (`#projects`) | Seven project showcases in a rail-and-window layout: pick a project from the rail, page through its screens in a window-framed preview. Every project is presented under a generic name and every number shown is synthetic. |
 | **Experience** (`#experience`) | An animated career timeline: a gradient rail draws itself in as you scroll past it (`useScrollFill`) with a glowing beam riding the same progress down the rail, each entry fades up into view the first time it's reached (`useRevealEach`), the current role's card traces a rotating border-beam, and every card gets a cursor-tracked spotlight glow (`useSpotlight`). A number ticker counts up the years of experience on scroll-in, and "Show more" expands a card's remaining highlights via a smooth grid-row transition rather than popping open. Real employers, roles and dates, each with a collapsible highlight list. |
-| **Components** (`#components`) | Searchable, category-filtered catalog of 25 components. The unfiltered view defaults to 6 curated flagship picks (`FEATURED_IDS`) rather than all 25 at once — a "Browse all 25" toggle expands it, and searching or picking a category always searches/shows the full catalog regardless of the toggle. |
-| **Component detail** | Per-component page with Preview, Variants, Properties, Events, Architecture, Examples, Accessibility and Limitations tabs, generated YAML, copyable docs, and an optional live Power Apps embed. Lives at `#components/<id>` (`useComponentRoute`), so the browser back button closes it and a direct link opens straight to that component. |
+| **Components** (`#components`) | Searchable, category-filtered catalog of 25 components. The unfiltered view defaults to 6 curated flagship picks (`FEATURED_IDS`) rather than all 25 at once — a "Browse all 25" toggle expands it, and searching or picking a category always searches/shows the full catalog regardless of the toggle. A "Copy brand theme YAML" button generates a real Power Apps Studio theme (Themes panel > Add a theme > Paste theme) seeded from the site's own brand green. |
+| **Component detail** | Per-component page with Preview, Variants, Properties, Events, Architecture, Examples, Accessibility and Limitations tabs, generated YAML in two schema-conformant forms (a component definition and a screen-control instance of it — see below), copyable docs, and an optional live Power Apps embed. Lives at `#components/<id>` (`useComponentRoute`), so the browser back button closes it and a direct link opens straight to that component. |
 | **Recognition** (`#recognition`) | Awards, delivery-scale highlights, and certifications — a status pill reads "Certified" (green) or whatever else is in progress (amber). |
 | **Skills** | LinkedIn's real skill list with a checkmark on the ones actually endorsed — not composed testimonials, since no written quotes exist to use. |
 
@@ -49,6 +49,7 @@ npm run dev      # http://localhost:5173
 npm run build    # production bundle in dist/
 npm run preview  # serve the built bundle
 npm run lint
+npm run test:yaml   # generated component/theme YAML vs. Microsoft's own schema
 ```
 
 ## Project structure
@@ -99,6 +100,55 @@ src/
 Everything else — the catalog card, the detail page tabs, the generated
 `cmp<Pascal>.yaml` and the copyable markdown docs — is derived from that data,
 so the YAML and the Properties/Events tabs can never drift apart.
+
+### YAML schema conformance
+
+Every component gets two generated YAML outputs (`src/lib/componentDocs.js`):
+a **component definition** (`buildComponentYaml` — `ComponentDefinitions` /
+`CustomProperties`, for Studio's Components pane > New component > Import
+from code) and a **screen control instance** of it (`buildScreenControlYaml`
+— `Control: cmp<Name>` / `Properties`, for pasting straight into a screen's
+tree view once the component already exists). Both are matched key-for-key
+and enum-for-enum against Microsoft's own published schema for Power Apps
+source YAML
+([`pa.schema.yaml`](https://github.com/microsoft/PowerApps-Tooling/blob/master/schemas/pa-yaml/v3.0/pa.schema.yaml)),
+not guessed from how other component-library sites happen to render theirs.
+
+`npm run test:yaml` (`scripts/validate-yaml.mjs`, wired into CI) parses every
+generated YAML string with a real YAML parser and checks it against that
+schema's actual enum values and key names. It exists because two real
+mistakes shipped silently before it did, both only caught by fetching
+Microsoft's schema and diffing this project's output against it by hand:
+
+- `DataType: String` — the schema's real enum value is `Text`, not `String`.
+- Every property default was wrapped as a quoted text literal, even for
+  `Number`/`Boolean` properties, which Power Fx would type-error on. A
+  `Number` or `Boolean` default that looks like a genuine literal (a bare
+  numeric string, or exactly `"true"`/`"false"`) is now emitted unquoted, as
+  a real Power Fx literal; everything else — including this catalog's many
+  defaults that are documentation shorthand rather than literal formulas,
+  like `"Sample entries"` or `"US federal default"` — is emitted as a quoted
+  text literal, which is always valid Power Fx even when it's standing in
+  for a longer description than that data type would ever really hold.
+
+A third bug came from the validator itself catching its own fix: the
+multi-line block scalar used for any default containing a bare `#` or `:`
+(both banned in a single-line Power Fx-in-YAML formula, per Microsoft's own
+[YAML formula grammar](https://learn.microsoft.com/power-platform/power-fx/yaml-formula-grammar))
+originally used plain `|`, which keeps one trailing newline stuck to the end
+of the parsed value. Switched to `|-` (strip chomping) once the validator's
+own YAML parse turned up the stray `\n`.
+
+`src/lib/themeYaml.js` generates a fourth, unrelated YAML shape — a real
+Studio Theme (`Theme Name` / `Font` / `BasePaletteColor` / `HueTorsion` /
+`Vibrancy` / `ColorOverrides`, pasteable into Studio's own Themes panel),
+seeded from this site's brand green rather than its own web font (a theme's
+font has to already exist in whatever environment it's pasted into, and this
+site's own "Inter" isn't guaranteed to be there the way "Segoe UI" is).
+
+None of this can launch Power Apps Studio itself to confirm a real paste
+succeeds — short of that, schema-conformant real YAML parsing is the
+strongest available check.
 
 ### Component detail routing
 
