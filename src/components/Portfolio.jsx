@@ -5,6 +5,7 @@ import { CONTACT } from "../config.js";
 import useReveal from "../hooks/useReveal.js";
 import useParallax from "../hooks/useParallax.js";
 import useTilt from "../hooks/useTilt.js";
+import useComponentRoute from "../hooks/useComponentRoute.js";
 import ProjectsSection from "./ProjectsSection.jsx";
 import ExperienceSection from "./ExperienceSection.jsx";
 import PlatformOrbit from "./PlatformOrbit.jsx";
@@ -21,7 +22,7 @@ export default function Portfolio() {
   const [dark, setDark] = useState(false);
   const [query, setQuery] = useState("");
   const [category, setCategory] = useState("All");
-  const [selected, setSelected] = useState(null);
+  const [selected, selectComponent, clearSelected] = useComponentRoute(components);
   const [menuOpen, setMenuOpen] = useState(false);
   const [barsRef, barsIn] = useReveal();
   const scrolled = useParallax();
@@ -45,7 +46,7 @@ export default function Portfolio() {
     return () => window.removeEventListener("keydown", onKeyDown);
   }, [menuOpen]);
 
-  if (selected) return <Detail item={selected} dark={dark} onBack={() => setSelected(null)} />;
+  if (selected) return <Detail item={selected} dark={dark} onBack={clearSelected} />;
 
   return (
     <main className={dark ? "dark min-h-screen bg-[#0B1110] text-white" : "min-h-screen bg-[#FBFDFB] text-[#17201B]"}>
@@ -177,7 +178,7 @@ export default function Portfolio() {
           {shown.map(c => {
             const I = icons[c.category] || Sparkles;
             return (
-              <button key={c.id} onClick={() => setSelected(c)} className="lift-hover overflow-hidden rounded-[28px] border border-slate-200 bg-white text-left shadow-lg dark:border-white/10 dark:bg-white/5">
+              <button key={c.id} onClick={() => selectComponent(c)} className="lift-hover overflow-hidden rounded-[28px] border border-slate-200 bg-white text-left shadow-lg dark:border-white/10 dark:bg-white/5">
                 <div className="grid h-44 place-items-center bg-slate-50 p-5 dark:bg-white/5">
                   <div className="w-[78%] rounded-[22px] bg-white p-5 shadow-xl dark:bg-[#17201B]">
                     <div className="flex justify-between"><I style={{ color: c.color }} /><span className="rounded-full px-2 py-1 text-[9px] font-black" style={{ background: `${c.color}18`, color: c.color }}>{c.maturity}</span></div>

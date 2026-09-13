@@ -16,7 +16,7 @@ SVG and CSS.
 | **Projects** (`#projects`) | Seven project showcases in a rail-and-window layout: pick a project from the rail, page through its screens in a window-framed preview. Every project is presented under a generic name and every number shown is synthetic. |
 | **Experience** (`#experience`) | An animated career timeline: a gradient rail draws itself in as you scroll past it (`useScrollFill`), each entry fades up into view the first time it's reached (`useRevealEach`), and its dot lights up in the role's color once revealed. Real employers, roles and dates, each with a collapsible highlight list. |
 | **Components** (`#components`) | Searchable, category-filtered catalog of 25 components. |
-| **Component detail** | Per-component page with Preview, Variants, Properties, Events, Architecture, Examples, Accessibility and Limitations tabs, generated YAML, copyable docs, and an optional live Power Apps embed. |
+| **Component detail** | Per-component page with Preview, Variants, Properties, Events, Architecture, Examples, Accessibility and Limitations tabs, generated YAML, copyable docs, and an optional live Power Apps embed. Lives at `#components/<id>` (`useComponentRoute`), so the browser back button closes it and a direct link opens straight to that component. |
 | **Recognition** (`#recognition`) | Awards and delivery-scale highlights. |
 
 Dark mode is a class toggle on the page's own `<main>`, which is why
@@ -79,6 +79,7 @@ src/
     useParallax.js       throttled scroll offset, frozen under reduced motion
     useScrollFill.js     0-1 scroll progress, for a rail that draws itself in
     useTilt.js           mouse-tracked 3D tilt + cursor glare for a card
+    useComponentRoute.js syncs the open component Detail page with #components/<id>
   config.js              contact details and the Power Apps embed configuration
 ```
 
@@ -94,6 +95,24 @@ src/
 Everything else — the catalog card, the detail page tabs, the generated
 `cmp<Pascal>.yaml` and the copyable markdown docs — is derived from that data,
 so the YAML and the Properties/Events tabs can never drift apart.
+
+### Component detail routing
+
+Opening a component swaps in an entirely different full-page component
+(`Detail`), not a route in the usual sense, so without `useComponentRoute` the
+browser's back button had nowhere useful to go and a shared link could only
+ever land on the homepage. The hook keeps that swap in sync with
+`#components/<id>` via `history.pushState` (not `location.hash =`, which
+would also trigger the browser's own scroll-to-anchor for the plain
+`#components` case, since a real element already carries that id) and
+listens for `popstate` to handle back/forward. An unrecognized id in the URL
+just falls back to the homepage rather than erroring.
+
+This intentionally covers only the Detail page swap — which project/slide is
+selected in `ProjectsSection`, and the catalog's search/category filters,
+stay in plain component state. Those are shallower, more transient
+selections where losing them to a page refresh or a back-button press is a
+reasonable tradeoff against the added complexity of routing all of them too.
 
 ### Adding a project screen
 
