@@ -234,43 +234,87 @@ const overrides = {
     architecture: ["One flat gallery renders both parent and child rows, avoiding nested-gallery height constraints entirely", "Tag and Tone are separate — Tag is the label text, Tone is the color — so the same control renders order states, approval states or task states with no extra configuration", "Every action raises an event and stops; the component owns no data and performs no Patch itself"],
     examples: ["Project phases and tasks", "Orders and lines", "Checklist sections"],
     accessibility: ["Expand/collapse exposes an accessible expanded state on the group header, not just a rotating chevron", "Tag/Tone pairs always render the Tag text — Tone's color is never the only signal for a row's state", "OnMoveUp/OnMoveDown are reachable from the keyboard, not only from drag handles"],
-    limitations: ["GroupKey can never be zero, since zero is reserved to mean nothing expanded", "Comfortable into the low hundreds of groups; past that, paging beats an ever-taller accordion"]
+    limitations: ["GroupKey can never be zero, since zero is reserved to mean nothing expanded", "Comfortable into the low hundreds of groups; past that, paging beats an ever-taller accordion"],
+    // Community Power Apps accordion patterns land on the same single-
+    // flat-gallery shape this component already uses over two nested
+    // galleries, specifically because nested flexible-height galleries
+    // fight Power Apps' own height-measuring — real-world confirmation
+    // of an existing design choice, not a change.
+    variants: [
+      ["Standard", "Parent groups with child rows, multiple groups open at once — as shown in Preview."],
+      ["Compact", "Tighter row height and no Tag/Tone pill padding, for a dense list of many groups."],
+      ["Single-expand", "Opening one group collapses whichever other group was open — classic accordion behavior, instead of Standard's several-open-at-once."],
+      ["Checklist", "Child rows render a checkbox in place of the Tag/Tone pill, for a task or requirements list rather than a status list."]
+    ]
   },
   "enterprise-data-table": {
     summary: "One row contract rendered as a table, card, or list, with status/priority colors and row actions resolved through shared lookup config.",
-    properties: [["Items", "Table", "Sample records", "Rows to display; progress columns need CompletedSteps and TotalSteps"], ["ViewMode", "Text", "table", "Initial view: table, card or list"], ["ContextMenuItems", "Table", "View / Edit / Delete", "Row action menu items — key, label, enabled, visible"], ["StatusConfig", "Table", "Default", "Status-to-color lookup, case-insensitive, with a default fallback row"], ["PriorityConfig", "Table", "Default", "Priority-to-color lookup, same pattern as StatusConfig"]],
+    properties: [["Items", "Table", "Sample records", "Rows to display; progress columns need CompletedSteps and TotalSteps"], ["ViewMode", "Text", "table", "Initial view: table, card or list"], ["ContextMenuItems", "Table", "View / Edit / Delete", "Row action menu items — key, label, enabled, visible"], ["StatusConfig", "Table", "Default", "Status-to-color lookup, case-insensitive, with a default fallback row"], ["PriorityConfig", "Table", "Default", "Priority-to-color lookup, same pattern as StatusConfig"], ["NoDataText", "Text", "No records to show", "Empty-state message — matches the real canvas Data table control's own NoDataText property"]],
     events: [["OnRowSelect", "Fires when a row, card or list item is tapped"], ["OnMenuItemSelect", "Fires when a row action is chosen; returns the item and the action key"], ["OnViewChange", "Fires when the visitor switches between table, card and list views"]],
     architecture: ["Table, card and list views share one Items contract and one set of context menus", "Status and priority colors resolve through a lookup table with a default row, never a hardcoded switch", "Segmented progress bars render from CompletedSteps / TotalSteps fields already present on each row"],
     examples: ["Project register", "Case browser", "Responsive mobile list"],
     accessibility: ["Status and Priority always render their StatusConfig/PriorityConfig text label, never the lookup color alone", "Switching ViewMode (table/card/list) keeps the same accessible row structure and selection state underneath", "The row-action menu's items carry accessible names for keyboard and screen-reader use, not an icon-only affordance"],
-    limitations: ["The native row-action menu renders text labels only; custom per-item icons and colors are reserved but not wired up", "Column mapping must match the shaped Items contract exactly, so a raw source list needs a projection step first"]
+    // Checked against Microsoft's own real canvas Data table control
+    // (learn.microsoft.com/power-apps/maker/canvas-apps/controls/control-data-table)
+    // deliberately, since this component already goes well past it —
+    // the native control is read-only, single-row-select only, has no
+    // built-in column sort/filter, and can't show images or related-
+    // table fields. Worth stating plainly rather than implying parity:
+    // this contract is closer to a PCF-grade grid than the native
+    // control, and multi-select / sortable headers are real gaps a
+    // future revision could close, not things already covered.
+    limitations: ["The native row-action menu renders text labels only; custom per-item icons and colors are reserved but not wired up", "Column mapping must match the shaped Items contract exactly, so a raw source list needs a projection step first", "Single-row selection only, no multi-select — matching the real canvas Data table control's own limit, not a gap unique to this component", "No built-in column sort or filter by heading; the host sorts/filters Items before it reaches the component"],
+    variants: [
+      ["Table", "Full-width rows with column headers — the default ViewMode, as shown in Preview."],
+      ["Card", "One card per record with the same status/priority pills, for a narrower screen or a visual browse."],
+      ["List", "A single-column compact list, the tightest of the three — best for a mobile-width panel."],
+      ["Compact density", "Table view with tighter row height and smaller text, for a screen that needs to show many more rows at once."]
+    ]
   },
   "governed-file-upload": {
     summary: "A staging-only file dropzone — nothing uploads, deletes, or persists until a flow handles the event it raises.",
-    properties: [["Items", "Table", "Documents already on file", "Existing rows — Id, Name, SizeBytes, UploadedOn, UploadedBy, Ext"], ["MaxFileSize", "Number", "25", "Megabytes, enforced at staging time, not just shown as a hint"], ["MaxFiles", "Number", "5", "Cap on staged files; existing Items rows do not count against it"], ["AllowUpload", "Boolean", "true", "Governs both the dropzone's presence and the Upload / Cancel actions"], ["AllowDelete", "Boolean", "true", "Governs the delete icon on existing rows, independent of AllowUpload"]],
-    events: [["OnSave", "Fires when Upload is pressed; hands back the staged files for a flow to persist"], ["OnCancel", "Fires when Cancel is pressed, after the staged list is already cleared"], ["OnView", "Fires from the preview icon on an existing row"], ["OnDownload", "Fires from the download icon on an existing row"], ["OnDelete", "Fires from the bin icon on an existing row"]],
-    architecture: ["The dropzone stages files locally; nothing is queried or written until an event fires", "Staged files are exposed only inside OnSave, in both a native-file shape and a base64 shape, matching whichever input a flow trigger expects", "The host's flow performs the actual write; a Reset only on the success path keeps the staged list intact after a failure"],
+    properties: [["Items", "Table", "Documents already on file", "Existing rows — Id, Name, SizeBytes, UploadedOn, UploadedBy, Ext"], ["MaxFileSize", "Number", "25", "Megabytes, enforced at staging time — matches the real canvas Attachments control's own MaxAttachmentSize, same unit"], ["MaxFiles", "Number", "5", "Cap on staged files; existing Items rows do not count against it"], ["AllowUpload", "Boolean", "true", "Governs both the dropzone's presence and the Upload / Cancel actions"], ["AllowDelete", "Boolean", "true", "Governs the delete icon on existing rows, independent of AllowUpload"], ["NoFilesText", "Text", "No files attached yet", "Empty-state message, shown when both Items and the staged list are empty"]],
+    events: [["OnSave", "Fires when Upload is pressed; hands back the staged files for a flow to persist"], ["OnCancel", "Fires when Cancel is pressed, after the staged list is already cleared"], ["OnView", "Fires from the preview icon on an existing row"], ["OnDownload", "Fires from the download icon on an existing row"], ["OnDelete", "Fires from the bin icon on an existing row"], ["OnUndoRemove", "Fires when Undo is pressed right after removing a staged file — the real canvas Attachments control ships this exact event (OnUndoRemoveFile) and it's worth having here too, since \"I removed the wrong one\" is a real, common slip"]],
+    architecture: ["The dropzone stages files locally; nothing is queried or written until an event fires", "Staged files are exposed only inside OnSave, in both a native-file shape and a base64 shape, matching whichever input a flow trigger expects", "The host's flow performs the actual write; a Reset only on the success path keeps the staged list intact after a failure", "Removing a staged file keeps it around briefly for OnUndoRemove instead of discarding it immediately — checked against the real Attachments control, which offers the identical undo window"],
     examples: ["SharePoint document library", "Case attachments", "Read-only document viewer"],
-    accessibility: ["MaxFileSize/MaxFiles limits are stated as visible text near the dropzone, not only enforced silently at staging time", "AllowUpload/AllowDelete set to false disables the affordance and states why, rather than just hiding it", "Each existing row's preview/download/delete icons carry accessible names, not icon glyphs alone"],
-    limitations: ["The component never uploads, deletes or queries by itself — a flow triggered from OnSave / OnDelete does the real persistence", "File-type restriction is a hint only; enforcing it for real belongs in the flow"]
+    accessibility: ["MaxFileSize/MaxFiles limits are stated as visible text near the dropzone, not only enforced silently at staging time", "AllowUpload/AllowDelete set to false disables the affordance and states why, rather than just hiding it", "Each existing row's preview/download/delete icons carry accessible names, not icon glyphs alone", "The dropzone's drag-over state is paired with a text cue (\"Drop to add\"), not a border-color change alone — the real Attachments control's DropTargetBorderColor/DropTargetTextColor pairing checked for the same reason"],
+    limitations: ["The component never uploads, deletes or queries by itself — a flow triggered from OnSave / OnDelete does the real persistence", "File-type restriction is a hint only; enforcing it for real belongs in the flow"],
+    variants: [
+      ["Standard", "Dropzone plus a list of already-uploaded files with preview/download/delete icons — as shown in Preview."],
+      ["Compact", "A single-line \"Add file\" affordance with no dropzone illustration, for a form with limited vertical space."],
+      ["Read-only viewer", "AllowUpload and AllowDelete both false — Items renders as a plain file list with no staging affordance at all, for a record that's closed for edits."],
+      ["Drag-active", "The dropzone's own mid-drag state — border and background shift to the DropTarget-style treatment while a file is dragged over it."]
+    ]
   },
   "governed-email-composer": {
     summary: "A connector-free email composer that assembles a complete HTML message and hands it to whatever the host actually sends with.",
-    properties: [["Directory", "Table", "Required", "People the To/CC pickers offer; needs DisplayName and Mail, JobTitle optional"], ["DefaultSubject", "Text", "Blank", "Prefills the subject; Config.LockSubject makes it read-only for a traceable reply"], ["ContextHtml", "Text", "Blank", "Trusted host markup rendered raw into a tinted box above the note"], ["Signature", "Text", "Blank", "Plain-text line appended to the body; escaped, unlike ContextHtml"], ["Busy", "Boolean", "false", "Disables every control and shows a sending state while the host's send is in flight"]],
+    properties: [["Directory", "Table", "Required", "People the To/CC pickers offer; needs DisplayName and Mail, JobTitle optional"], ["DefaultSubject", "Text", "Blank", "Prefills the subject; Config.LockSubject makes it read-only for a traceable reply"], ["ContextHtml", "Text", "Blank", "Trusted host markup rendered raw into a tinted box above the note"], ["Signature", "Text", "Blank", "Plain-text line appended to the body; escaped, unlike ContextHtml"], ["DefaultPriority", "Text", "Normal", "Low, Normal or High — matches the real Office 365 Outlook connector's own Importance values on Send an email (V2)"], ["Busy", "Boolean", "false", "Disables every control and shows a sending state while the host's send is in flight"]],
     events: [["OnSend", "Fires once every output is populated; hands back recipients, subject, body and priority"], ["OnCancel", "Fires when the dialog is dismissed without sending"]],
-    architecture: ["The component builds a complete table-based HTML email body but owns no connector; the host chooses Outlook, a flow or SMTP", "Recipients are de-duplicated and cleaned before OnSend, and unlicensed accounts with a blank address are dropped automatically", "ContextHtml is the one raw slot; anything interpolated into it is the host's own markup to escape"],
+    architecture: ["The component builds a complete table-based HTML email body but owns no connector; the host chooses Outlook, a flow or SMTP", "Recipients are de-duplicated and cleaned before OnSend, and unlicensed accounts with a blank address are dropped automatically", "ContextHtml is the one raw slot; anything interpolated into it is the host's own markup to escape", "OnSend's output shape (To/Subject/Body/Attachments) is deliberately the same shape the Office 365 Outlook connector's own Send an email (V2) action expects, so wiring OnSend straight into that action needs no reshaping in the flow"],
     examples: ["Record summary email", "Review request", "Status-change notification"],
     accessibility: ["Busy disables every control and announces a sending state as text, not only a spinner", "To/CC picker results are announced by DisplayName, with Mail as a secondary detail, not the raw address alone", "ContextHtml renders inside a labeled, visually distinct box so it reads as quoted context, not the composer's own message"],
-    limitations: ["The component does not send email itself, only assembles the message", "Any user-typed text placed inside ContextHtml must be escaped by the host, since that slot is rendered raw"]
+    limitations: ["The component does not send email itself, only assembles the message", "Any user-typed text placed inside ContextHtml must be escaped by the host, since that slot is rendered raw"],
+    variants: [
+      ["Standard", "Full composer — To/CC pickers, subject, a body note and Send/Cancel — as shown in Preview."],
+      ["Reply", "ContextHtml populated with the quoted original message and DefaultSubject locked via Config.LockSubject, for a traceable reply thread."],
+      ["Compact", "Just a To picker and a body note, subject and CC hidden, for a quick one-line message rather than a full email."],
+      ["Sending", "Busy is true — every control disabled and a sending state shown, while the host's own Send an email (V2) call is in flight."]
+    ]
   },
   "enterprise-sidebar": {
     summary: "A collapsible navigation rail with a built-in user footer and context menu, not just a bare list of links.",
-    properties: [["Items", "Table", "Required", "Navigation items with parent/child hierarchy, badges and section labels"], ["IsExpanded", "Boolean", "true", "Toggles between a 260px expanded rail and a 64px collapsed rail"], ["Theme", "Text", "Light", "Light or Dark theme"], ["UserName", "Text", "Blank", "Name shown in the footer's initials avatar"]],
+    properties: [["Items", "Table", "Required", "Navigation items with parent/child hierarchy, badges and section labels"], ["SelectedKey", "Text", "Blank", "The current destination's key — settable by the host as well as read from OnItemSelect, matching Microsoft's own Creator Kit Nav control's SelectedKey"], ["IsExpanded", "Boolean", "true", "Toggles between a 260px expanded rail and a 64px collapsed rail"], ["Theme", "Text", "Light", "Light or Dark theme"], ["UserName", "Text", "Blank", "Name shown in the footer's initials avatar"]],
     events: [["OnItemSelect", "Returns the selected navigation item"], ["OnExpandToggle", "Returns the new IsExpanded state"]],
-    architecture: ["A single tree gallery renders parent and child items with expand and collapse state", "IsExpanded drives both the rail width and whether labels are shown next to icons", "A context menu and a user footer with an initials avatar are built in, not assembled separately"],
+    architecture: ["A single tree gallery renders parent and child items with expand and collapse state", "IsExpanded drives both the rail width and whether labels are shown next to icons", "A context menu and a user footer with an initials avatar are built in, not assembled separately", "SelectedKey is two-way in practice: the host can set it directly (e.g. after a deep link lands on a screen) as well as read it back from OnItemSelect, the same pattern Microsoft's own published Creator Kit Nav control uses for its SelectedKey"],
     examples: ["Enterprise app shell", "Record hierarchy", "Mobile-collapsed navigation"],
     accessibility: ["OnExpandToggle lets the host announce the rail's new state, since a width change alone isn't perceivable to a screen reader", "Collapsed-rail icons keep their full item label as an accessible name even though it isn't shown visually", "The footer's initials avatar exposes UserName as its accessible name, not just visual initials"],
-    limitations: ["Screen content must offset itself using the IsExpanded output; the rail does not push layout for you", "Icons are SVG strings, so an icon library or generator is the host's responsibility"]
+    limitations: ["Screen content must offset itself using the IsExpanded output; the rail does not push layout for you", "Icons are SVG strings, so an icon library or generator is the host's responsibility"],
+    variants: [
+      ["Expanded", "Full 260px rail with icon and label side by side — the default IsExpanded state, as shown in Preview."],
+      ["Collapsed", "64px icon-only rail; each item's full label still carries through as its accessible name even though nothing is shown visually."],
+      ["Dark theme", "Theme set to Dark — token-adjusted surfaces and borders, the same tokens the rest of this site's own dark mode uses."],
+      ["Grouped sections", "Items rendered under section-label headers rather than one flat list, for an app shell with more destinations than fit comfortably ungrouped."]
+    ]
   },
   "enterprise-mega-menu": {
     summary: "A top-level nav bar whose dropdown panels are content-only, so editing a panel's items never touches the bar itself.",

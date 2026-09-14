@@ -200,6 +200,162 @@ function ComponentPreview({ item, values = {} }) {
     );
   }
 
+  if (item.title === "Accordion Record List") {
+    const groups = [
+      {
+        name: "Order #4821 — Acme Corp",
+        expanded: true,
+        children: [
+          { name: "Line 1 — Widget A x200", tag: "Shipped", color: item.color },
+          { name: "Line 2 — Widget B x50", tag: "Processing", color: "#0F6CBD" }
+        ]
+      },
+      { name: "Order #4820 — Globex Inc", expanded: false, children: [] }
+    ];
+    return (
+      <div className="space-y-2">
+        {groups.map(g => (
+          <div key={g.name} className="rounded-xl border border-slate-200 dark:border-white/10">
+            <div className="flex items-center justify-between p-3">
+              <b className="text-xs">{g.name}</b>
+              <span aria-hidden="true" className={`text-slate-500 transition-transform dark:text-slate-400 ${g.expanded ? "rotate-180" : ""}`}>&#9660;</span>
+            </div>
+            {g.expanded && g.children.length > 0 && (
+              <div className="space-y-1.5 border-t border-slate-100 p-3 dark:border-white/10">
+                {g.children.map(c => (
+                  <div key={c.name} className="flex items-center justify-between rounded-lg bg-slate-50 px-3 py-2 dark:bg-white/10">
+                    <span className="text-xs">{c.name}</span>
+                    <span
+                      className="rounded-full px-2 py-0.5 text-[10px] font-black text-[color:var(--badge-light)] dark:text-[color:var(--badge-dark)]"
+                      style={{ background: `${c.color}18`, "--badge-light": darken(c.color), "--badge-dark": lighten(c.color) }}
+                    >
+                      {c.tag}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        ))}
+      </div>
+    );
+  }
+
+  if (item.title === "Enterprise Data Table") {
+    const rows = [
+      { name: "Website redesign", status: "On track", statusColor: item.color, priority: "High", priorityColor: "#D83B01" },
+      { name: "Data migration", status: "At risk", statusColor: "#D83B01", priority: "Medium", priorityColor: "#0F6CBD" },
+      { name: "Vendor onboarding", status: "Complete", statusColor: "#5B5BD6", priority: "Low", priorityColor: "#64748B" }
+    ];
+    return (
+      <div className="overflow-hidden rounded-xl border border-slate-200 dark:border-white/10">
+        <div className="grid grid-cols-[1.4fr_.8fr_.8fr_auto] gap-2 bg-slate-50 px-3 py-2 text-[10px] font-black uppercase text-slate-500 dark:bg-white/10 dark:text-slate-400">
+          <span>Project</span><span>Status</span><span>Priority</span><span />
+        </div>
+        {rows.map(r => (
+          <div key={r.name} className="grid grid-cols-[1.4fr_.8fr_.8fr_auto] items-center gap-2 border-t border-slate-100 px-3 py-2.5 text-xs dark:border-white/10">
+            <b className="truncate">{r.name}</b>
+            <span
+              className="w-fit rounded-full px-2 py-0.5 text-[10px] font-black text-[color:var(--badge-light)] dark:text-[color:var(--badge-dark)]"
+              style={{ background: `${r.statusColor}18`, "--badge-light": darken(r.statusColor), "--badge-dark": lighten(r.statusColor) }}
+            >
+              {r.status}
+            </span>
+            <span
+              className="w-fit rounded-full px-2 py-0.5 text-[10px] font-black text-[color:var(--badge-light)] dark:text-[color:var(--badge-dark)]"
+              style={{ background: `${r.priorityColor}18`, "--badge-light": darken(r.priorityColor), "--badge-dark": lighten(r.priorityColor) }}
+            >
+              {r.priority}
+            </span>
+            <span aria-hidden="true" className="text-slate-500 dark:text-slate-400">&#8942;</span>
+          </div>
+        ))}
+      </div>
+    );
+  }
+
+  if (item.title === "Governed File Upload") {
+    const files = [
+      { name: "Statement-of-work.pdf", size: "2.4 MB", ext: "PDF" },
+      { name: "Site-photos.zip", size: "18.1 MB", ext: "ZIP" }
+    ];
+    return (
+      <div>
+        <div className="grid place-items-center rounded-xl border-2 border-dashed border-slate-300 bg-slate-50 py-6 text-center dark:border-white/20 dark:bg-white/5">
+          <span aria-hidden="true" className="text-2xl">&#8679;</span>
+          <span className="mt-1 text-xs font-bold text-slate-600 dark:text-slate-300">Drag files here or browse</span>
+          <span className="text-[10px] text-slate-500 dark:text-slate-400">Up to 25 MB, 5 files</span>
+        </div>
+        <div className="mt-3 space-y-1.5">
+          {files.map(f => (
+            <div key={f.name} className="flex items-center justify-between rounded-lg bg-slate-50 px-3 py-2 dark:bg-white/10">
+              <div className="flex min-w-0 items-center gap-2">
+                <span className="grid h-7 w-7 shrink-0 place-items-center rounded-md text-[9px] font-black text-white" style={{ background: item.color }}>{f.ext}</span>
+                <div className="min-w-0">
+                  <b className="block truncate text-xs">{f.name}</b>
+                  <span className="text-[10px] text-slate-500 dark:text-slate-400">{f.size}</span>
+                </div>
+              </div>
+              <button type="button" className="shrink-0 text-xs font-bold text-slate-500 dark:text-slate-400" aria-label={`Remove ${f.name}`}>&#10005;</button>
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  }
+
+  if (item.title === "Governed Email Composer") {
+    return (
+      <div>
+        <div className="flex flex-wrap items-center gap-1.5 border-b border-slate-100 pb-2 dark:border-white/10">
+          <span className="text-[10px] font-black uppercase text-slate-500 dark:text-slate-400">To</span>
+          <span className="rounded-full bg-slate-100 px-2 py-1 text-[10px] font-bold dark:bg-white/10">Priya Shah</span>
+          <span className="rounded-full bg-slate-100 px-2 py-1 text-[10px] font-bold dark:bg-white/10">J. Okafor</span>
+        </div>
+        <div className="mt-2 border-b border-slate-100 pb-2 text-xs font-bold dark:border-white/10">Re: Case #4821 status update</div>
+        <div className="mt-3 rounded-lg bg-slate-50 p-2.5 text-[10px] leading-5 text-slate-500 dark:bg-white/10 dark:text-slate-400">
+          &gt; Original request: please confirm the vendor timeline for next week.
+        </div>
+        <p className="mt-3 text-xs leading-5 text-slate-700 dark:text-slate-200">Hi team, sharing the latest update below &mdash; let me know if anything&rsquo;s missing.</p>
+        <div className="mt-4 flex gap-2">
+          <span className="rounded-full px-3 py-1.5 text-xs font-bold text-white" style={{ background: item.color }}>Send</span>
+          <span className="rounded-full bg-slate-100 px-3 py-1.5 text-xs font-bold dark:bg-white/10">Cancel</span>
+        </div>
+      </div>
+    );
+  }
+
+  if (item.title === "Enterprise Sidebar") {
+    const navItems = [
+      { label: "Dashboard", icon: "▦" },
+      { label: "Projects", icon: "▤", active: true },
+      { label: "Reports", icon: "▥" },
+      { label: "Settings", icon: "⚙" }
+    ];
+    return (
+      <div className="flex gap-3">
+        <div className="w-32 shrink-0 rounded-xl border border-slate-200 p-2 dark:border-white/10">
+          <div className="space-y-1">
+            {navItems.map(nav => (
+              <div
+                key={nav.label}
+                className={`flex items-center gap-2 rounded-lg px-2 py-1.5 text-[11px] font-bold ${nav.active ? "text-white" : "text-slate-600 dark:text-slate-300"}`}
+                style={nav.active ? { background: item.color } : undefined}
+              >
+                <span aria-hidden="true">{nav.icon}</span>{nav.label}
+              </div>
+            ))}
+          </div>
+          <div className="mt-3 flex items-center gap-2 border-t border-slate-100 pt-2 dark:border-white/10">
+            <span className="grid h-6 w-6 shrink-0 place-items-center rounded-full text-[9px] font-black text-white" style={{ background: item.color }}>UP</span>
+            <span className="text-[10px] font-bold text-slate-600 dark:text-slate-300">Uday P.</span>
+          </div>
+        </div>
+        <div aria-hidden="true" className="flex-1 rounded-xl bg-slate-50 dark:bg-white/5" />
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-3">
       {["Submitted", "In review", "Approved", "Operational"].map((x, i) => (

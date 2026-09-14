@@ -161,14 +161,20 @@ one unreviewable pass through all 25:
    demonstrating the property does something, rather than existing only
    as a Properties-tab row.
 
-**Done so far** (the 5 "Verified" components worked first, since they're
-the ones already claiming a cross-checked contract): Executive KPI Card,
-Responsive Line Chart, Deadline Intelligence, Activity Timeline, Enterprise
-Calendar. Re-scanned with axe-core (WCAG 2A/2AA + best-practice) across
-each one's Preview and Variants tabs, light and dark, after every change —
-zero violations. The remaining 20 components (6 more "Verified", then the
-14 "Original" ones) are still on the old generic mockup and
-Standard/Compact/Dark/Mobile variants, worked through in the same batches.
+**Done so far** — 10 of the 11 "Verified" components, worked first since
+they're the ones already claiming a cross-checked contract, in two
+batches: Executive KPI Card, Responsive Line Chart, Deadline Intelligence,
+Activity Timeline, Enterprise Calendar; then Accordion Record List,
+Enterprise Data Table, Governed File Upload, Governed Email Composer,
+Enterprise Sidebar. Re-scanned with axe-core (WCAG 2A/2AA + best-practice)
+across each one's Preview and Variants tabs, light and dark, after every
+change — one real finding along the way (a "Low priority" badge's gray
+was too light to darken enough for AA contrast even after `darken()`;
+swapped to a properly mid-tone base color rather than special-casing the
+helper), zero violations remaining. Still on the old generic mockup and
+Standard/Compact/Dark/Mobile variants: Enterprise Mega Menu (the last
+"Verified" one) and the 14 "Original" components, worked through in the
+same batches next.
 
 ### YAML schema conformance
 
