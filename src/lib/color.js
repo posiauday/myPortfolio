@@ -30,3 +30,28 @@ export function lighten(hex, amount = 0.45) {
   const lightened = rgb.map(c => Math.round(c * (1 - amount) + 255 * amount));
   return `#${lightened.map(c => c.toString(16).padStart(2, "0")).join("")}`;
 }
+
+/* Formalizes a pattern every ComponentPreview badge/pill/indicator was
+   already writing out by hand: a light tint of a seed color as the
+   background, paired with a darkened (light mode) or lightened (dark
+   mode) version of that same color as the text — which is, functionally,
+   Material Design 3's "container" color role (e.g. `primary` /
+   `primaryContainer` / `onPrimaryContainer`, one seed color deriving a
+   whole tonal family) rather than a hand-picked color per state. Naming
+   it here removes about 15 repetitions of the same three-line style
+   object across ComponentPreview.jsx, and gives the pattern a real name
+   in the codebase instead of leaving it as an unlabeled convention.
+
+   Pair with CONTAINER_TEXT_CLASS on the element's className so
+   light/dark mode pick the right variable automatically via Tailwind's
+   dark: selector, the same as every other dark-aware color pairing on
+   this page — no JS dark-mode branching needed. */
+export function container(hex, alpha = "18") {
+  return {
+    background: `${hex}${alpha}`,
+    "--badge-light": darken(hex),
+    "--badge-dark": lighten(hex)
+  };
+}
+
+export const CONTAINER_TEXT_CLASS = "text-[color:var(--badge-light)] dark:text-[color:var(--badge-dark)]";

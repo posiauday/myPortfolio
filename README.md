@@ -212,6 +212,67 @@ component in this catalog can be grounded in something this project
 itself has already built and shipped, that's stronger grounding than an
 external reference.
 
+### Material Design polish pass on the 25 mockups
+
+A follow-up request, once the content of all 25 mockups was real: make
+each mockup's own UI itself look like a modern, current design language,
+not just its underlying data. Scoped deliberately narrow — the 25
+`ComponentPreview.jsx` mockups only, not this site's own brand identity
+(the green accent, the custom card/motion language elsewhere on the page
+stays as-is), and "ability to change theme" was already satisfied by the
+existing dark/light toggle, verified working across all 25 components in
+the research-grounding pass above.
+
+Applying Material Design 3 (MD3) meant naming and extending two things
+that were already half-present in the codebase rather than starting from
+a blank slate:
+
+1. **The "container" color role.** Roughly 15 places in
+   `ComponentPreview.jsx` already hand-wrote the same three-line pattern —
+   a light tint of a seed color as a badge's background, paired with
+   `darken()`/`lighten()` of that same color as its text — which is
+   functionally MD3's container role (`primary` → `primaryContainer` /
+   `onPrimaryContainer`, one seed color deriving a whole tonal family).
+   `container()`/`CONTAINER_TEXT_CLASS` (`src/lib/color.js`) name that
+   pattern once instead of leaving it an unlabeled convention repeated by
+   hand, and every qualifying call site — Activity Timeline's category
+   tag, Accordion Record List's child-row tag, Enterprise Data Table's
+   status/priority badges, Decision Log's status badge, Workflow Route
+   Map's completed-node badge — now goes through it. Call sites using a
+   brand color as *text only*, with no background tint to pair it with
+   (Portfolio Command Card's metric values, Comments & Mentions'
+   `@mention`, Responsive Breadcrumbs' current crumb), correctly kept
+   direct `darken()`/`lighten()` calls rather than being forced into a
+   role that doesn't apply to them.
+2. **Elevation as a real signal, not decoration.** MD3 uses shadow depth
+   to say which surfaces are distinct, raised content versus which are
+   flat groupings. Added `shadow-sm` to the mockup elements that actually
+   represent individual raised cards — Activity Timeline's entries,
+   Accordion Record List's child rows, Governed File Upload's file rows,
+   Project Health Summary's dimension tiles, Decision Log's cards,
+   Comments & Mentions' comment bubbles, Program Scorecard's metric
+   tiles, Portfolio Command Card's metric tiles and bar-chart panel — and
+   `shadow-lg` to Enterprise Mega Menu's dropdown panel, a floating
+   overlay that a plain border alone doesn't read as. Left flat by design
+   everywhere elevation would be wrong for what the surface actually is:
+   Enterprise Data Table's rows (a bordered table, not floating cards),
+   Enterprise Calendar's day cells, Operational Status Banner's strips,
+   Portfolio Risk Matrix's heatmap cells, Branded Loading Experience's
+   outer frame.
+
+One structural change beyond color and shadow: **Enterprise Sidebar**'s
+active nav item went from a solid brand-color fill with white text to
+MD3's tonal "active indicator" — a pill-shaped container tint instead of
+a hard-filled rectangle — for consistency with the container pattern used
+everywhere else in the catalog, and because a solid-fill active state is
+the exact older pattern MD3's navigation components moved away from.
+
+Re-verified after every change: `npm run lint && npm run test:yaml &&
+npm run build` clean, then a full axe-core re-scan (WCAG 2A/2AA +
+best-practice) across all 25 components in both light and dark —
+zero violations, confirming the new shadows and the `container()`
+refactor didn't regress any of the contrast fixes from the pass above.
+
 ### YAML schema conformance
 
 Every component gets two generated YAML outputs (`src/lib/componentDocs.js`):

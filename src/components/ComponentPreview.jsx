@@ -1,5 +1,5 @@
 import { buildLinePath } from "../lib/svgPath.js";
-import { darken, lighten } from "../lib/color.js";
+import { darken, lighten, container, CONTAINER_TEXT_CLASS } from "../lib/color.js";
 
 /* ============================================================
    COMPONENT PREVIEW (the small mockup shown in the Detail page)
@@ -141,15 +141,15 @@ function ComponentPreview({ item, values = {} }) {
         <div className="relative mt-4 space-y-3 pl-5">
           <span aria-hidden="true" className="absolute inset-y-1 left-[3px] w-px bg-slate-200 dark:bg-white/10" />
           {entries.map(e => (
-            <div key={e.title} className="relative rounded-xl bg-slate-50 p-3 dark:bg-white/10">
+            <div key={e.title} className="relative rounded-xl bg-slate-50 p-3 shadow-sm dark:bg-white/10">
               <span aria-hidden="true" className="absolute -left-[21px] top-4 h-2 w-2 rounded-full" style={{ background: e.color }} />
               <div className="flex items-center justify-between gap-2">
                 <b className="text-xs">{e.title}</b>
                 <span className="shrink-0 text-[10px] font-bold text-slate-500 dark:text-slate-400">{e.time}</span>
               </div>
               <span
-                className="mt-1 block text-[10px] font-bold text-[color:var(--badge-light)] dark:text-[color:var(--badge-dark)]"
-                style={{ "--badge-light": darken(e.color), "--badge-dark": lighten(e.color) }}
+                className={`mt-1 block w-fit rounded px-1.5 py-0.5 text-[10px] font-bold ${CONTAINER_TEXT_CLASS}`}
+                style={container(e.color)}
               >
                 {e.category}
               </span>
@@ -223,11 +223,11 @@ function ComponentPreview({ item, values = {} }) {
             {g.expanded && g.children.length > 0 && (
               <div className="space-y-1.5 border-t border-slate-100 p-3 dark:border-white/10">
                 {g.children.map(c => (
-                  <div key={c.name} className="flex items-center justify-between rounded-lg bg-slate-50 px-3 py-2 dark:bg-white/10">
+                  <div key={c.name} className="flex items-center justify-between rounded-lg bg-slate-50 px-3 py-2 shadow-sm dark:bg-white/10">
                     <span className="text-xs">{c.name}</span>
                     <span
-                      className="rounded-full px-2 py-0.5 text-[10px] font-black text-[color:var(--badge-light)] dark:text-[color:var(--badge-dark)]"
-                      style={{ background: `${c.color}18`, "--badge-light": darken(c.color), "--badge-dark": lighten(c.color) }}
+                      className={`rounded-full px-2 py-0.5 text-[10px] font-black ${CONTAINER_TEXT_CLASS}`}
+                      style={container(c.color)}
                     >
                       {c.tag}
                     </span>
@@ -256,14 +256,14 @@ function ComponentPreview({ item, values = {} }) {
           <div key={r.name} className="grid grid-cols-[1.4fr_.8fr_.8fr_auto] items-center gap-2 border-t border-slate-100 px-3 py-2.5 text-xs dark:border-white/10">
             <b className="truncate">{r.name}</b>
             <span
-              className="w-fit rounded-full px-2 py-0.5 text-[10px] font-black text-[color:var(--badge-light)] dark:text-[color:var(--badge-dark)]"
-              style={{ background: `${r.statusColor}18`, "--badge-light": darken(r.statusColor), "--badge-dark": lighten(r.statusColor) }}
+              className={`w-fit rounded-full px-2 py-0.5 text-[10px] font-black ${CONTAINER_TEXT_CLASS}`}
+              style={container(r.statusColor)}
             >
               {r.status}
             </span>
             <span
-              className="w-fit rounded-full px-2 py-0.5 text-[10px] font-black text-[color:var(--badge-light)] dark:text-[color:var(--badge-dark)]"
-              style={{ background: `${r.priorityColor}18`, "--badge-light": darken(r.priorityColor), "--badge-dark": lighten(r.priorityColor) }}
+              className={`w-fit rounded-full px-2 py-0.5 text-[10px] font-black ${CONTAINER_TEXT_CLASS}`}
+              style={container(r.priorityColor)}
             >
               {r.priority}
             </span>
@@ -288,7 +288,7 @@ function ComponentPreview({ item, values = {} }) {
         </div>
         <div className="mt-3 space-y-1.5">
           {files.map(f => (
-            <div key={f.name} className="flex items-center justify-between rounded-lg bg-slate-50 px-3 py-2 dark:bg-white/10">
+            <div key={f.name} className="flex items-center justify-between rounded-lg bg-slate-50 px-3 py-2 shadow-sm dark:bg-white/10">
               <div className="flex min-w-0 items-center gap-2">
                 <span className="grid h-7 w-7 shrink-0 place-items-center rounded-md text-[9px] font-black text-white" style={{ background: item.color }}>{f.ext}</span>
                 <div className="min-w-0">
@@ -339,8 +339,8 @@ function ComponentPreview({ item, values = {} }) {
             {navItems.map(nav => (
               <div
                 key={nav.label}
-                className={`flex items-center gap-2 rounded-lg px-2 py-1.5 text-[11px] font-bold ${nav.active ? "text-white" : "text-slate-600 dark:text-slate-300"}`}
-                style={nav.active ? { background: item.color } : undefined}
+                className={`flex items-center gap-2 rounded-full px-2 py-1.5 text-[11px] font-bold ${nav.active ? CONTAINER_TEXT_CLASS : "text-slate-600 dark:text-slate-300"}`}
+                style={nav.active ? container(item.color, "26") : undefined}
               >
                 <span aria-hidden="true">{nav.icon}</span>{nav.label}
               </div>
@@ -375,7 +375,7 @@ function ComponentPreview({ item, values = {} }) {
             </span>
           ))}
         </div>
-        <div className="mt-2 grid grid-cols-2 gap-4 rounded-xl border border-slate-200 bg-white p-4 dark:border-white/10 dark:bg-white/5">
+        <div className="mt-2 grid grid-cols-2 gap-4 rounded-xl border border-slate-200 bg-white p-4 shadow-lg dark:border-white/10 dark:bg-white/5">
           {Object.entries(panel).map(([section, links]) => (
             <div key={section}>
               <span className="text-[10px] font-black uppercase text-slate-500 dark:text-slate-400">{section}</span>
@@ -402,7 +402,7 @@ function ComponentPreview({ item, values = {} }) {
         <h3 className="mt-1 text-lg font-black">Executive overview</h3>
         <div className="mt-4 grid grid-cols-3 gap-2">
           {metrics.map(m => (
-            <div key={m.label} className="rounded-xl bg-slate-50 p-3 dark:bg-white/10">
+            <div key={m.label} className="rounded-xl bg-slate-50 p-3 shadow-sm dark:bg-white/10">
               <span className="text-[10px] text-slate-500 dark:text-slate-400">{m.label}</span>
               <b
                 className="mt-1 block text-lg text-[color:var(--badge-light)] dark:text-[color:var(--badge-dark)]"
@@ -413,7 +413,7 @@ function ComponentPreview({ item, values = {} }) {
             </div>
           ))}
         </div>
-        <div className="mt-3 flex h-16 items-end gap-1.5 rounded-xl bg-slate-50 p-3 dark:bg-white/10">
+        <div className="mt-3 flex h-16 items-end gap-1.5 rounded-xl bg-slate-50 p-3 shadow-sm dark:bg-white/10">
           {bars.map((h, i) => (
             <div key={i} className="flex-1 rounded-t" style={{ height: `${h}%`, background: i === bars.length - 1 ? item.color : `${item.color}66` }} />
           ))}
@@ -432,7 +432,7 @@ function ComponentPreview({ item, values = {} }) {
     return (
       <div className="grid grid-cols-2 gap-2">
         {metrics.map(m => (
-          <div key={m.name} className="rounded-xl border-l-4 bg-slate-50 p-3 dark:bg-white/10" style={{ borderColor: m.tone }}>
+          <div key={m.name} className="rounded-xl border-l-4 bg-slate-50 p-3 shadow-sm dark:bg-white/10" style={{ borderColor: m.tone }}>
             <span className="text-[10px] font-bold text-slate-500 dark:text-slate-400">{m.name}</span>
             <b className="mt-1 block text-xl">{m.value}</b>
             <span className="text-[10px] text-slate-500 dark:text-slate-400">Target {m.target}</span>
@@ -474,7 +474,7 @@ function ComponentPreview({ item, values = {} }) {
         </div>
         <div className="mt-3 grid grid-cols-2 gap-2">
           {dims.map(d => (
-            <div key={d.name} className="rounded-xl bg-slate-50 p-3 dark:bg-white/10">
+            <div key={d.name} className="rounded-xl bg-slate-50 p-3 shadow-sm dark:bg-white/10">
               <div className="flex items-center gap-2">
                 <span aria-hidden="true" className="h-2 w-2 shrink-0 rounded-full" style={{ background: d.tone }} />
                 <b className="text-xs">{d.name}</b>
@@ -520,12 +520,12 @@ function ComponentPreview({ item, values = {} }) {
     return (
       <div className="space-y-2">
         {decisions.map(d => (
-          <div key={d.decision} className="rounded-xl bg-slate-50 p-3 dark:bg-white/10">
+          <div key={d.decision} className="rounded-xl bg-slate-50 p-3 shadow-sm dark:bg-white/10">
             <div className="flex items-start justify-between gap-2">
               <b className="text-xs leading-5">{d.decision}</b>
               <span
-                className="shrink-0 rounded-full px-2 py-0.5 text-[9px] font-black text-[color:var(--badge-light)] dark:text-[color:var(--badge-dark)]"
-                style={{ background: `${d.color}18`, "--badge-light": darken(d.color), "--badge-dark": lighten(d.color) }}
+                className={`shrink-0 rounded-full px-2 py-0.5 text-[9px] font-black ${CONTAINER_TEXT_CLASS}`}
+                style={container(d.color)}
               >
                 {d.status}
               </span>
@@ -558,7 +558,7 @@ function ComponentPreview({ item, values = {} }) {
         <div className="space-y-3">
           <div className="flex gap-2">
             <span className="grid h-7 w-7 shrink-0 place-items-center rounded-full text-[9px] font-black text-white" style={{ background: item.color }}>PS</span>
-            <div className="min-w-0 flex-1 rounded-xl bg-slate-50 p-2.5 dark:bg-white/10">
+            <div className="min-w-0 flex-1 rounded-xl bg-slate-50 p-2.5 shadow-sm dark:bg-white/10">
               <div className="flex items-center justify-between gap-2">
                 <b className="text-xs">Priya Shah</b>
                 <span className="shrink-0 text-[10px] text-slate-500 dark:text-slate-400">2h ago</span>
@@ -577,7 +577,7 @@ function ComponentPreview({ item, values = {} }) {
           </div>
           <div className="flex gap-2">
             <span className="grid h-7 w-7 shrink-0 place-items-center rounded-full text-[9px] font-black text-white" style={{ background: "#0F6CBD" }}>JO</span>
-            <div className="min-w-0 flex-1 rounded-xl bg-slate-50 p-2.5 dark:bg-white/10">
+            <div className="min-w-0 flex-1 rounded-xl bg-slate-50 p-2.5 shadow-sm dark:bg-white/10">
               <div className="flex items-center justify-between gap-2">
                 <b className="text-xs">J. Okafor</b>
                 <span className="shrink-0 text-[10px] text-slate-500 dark:text-slate-400">1h ago</span>
@@ -682,8 +682,8 @@ function ComponentPreview({ item, values = {} }) {
               </span>
             ) : n.status === "done" ? (
               <span
-                className="rounded-lg border-2 px-2.5 py-1.5 text-[10px] font-bold text-[color:var(--badge-light)] dark:text-[color:var(--badge-dark)]"
-                style={{ background: `${item.color}18`, borderColor: item.color, "--badge-light": darken(item.color), "--badge-dark": lighten(item.color) }}
+                className={`rounded-lg border-2 px-2.5 py-1.5 text-[10px] font-bold ${CONTAINER_TEXT_CLASS}`}
+                style={{ ...container(item.color), borderColor: item.color }}
               >
                 {n.label}
               </span>
