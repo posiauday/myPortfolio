@@ -16,8 +16,9 @@ SVG and CSS.
 | **Platform** | Microsoft's own official Power Platform product icons orbiting a central hub in two counter-rotating rings — pure CSS, no animation library (see `PlatformOrbit.jsx`). |
 | **Projects** (`#projects`) | Seven project showcases in a rail-and-window layout: pick a project from the rail, page through its screens in a window-framed preview. Every project is presented under a generic name and every number shown is synthetic. |
 | **Experience** (`#experience`) | An animated career timeline: a gradient rail draws itself in as you scroll past it (`useScrollFill`) with a glowing beam riding the same progress down the rail, each entry fades up into view the first time it's reached (`useRevealEach`), the current role's card traces a rotating border-beam, and every card gets a cursor-tracked spotlight glow (`useSpotlight`). A number ticker counts up the years of experience on scroll-in, and "Show more" expands a card's remaining highlights via a smooth grid-row transition rather than popping open. Real employers, roles and dates, each with a collapsible highlight list. |
-| **Components** (`#components`) | Searchable, category-filtered catalog of 25 components. The unfiltered view defaults to 6 curated flagship picks (`FEATURED_IDS`) rather than all 25 at once — a "Browse all 25" toggle expands it, and searching or picking a category always searches/shows the full catalog regardless of the toggle. A "Copy brand theme YAML" button generates a real Power Apps Studio theme (Themes panel > Add a theme > Paste theme) seeded from the site's own brand green. |
-| **Component detail** | Per-component page with Preview, Variants, Properties, Events, Architecture, Examples, Accessibility and Limitations tabs, a live property configurator that regenerates the generated YAML (in two schema-conformant forms — see below) as you edit values, copyable docs, and an optional live Power Apps embed. Lives at `#components/<id>` (`useComponentRoute`), so the browser back button closes it and a direct link opens straight to that component. |
+| **Components** (`#components`) | The homepage shows 6 curated flagship picks (`FEATURED_IDS`), always — "Browse all 25 components" opens the separate Catalog page (`Catalog.jsx`, its own full page, own `#catalog` route) rather than expanding this section in place. A "Copy brand theme YAML" button generates a real Power Apps Studio theme (Themes panel > Add a theme > Paste theme) seeded from the site's own brand green. |
+| **Catalog** (`#catalog`) | The full, searchable, category-filtered 25-component grid, as its own page — search/category state lives here and resets each time it's opened, deliberately not shared with the homepage's fixed featured set. |
+| **Component detail** | Per-component page with Preview, Variants, Properties, Events, Architecture, Examples, Accessibility and Limitations tabs, a live property configurator that regenerates the generated YAML (in two schema-conformant forms — see below) as you edit values, copyable docs, and an optional live Power Apps embed. Lives at `#components/<id>` (`useComponentRoute`), so the browser back button closes it and a direct link opens straight to that component — and closing it returns to wherever it was actually opened from, home or Catalog, not always home. |
 | **Recognition** (`#recognition`) | Awards, delivery-scale highlights, and certifications — a status pill reads "Certified" (green) or whatever else is in progress (amber). |
 | **Skills** | LinkedIn's real skill list with a checkmark on the ones actually endorsed — not composed testimonials, since no written quotes exist to use. |
 
@@ -94,12 +95,26 @@ src/
    `src/data/componentLibrary.js`.
 2. Optionally add an entry to `overrides`, keyed by the slugified title
    (`"Enterprise Calendar"` → `"enterprise-calendar"`), to replace the
-   category defaults for `properties`, `events`, `architecture`, `examples`,
-   `accessibility` or `limitations`.
+   category defaults for `summary`, `properties`, `events`, `architecture`,
+   `examples`, `accessibility` or `limitations`.
 
 Everything else — the catalog card, the detail page tabs, the generated
 `cmp<Pascal>.yaml` and the copyable markdown docs — is derived from that data,
 so the YAML and the Properties/Events tabs can never drift apart.
+
+A component with an `overrides` entry is claiming a real, cross-checked
+contract (that's what the "Verified" maturity badge and its YAML status text
+both say) — so every field in its override should actually be specific to
+that component, not left as an unedited copy of the category default or
+another component's own override. A pass over all 11 `overrides` entries
+found exactly that gap twice — `responsive-line-chart`'s `examples` was a
+verbatim, unedited copy of `baseByCategory.Analytics.examples`, and
+`enterprise-mega-menu`'s largely duplicated `enterprise-sidebar`'s — plus
+9 of the 11 `overrides` entries had no `accessibility` array at all despite
+having bespoke everything else, quietly falling back to the generic
+category-level text instead. Both are fixed now; if a future override skips
+a field, double-check it isn't accidentally inheriting a sibling's leftover
+copy rather than genuinely sharing the category default.
 
 ### YAML schema conformance
 
@@ -181,21 +196,38 @@ would silently carry over and describe the wrong component's YAML.
 
 ### Component detail routing
 
-Opening a component swaps in an entirely different full-page component
-(`Detail`), not a route in the usual sense, so without `useComponentRoute` the
-browser's back button had nowhere useful to go and a shared link could only
-ever land on the homepage. The hook keeps that swap in sync with
-`#components/<id>` via `history.pushState` (not `location.hash =`, which
-would also trigger the browser's own scroll-to-anchor for the plain
-`#components` case, since a real element already carries that id) and
-listens for `popstate` to handle back/forward. An unrecognized id in the URL
-just falls back to the homepage rather than erroring.
+`useComponentRoute` is a small three-view router — homepage, the Catalog
+page, or a component's Detail page — kept as one state machine rather than
+three independent pieces of state. That's a deliberate choice, not just
+tidiness: `history.pushState` (used throughout, over assigning
+`location.hash =`, for the reason below) never fires a `popstate` event, so
+a pushState call made inside one hook has no way to tell a *different*
+hook's own state that the URL just changed. Three independent hooks —
+tried first — couldn't reliably tell Catalog to open itself back up after
+Detail closes, since Detail's own close handler has no way to notify a
+sibling hook it doesn't know about. One hook owning one `view` value
+sidesteps that: every transition, wherever it's triggered from, updates
+the same state directly, and only real browser back/forward (which *does*
+fire `popstate`) needs the one `popstate` listener to catch up.
 
-This intentionally covers only the Detail page swap — which project/slide is
-selected in `ProjectsSection`, and the catalog's search/category filters,
-stay in plain component state. Those are shallower, more transient
-selections where losing them to a page refresh or a back-button press is a
-reasonable tradeoff against the added complexity of routing all of them too.
+Opening a component remembers whichever of home or Catalog it was actually
+opened from (`returnHashRef`), so closing Detail goes back there rather than
+always landing on the homepage — open a component from the full Catalog and
+its own "Components" back link returns you to Catalog, not home. A direct
+link with no prior in-app navigation, or an id the catalog doesn't
+recognize, both fall back to home rather than erroring.
+
+Deliberately used `pushState` rather than assigning `location.hash =` — the
+latter also triggers the browser's own scroll-to-anchor behavior, which
+matters here because a real element carries the id `"components"` for the
+homepage section nav link; assigning that hash while Catalog or Detail (both
+full-page replacements) are showing would be a silent no-op today, but a
+real bug waiting for the day something else shares that id.
+
+This intentionally covers only the three views above — which project/slide
+is selected in `ProjectsSection` stays in plain component state, a shallower,
+more transient selection where losing it to a refresh or back-press is a
+reasonable tradeoff against routing it too.
 
 ### Adding a project screen
 

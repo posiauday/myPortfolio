@@ -123,20 +123,25 @@ const baseByCategory = {
 // verbatim, since that library's YAML and prose are its own.
 const overrides = {
   "executive-kpi-card": {
+    summary: "A single formatted measure with a trend arrow, a target comparison, and a click-through into supporting detail.",
     properties: [["Label", "Text", "Active projects", "Metric name"], ["Value", "Text", "156", "Formatted measure"], ["Trend", "Number", "12.4", "Change from comparison period"], ["Target", "Number", "150", "Target value"], ["Status", "Text", "On track", "Accessible status"], ["TooltipText", "Text", "Blank", "Calculation guidance"]],
     events: [["OnSelect", "Opens supporting detail"]],
     architecture: ["Host provides governed DAX measure", "Card formats value, trend and status", "OnSelect routes to a drill-through page"],
     examples: ["Active projects", "At-risk projects", "Submitted this month"],
+    accessibility: ["Status is its own text property, not inferred from color, so a screen reader announces \"On track\" even where the trend arrow's color can't be perceived", "TooltipText carries the calculation explanation as text, not only as a hover-only visual", "Trend direction reads as a word alongside the arrow glyph, not the glyph alone"],
     limitations: ["Formatting must match the measure", "Tooltip definitions must be maintained with KPI logic"]
   },
   "responsive-line-chart": {
+    summary: "A single-series trend line rendered as one dependency-free inline SVG, with an auto-scaling axis and a matching gradient fill.",
     properties: [["ChartData", "Table", "12-month sample", "x (ordinal), y (value), label (axis text); auto-sorted by x"], ["LineColor", "Text", "#168326", "Hex color for the line and its area-fill gradient"], ["Smooth", "Boolean", "true", "Cubic-curve line versus straight segments"], ["ShowPointLabels", "Boolean", "false", "Formatted value shown above each point"], ["Animate", "Boolean", "true", "Staggered draw-in animation on load"]],
     events: [],
     architecture: ["The whole chart is one Image control rendering an inline SVG, so it carries no charting-library dependency", "The Y-axis always starts at zero and auto-scales to a rounded ceiling with headroom rather than fitting tightly to the data", "A built-in gradient fades from LineColor to transparent, so the fill always matches whatever accent color is passed in"],
-    examples: ["Executive KPI strip", "Portfolio trend panel", "Operational scorecard"],
+    examples: ["Monthly revenue trend", "Ticket volume over time", "SLA compliance history"],
+    accessibility: ["The chart is one Image control, so it needs AltText summarizing the trend in words (e.g. \"Revenue up 12% over 12 months\") — the SVG itself carries no accessible structure of its own", "ShowPointLabels prints values directly on the chart for anyone who can see the image but not resolve fine gridlines", "Never rely on LineColor alone to convey state; pair it with a text summary elsewhere on the screen"],
     limitations: ["Single series only; a multi-series comparison needs a different chart", "No interactive tooltips, since inline SVG inside an Image control cannot respond to hover"]
   },
   "deadline-intelligence": {
+    summary: "A countdown card that excludes weekends and holidays before stating a due date, not just a raw day-count.",
     properties: [["StartDate", "DateTime", "Today()", "The date the clock runs from; that day itself is never counted"], ["Days", "Number", "30", "Allowed duration, capped at 400 internally"], ["CompletedDate", "DateTime", "Blank", "Set once resolved; stops the countdown"], ["Holidays", "Table", "US federal default", "Observed HolidayName / HolidayDate pairs; override with your own"], ["Config", "Record", "Business days", "Count mode, working-week days, due-soon threshold and compact layout"]],
     events: [["OnSelect", "Returns the card selection"]],
     architecture: ["Weekends and observed holidays are excluded before a due date is picked, since an office closed on an observed Friday is still closed", "A bounded window of candidate dates is generated and searched rather than solved analytically, so an arbitrary working week can be priced in", "Every output derives from the inputs with no stored state, so the card is correct the instant it is placed"],
@@ -145,59 +150,75 @@ const overrides = {
     limitations: ["Day-based, not hour-based", "Store the computed due date and reuse it rather than recalculating on every read, or a later holiday-table correction can quietly move a date someone was already given"]
   },
   "activity-timeline": {
+    summary: "A category-colored, rail-connected activity feed with per-category filtering and a loading skeleton state.",
     properties: [["Items", "Table", "Sample entries", "Event title, description, author, timestamp and category; each card sizes itself to its content"], ["FilterOptions", "Table", "Six categories", "Values shown in the filter dropdown; must match Items' category values"], ["IconMap", "Table", "Default mapping", "Maps each category to an icon and a rail dot color"], ["IsLoading", "Boolean", "false", "Swaps in skeleton placeholder cards instead of data"], ["CardHeight", "Number", "104", "Minimum card height; cards grow past it to fit their content"]],
     events: [["OnItemSelect", "Returns the tapped record in full"], ["OnExport", "Fires from the toolbar's export action"], ["OnPrint", "Fires from the toolbar's print action"]],
     architecture: ["A single variable-height gallery draws a rail line connecting category-colored dots to each card", "Entries flagged with a sub-detail render an extra HTML block below the card, for something like an email preview", "Category, icon and dot color are all data-driven through IconMap, never hardcoded per entry"],
     examples: ["Case audit history", "Approval tracking", "CRM activity"],
+    accessibility: ["IsLoading swaps in skeleton cards carrying a text-equivalent \"Loading activity…\" label, not just a bare shimmer", "Each entry's category is announced through its IconMap text label, not only its icon or dot color", "The rail's connecting line is decorative; reading order follows gallery order, not visual position on the line"],
     limitations: ["A very long sub-detail message grows its card and can slow gallery scrolling; cap it at the source", "Filtering shows one active category at a time, driven by FilterOptions"]
   },
   "enterprise-calendar": {
+    summary: "A month/week/agenda calendar that reports its own visible date window so the host loads only what's on screen.",
     properties: [["Events", "Table", "Required", "Flat occurrences, one row per day an event appears on; a multi-day event is several rows"], ["Channels", "Table", "Required", "Category key, title and color used to tint each chip"], ["FocusDate", "DateTime", "Today()", "Which month or week opens first"], ["View", "Text", "month", "month, week or agenda"], ["Config", "Record", "Default", "Row height, chip slots, first day of week, work hours and holiday tinting"]],
     events: [["OnRangeChange", "Fires whenever the visible window moves; returns the exact start and end drawn"], ["OnViewChange", "Fires when the toolbar switches views"], ["OnSelectDay", "Fires when a day cell or its overflow link is tapped"], ["OnSelectEvent", "Fires when a chip is tapped"]],
     architecture: ["The component reports the date window it is about to draw, so the host loads only that bounded window rather than a whole list", "Month, week and agenda each render from one flat gallery per view, never nested, so no inner control ever reads a frozen ThisItem", "Recurrence must already be materialized into individual occurrence rows before it reaches the component; it does not expand a rule itself"],
     examples: ["Reporting calendar", "Inspection schedule", "Leave and coverage"],
+    accessibility: ["Every day cell exposes its full date as an accessible name, not just the day number shown visually", "Channel color tints are always paired with the channel's text title on the chip itself, never color alone", "Switching View (month/week/agenda) goes through the toolbar's own labeled buttons, not a silent visual swap"],
     limitations: ["No drag-to-reschedule; a chip tap is read-only navigation", "A repeating series must already exist as one row per occurrence"]
   },
   "accordion-record-list": {
+    summary: "A flat, two-level accordion — parent groups over child rows — that renders any status set through a shared Tag/Tone pair.",
     properties: [["Groups", "Table", "Sample orders", "Parent rows; GroupKey must never be zero, since zero is the internal collapsed-state sentinel"], ["Items", "Table", "Sample lines", "Child rows linked to a parent by GroupKey"], ["Config", "Record", "Light, all switches on", "Every key is Coalesced, so a partial record is safe"], ["Title", "Text", "\"Orders\"", "Heading shown above the list"]],
     events: [["OnSelectGroup", "Fires after the tapped group's expanded state has already changed"], ["OnSelectItem", "Fires when a child row is tapped"], ["OnMoveUp", "Returns the row's key and whether it was a group or an item"], ["OnMoveDown", "Returns the row's key and whether it was a group or an item"], ["OnEdit", "Opens the host's own editor for a group or item"], ["OnDelete", "Requests the host's own confirmation and removal"]],
     architecture: ["One flat gallery renders both parent and child rows, avoiding nested-gallery height constraints entirely", "Tag and Tone are separate — Tag is the label text, Tone is the color — so the same control renders order states, approval states or task states with no extra configuration", "Every action raises an event and stops; the component owns no data and performs no Patch itself"],
     examples: ["Project phases and tasks", "Orders and lines", "Checklist sections"],
+    accessibility: ["Expand/collapse exposes an accessible expanded state on the group header, not just a rotating chevron", "Tag/Tone pairs always render the Tag text — Tone's color is never the only signal for a row's state", "OnMoveUp/OnMoveDown are reachable from the keyboard, not only from drag handles"],
     limitations: ["GroupKey can never be zero, since zero is reserved to mean nothing expanded", "Comfortable into the low hundreds of groups; past that, paging beats an ever-taller accordion"]
   },
   "enterprise-data-table": {
+    summary: "One row contract rendered as a table, card, or list, with status/priority colors and row actions resolved through shared lookup config.",
     properties: [["Items", "Table", "Sample records", "Rows to display; progress columns need CompletedSteps and TotalSteps"], ["ViewMode", "Text", "table", "Initial view: table, card or list"], ["ContextMenuItems", "Table", "View / Edit / Delete", "Row action menu items — key, label, enabled, visible"], ["StatusConfig", "Table", "Default", "Status-to-color lookup, case-insensitive, with a default fallback row"], ["PriorityConfig", "Table", "Default", "Priority-to-color lookup, same pattern as StatusConfig"]],
     events: [["OnRowSelect", "Fires when a row, card or list item is tapped"], ["OnMenuItemSelect", "Fires when a row action is chosen; returns the item and the action key"], ["OnViewChange", "Fires when the visitor switches between table, card and list views"]],
     architecture: ["Table, card and list views share one Items contract and one set of context menus", "Status and priority colors resolve through a lookup table with a default row, never a hardcoded switch", "Segmented progress bars render from CompletedSteps / TotalSteps fields already present on each row"],
     examples: ["Project register", "Case browser", "Responsive mobile list"],
+    accessibility: ["Status and Priority always render their StatusConfig/PriorityConfig text label, never the lookup color alone", "Switching ViewMode (table/card/list) keeps the same accessible row structure and selection state underneath", "The row-action menu's items carry accessible names for keyboard and screen-reader use, not an icon-only affordance"],
     limitations: ["The native row-action menu renders text labels only; custom per-item icons and colors are reserved but not wired up", "Column mapping must match the shaped Items contract exactly, so a raw source list needs a projection step first"]
   },
   "governed-file-upload": {
+    summary: "A staging-only file dropzone — nothing uploads, deletes, or persists until a flow handles the event it raises.",
     properties: [["Items", "Table", "Documents already on file", "Existing rows — Id, Name, SizeBytes, UploadedOn, UploadedBy, Ext"], ["MaxFileSize", "Number", "25", "Megabytes, enforced at staging time, not just shown as a hint"], ["MaxFiles", "Number", "5", "Cap on staged files; existing Items rows do not count against it"], ["AllowUpload", "Boolean", "true", "Governs both the dropzone's presence and the Upload / Cancel actions"], ["AllowDelete", "Boolean", "true", "Governs the delete icon on existing rows, independent of AllowUpload"]],
     events: [["OnSave", "Fires when Upload is pressed; hands back the staged files for a flow to persist"], ["OnCancel", "Fires when Cancel is pressed, after the staged list is already cleared"], ["OnView", "Fires from the preview icon on an existing row"], ["OnDownload", "Fires from the download icon on an existing row"], ["OnDelete", "Fires from the bin icon on an existing row"]],
     architecture: ["The dropzone stages files locally; nothing is queried or written until an event fires", "Staged files are exposed only inside OnSave, in both a native-file shape and a base64 shape, matching whichever input a flow trigger expects", "The host's flow performs the actual write; a Reset only on the success path keeps the staged list intact after a failure"],
     examples: ["SharePoint document library", "Case attachments", "Read-only document viewer"],
+    accessibility: ["MaxFileSize/MaxFiles limits are stated as visible text near the dropzone, not only enforced silently at staging time", "AllowUpload/AllowDelete set to false disables the affordance and states why, rather than just hiding it", "Each existing row's preview/download/delete icons carry accessible names, not icon glyphs alone"],
     limitations: ["The component never uploads, deletes or queries by itself — a flow triggered from OnSave / OnDelete does the real persistence", "File-type restriction is a hint only; enforcing it for real belongs in the flow"]
   },
   "governed-email-composer": {
+    summary: "A connector-free email composer that assembles a complete HTML message and hands it to whatever the host actually sends with.",
     properties: [["Directory", "Table", "Required", "People the To/CC pickers offer; needs DisplayName and Mail, JobTitle optional"], ["DefaultSubject", "Text", "Blank", "Prefills the subject; Config.LockSubject makes it read-only for a traceable reply"], ["ContextHtml", "Text", "Blank", "Trusted host markup rendered raw into a tinted box above the note"], ["Signature", "Text", "Blank", "Plain-text line appended to the body; escaped, unlike ContextHtml"], ["Busy", "Boolean", "false", "Disables every control and shows a sending state while the host's send is in flight"]],
     events: [["OnSend", "Fires once every output is populated; hands back recipients, subject, body and priority"], ["OnCancel", "Fires when the dialog is dismissed without sending"]],
     architecture: ["The component builds a complete table-based HTML email body but owns no connector; the host chooses Outlook, a flow or SMTP", "Recipients are de-duplicated and cleaned before OnSend, and unlicensed accounts with a blank address are dropped automatically", "ContextHtml is the one raw slot; anything interpolated into it is the host's own markup to escape"],
     examples: ["Record summary email", "Review request", "Status-change notification"],
+    accessibility: ["Busy disables every control and announces a sending state as text, not only a spinner", "To/CC picker results are announced by DisplayName, with Mail as a secondary detail, not the raw address alone", "ContextHtml renders inside a labeled, visually distinct box so it reads as quoted context, not the composer's own message"],
     limitations: ["The component does not send email itself, only assembles the message", "Any user-typed text placed inside ContextHtml must be escaped by the host, since that slot is rendered raw"]
   },
   "enterprise-sidebar": {
+    summary: "A collapsible navigation rail with a built-in user footer and context menu, not just a bare list of links.",
     properties: [["Items", "Table", "Required", "Navigation items with parent/child hierarchy, badges and section labels"], ["IsExpanded", "Boolean", "true", "Toggles between a 260px expanded rail and a 64px collapsed rail"], ["Theme", "Text", "Light", "Light or Dark theme"], ["UserName", "Text", "Blank", "Name shown in the footer's initials avatar"]],
     events: [["OnItemSelect", "Returns the selected navigation item"], ["OnExpandToggle", "Returns the new IsExpanded state"]],
     architecture: ["A single tree gallery renders parent and child items with expand and collapse state", "IsExpanded drives both the rail width and whether labels are shown next to icons", "A context menu and a user footer with an initials avatar are built in, not assembled separately"],
     examples: ["Enterprise app shell", "Record hierarchy", "Mobile-collapsed navigation"],
+    accessibility: ["OnExpandToggle lets the host announce the rail's new state, since a width change alone isn't perceivable to a screen reader", "Collapsed-rail icons keep their full item label as an accessible name even though it isn't shown visually", "The footer's initials avatar exposes UserName as its accessible name, not just visual initials"],
     limitations: ["Screen content must offset itself using the IsExpanded output; the rail does not push layout for you", "Icons are SVG strings, so an icon library or generator is the host's responsibility"]
   },
   "enterprise-mega-menu": {
+    summary: "A top-level nav bar whose dropdown panels are content-only, so editing a panel's items never touches the bar itself.",
     properties: [["MenuItems", "Table", "Sample items", "Top-level nav buttons — ID, Label, HasDropdown, Link"], ["DropdownItems", "Table", "Sample items", "Dropdown content linked to a parent via MenuID, with an optional Section header and a Column (1 or 2)"], ["DropdownColumns", "Number", "2", "1 for a simple list, 2 for a mega-menu layout"], ["NavAlign", "Text", "Center", "Left, Center or Right"], ["ActiveColor", "Color", "Brand accent", "Highlight color for the open, linked or last-selected state"]],
     events: [["OnItemSelect", "Fires from any top-level button or dropdown item; returns the selected record for routing"]],
     architecture: ["MenuItems defines the bar; DropdownItems holds every panel's content, joined by MenuID, so content edits never touch the bar", "A transparent screen-level dismiss control, placed first in the tree, closes an open panel on any outside tap", "Under roughly 500px every dropdown collapses to a single scrollable column regardless of DropdownColumns"],
-    examples: ["Enterprise app shell", "Mobile navigation", "Record hierarchy"],
+    examples: ["Marketing site header", "Product catalog navigation", "Documentation site nav"],
+    accessibility: ["ActiveColor highlights the open/linked state, but every such item also carries a text or aria state — the color is reinforcement, not the only signal", "The screen-level dismiss control that closes an open panel is reachable by Escape as well as an outside tap", "Below the ~500px collapse, the single scrollable column keeps the same reading order as the two-column layout above it"],
     limitations: ["Screen routing stays host-owned; OnItemSelect only reports what was picked", "A small set of built-in icon names is recognized by keyword; anything else needs a raw SVG string or data URI"]
   }
 };
@@ -230,7 +251,12 @@ const components = raw.map(([title, category, maturity], i) => {
     category,
     maturity,
     color: ["#168326", "#0F6CBD", "#5B5BD6", "#C239B3", "#D83B01"][i % 5],
-    summary: `A reusable ${category.toLowerCase()} pattern designed for responsive, governed enterprise Power Platform experiences.`,
+    // Every override with real property/event/architecture detail gets
+    // its own one-line summary now too — without spec.summary here,
+    // even a component with a fully bespoke contract still showed this
+    // same generic sentence, identical to every other component in its
+    // category, on its card and Preview tab.
+    summary: spec.summary || `A reusable ${category.toLowerCase()} pattern designed for responsive, governed enterprise Power Platform experiences.`,
     properties: spec.properties || base.properties,
     events: spec.events || base.events,
     architecture: spec.architecture || base.architecture,
