@@ -356,6 +356,109 @@ function ComponentPreview({ item, values = {} }) {
     );
   }
 
+  if (item.title === "Enterprise Mega Menu") {
+    const navButtons = ["Products", "Solutions", "Resources", "Pricing"];
+    const panel = {
+      Platform: ["Power Apps", "Power Automate", "Dataverse"],
+      Extend: ["Copilot Studio", "AI Builder", "Power Pages"]
+    };
+    return (
+      <div>
+        <div className="flex items-center justify-center gap-1 rounded-xl border border-slate-200 bg-white p-2 dark:border-white/10 dark:bg-white/5">
+          {navButtons.map((b, i) => (
+            <span
+              key={b}
+              className={`rounded-lg px-3 py-1.5 text-xs font-bold ${i === 0 ? "text-white" : "text-slate-600 dark:text-slate-300"}`}
+              style={i === 0 ? { background: item.color } : undefined}
+            >
+              {b}
+            </span>
+          ))}
+        </div>
+        <div className="mt-2 grid grid-cols-2 gap-4 rounded-xl border border-slate-200 bg-white p-4 dark:border-white/10 dark:bg-white/5">
+          {Object.entries(panel).map(([section, links]) => (
+            <div key={section}>
+              <span className="text-[10px] font-black uppercase text-slate-500 dark:text-slate-400">{section}</span>
+              <div className="mt-2 space-y-1.5">
+                {links.map(l => <div key={l} className="text-xs font-bold text-slate-700 dark:text-slate-200">{l}</div>)}
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  }
+
+  if (item.title === "Portfolio Command Card") {
+    const metrics = [
+      { label: "Health", value: "74%", color: item.color },
+      { label: "Active", value: "32", color: item.color },
+      { label: "At risk", value: "06", color: "#D13438" }
+    ];
+    const bars = [42, 56, 48, 70, 62, 82, 76, 94];
+    return (
+      <div>
+        <span className="text-xs font-black uppercase tracking-widest text-slate-500 dark:text-slate-400">Portfolio command</span>
+        <h3 className="mt-1 text-lg font-black">Executive overview</h3>
+        <div className="mt-4 grid grid-cols-3 gap-2">
+          {metrics.map(m => (
+            <div key={m.label} className="rounded-xl bg-slate-50 p-3 dark:bg-white/10">
+              <span className="text-[10px] text-slate-500 dark:text-slate-400">{m.label}</span>
+              <b
+                className="mt-1 block text-lg text-[color:var(--badge-light)] dark:text-[color:var(--badge-dark)]"
+                style={{ "--badge-light": darken(m.color), "--badge-dark": lighten(m.color) }}
+              >
+                {m.value}
+              </b>
+            </div>
+          ))}
+        </div>
+        <div className="mt-3 flex h-16 items-end gap-1.5 rounded-xl bg-slate-50 p-3 dark:bg-white/10">
+          {bars.map((h, i) => (
+            <div key={i} className="flex-1 rounded-t" style={{ height: `${h}%`, background: i === bars.length - 1 ? item.color : `${item.color}66` }} />
+          ))}
+        </div>
+      </div>
+    );
+  }
+
+  if (item.title === "Program Scorecard") {
+    const metrics = [
+      { name: "Budget", value: "92%", target: "100%", tone: item.color },
+      { name: "Schedule", value: "68%", target: "80%", tone: "#D83B01" },
+      { name: "Quality", value: "97%", target: "95%", tone: item.color },
+      { name: "Risk", value: "3 open", target: "0", tone: "#0F6CBD" }
+    ];
+    return (
+      <div className="grid grid-cols-2 gap-2">
+        {metrics.map(m => (
+          <div key={m.name} className="rounded-xl border-l-4 bg-slate-50 p-3 dark:bg-white/10" style={{ borderColor: m.tone }}>
+            <span className="text-[10px] font-bold text-slate-500 dark:text-slate-400">{m.name}</span>
+            <b className="mt-1 block text-xl">{m.value}</b>
+            <span className="text-[10px] text-slate-500 dark:text-slate-400">Target {m.target}</span>
+          </div>
+        ))}
+      </div>
+    );
+  }
+
+  if (item.title === "Operational Status Banner") {
+    return (
+      <div className="space-y-2">
+        <div className="flex items-center gap-2 rounded-xl bg-green-50 px-3 py-2.5 dark:bg-green-900/20">
+          <span aria-hidden="true" className="h-2 w-2 shrink-0 rounded-full bg-green-500" />
+          <span className="text-xs font-bold text-green-700 dark:text-green-300">All systems operational</span>
+          <span className="ml-auto shrink-0 text-[10px] font-bold text-green-700 dark:text-green-300">Updated 4m ago</span>
+        </div>
+        <div className="flex items-center gap-2 rounded-xl bg-amber-50 px-3 py-2.5 dark:bg-amber-900/20">
+          <span aria-hidden="true" className="h-2 w-2 shrink-0 rounded-full bg-amber-500" />
+          <span className="text-xs font-bold text-amber-700 dark:text-amber-300">Degraded performance &mdash; Reporting</span>
+          <span className="ml-auto shrink-0 text-[10px] font-bold text-amber-700 dark:text-amber-300">Updated 4m ago</span>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-3">
       {["Submitted", "In review", "Approved", "Operational"].map((x, i) => (

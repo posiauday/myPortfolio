@@ -161,20 +161,32 @@ one unreviewable pass through all 25:
    demonstrating the property does something, rather than existing only
    as a Properties-tab row.
 
-**Done so far** — 10 of the 11 "Verified" components, worked first since
-they're the ones already claiming a cross-checked contract, in two
-batches: Executive KPI Card, Responsive Line Chart, Deadline Intelligence,
-Activity Timeline, Enterprise Calendar; then Accordion Record List,
-Enterprise Data Table, Governed File Upload, Governed Email Composer,
-Enterprise Sidebar. Re-scanned with axe-core (WCAG 2A/2AA + best-practice)
-across each one's Preview and Variants tabs, light and dark, after every
-change — one real finding along the way (a "Low priority" badge's gray
-was too light to darken enough for AA contrast even after `darken()`;
-swapped to a properly mid-tone base color rather than special-casing the
-helper), zero violations remaining. Still on the old generic mockup and
-Standard/Compact/Dark/Mobile variants: Enterprise Mega Menu (the last
-"Verified" one) and the 14 "Original" components, worked through in the
-same batches next.
+**Done so far** — all 11 "Verified" components (worked first, since
+they're the ones already claiming a cross-checked contract), plus the
+first 4 "Original" ones, in three batches: Executive KPI Card, Responsive
+Line Chart, Deadline Intelligence, Activity Timeline, Enterprise Calendar;
+then Accordion Record List, Enterprise Data Table, Governed File Upload,
+Governed Email Composer, Enterprise Sidebar; then Enterprise Mega Menu,
+Portfolio Command Card, Program Scorecard, Operational Status Banner,
+Portfolio Risk Matrix. Re-scanned with axe-core (WCAG 2A/2AA +
+best-practice) across every component's Preview and Variants tabs, light
+and dark, after every change — two real findings caught this way: a "Low
+priority" badge's gray too light to darken enough for AA contrast (fixed
+with a properly mid-tone base color), and Portfolio Command Card's metric
+values using a raw brand/danger color as text with no dark-mode pairing
+(fixed with the same `darken()`/`lighten()` CSS-variable treatment used
+everywhere else on this page) — zero violations remaining after each. The
+remaining 10 "Original" components are still on the generic mockup and
+Standard/Compact/Dark/Mobile variants, worked through in the same batches
+next.
+
+Portfolio Command Card is worth calling out specifically: its contract
+(Metrics/ChartData) is the *actual* contract this site's own hero card on
+the homepage already renders — Health/Active/At risk plus the 8-bar
+activity strip — not a separate illustration of a similar idea. When a
+component in this catalog can be grounded in something this project
+itself has already built and shipped, that's stronger grounding than an
+external reference.
 
 ### YAML schema conformance
 

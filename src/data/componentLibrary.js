@@ -323,7 +323,76 @@ const overrides = {
     architecture: ["MenuItems defines the bar; DropdownItems holds every panel's content, joined by MenuID, so content edits never touch the bar", "A transparent screen-level dismiss control, placed first in the tree, closes an open panel on any outside tap", "Under roughly 500px every dropdown collapses to a single scrollable column regardless of DropdownColumns"],
     examples: ["Marketing site header", "Product catalog navigation", "Documentation site nav"],
     accessibility: ["ActiveColor highlights the open/linked state, but every such item also carries a text or aria state — the color is reinforcement, not the only signal", "The screen-level dismiss control that closes an open panel is reachable by Escape as well as an outside tap", "Below the ~500px collapse, the single scrollable column keeps the same reading order as the two-column layout above it"],
-    limitations: ["Screen routing stays host-owned; OnItemSelect only reports what was picked", "A small set of built-in icon names is recognized by keyword; anything else needs a raw SVG string or data URI"]
+    limitations: ["Screen routing stays host-owned; OnItemSelect only reports what was picked", "A small set of built-in icon names is recognized by keyword; anything else needs a raw SVG string or data URI"],
+    // NavAlign and DropdownColumns are already real properties on this
+    // component — variants below are just its own real states, not new
+    // invented ones.
+    variants: [
+      ["Center-aligned", "Nav buttons centered — NavAlign's default, as shown in Preview."],
+      ["Left-aligned", "Nav buttons pinned to the left edge (NavAlign: Left), for a logo-plus-nav header layout."],
+      ["Simple dropdown", "DropdownColumns at 1 — a plain single-column list under a button, no Section headers, for a panel that's just links."],
+      ["Mega panel", "DropdownColumns at 2 with Section headers — the full mega-menu layout, for a panel with several grouped link categories."]
+    ]
+  },
+  "portfolio-command-card": {
+    summary: "An executive-overview card — three headline metrics over a weekly activity chart — built from the same contract this site's own hero card actually uses.",
+    properties: [["Eyebrow", "Text", "Portfolio command", "Small uppercase label above the title"], ["Title", "Text", "Executive overview", "Card heading"], ["Metrics", "Table", "Health 74% / Active 32 / At risk 06", "Exactly 3 tiles — Label, Value, Tone (Positive/Negative/Neutral)"], ["ChartData", "Table", "8-week sample", "Bar values for the activity strip beneath the tiles"], ["HighlightIndex", "Number", "-1", "Which chart bar draws in the accent color instead of the muted one; -1 highlights none"]],
+    events: [["OnMetricSelect", "Returns the tapped metric tile"], ["OnChartSelect", "Returns the tapped bar's index and value"]],
+    architecture: ["This is the same component contract this portfolio's own hero section renders — Metrics/ChartData here are the real Health/Active/At risk tiles and the 8-bar activity strip already live on the homepage, not a separate illustration of a similar idea", "Metrics is fixed at exactly 3 entries by design — a 3-up grid reads cleanly at a glance; a headline-metrics card with more than 3 numbers stops being skimmable and needs a different layout", "Tone (Positive/Negative/Neutral) resolves each tile's value color through the same brand/danger palette the rest of this catalog uses, never a hardcoded red/green pair"],
+    examples: ["Executive overview", "Program health snapshot", "Weekly portfolio digest"],
+    accessibility: ["Tone drives color only after the value and its Label already read correctly as plain text — nothing here is conveyed by color alone", "The activity strip's HighlightIndex bar is a visual accent only; its value is identical in kind to every other bar and reads the same to a screen reader", "OnChartSelect and OnMetricSelect both return enough context (index, value, label) that a host can build a fully keyboard-operable equivalent without guessing at what was tapped"],
+    limitations: ["Exactly 3 metrics by design — a 4th is dropped rather than silently breaking the grid; use Program Scorecard for a longer list of RAG metrics instead", "The activity strip is a plain bar chart, not the full axis/gradient treatment ResponsiveLineChart has; swap to that component for a trend that needs its own axis"],
+    variants: [
+      ["Standard", "All 3 metric tiles plus the activity chart beneath them — the full card, as shown on this site's own hero and in Preview."],
+      ["Metrics only", "Just the 3-tile grid, no chart — for a screen already showing its own trend visual elsewhere."],
+      ["Chart only", "Just the activity strip, no metric tiles — for a compact trend-only placement."],
+      ["Compact", "2 tiles side by side and no chart, for a narrower card that still needs to lead with a couple of headline numbers."]
+    ]
+  },
+  "program-scorecard": {
+    summary: "A grid of RAG-status metric cards against a target, the same red/amber/green scorecard pattern Power BI's own Metrics feature uses.",
+    properties: [["Metrics", "Table", "6 sample KPIs", "Name, Value, Target, Tone (Red/Amber/Green)"], ["Period", "Text", "This quarter", "Reporting period shown under the heading"], ["ShowTrend", "Boolean", "false", "Draws a small sparkline under each metric using the same SVG technique ResponsiveLineChart uses"]],
+    events: [["OnMetricSelect", "Returns the tapped metric, for drilling into its own detail page"]],
+    architecture: ["Each metric card resolves its Red/Amber/Green tone the same way Power BI's own Metrics/Scorecards feature does — value compared against Target, not a hardcoded threshold baked into this component", "ShowTrend reuses buildLinePath, the same smoothed-SVG helper Executive KPI Card's own sparkline and ResponsiveLineChart share, rather than a separate small-chart implementation", "The grid reflows from a fixed column count down to a single column by width, so the same Metrics table works on a dashboard-width screen and a phone-width one"],
+    examples: ["Quarterly OKR scorecard", "Program health dashboard", "Ministry KPI review"],
+    accessibility: ["Tone is announced through a text status word (\"On target\", \"At risk\", \"Off track\") next to the color, never the color alone", "Value and Target are both always visible as text, so \"how far off\" is readable without comparing two colors by eye", "ShowTrend's sparkline is decorative; the same direction it shows is already stated by Tone's text status"],
+    limitations: ["Tone is computed from Value vs. Target by the host before it reaches the component — the component itself has no notion of what a metric's Red/Amber/Green thresholds should be", "Best for a double-digit number of metrics; past roughly 20, Enterprise Data Table's own card view reads better"],
+    variants: [
+      ["Standard", "A grid of RAG cards, each with name/value/target — as shown in Preview."],
+      ["Compact", "One row per metric instead of a card grid, for a longer list in limited vertical space."],
+      ["Trend", "Standard, with ShowTrend on — every card gets its own small sparkline under the number."],
+      ["Print", "A single column, larger type, no hover states — for a scorecard exported or printed as a static report page."]
+    ]
+  },
+  "operational-status-banner": {
+    summary: "A full-width status banner with four real severity states, the same Operational/Degraded/Outage/Maintenance vocabulary Azure's own status page uses.",
+    properties: [["Status", "Text", "Operational", "Operational, Degraded, Outage or Maintenance — drives the banner's color and icon"], ["Message", "Text", "All systems operational", "The banner's own headline text"], ["LastUpdated", "DateTime", "Now()", "Shown as a relative time (\"Updated 4 minutes ago\")"], ["AffectedSystems", "Table", "Blank", "Named systems impacted; only rendered when Status is Degraded or Outage"], ["Dismissible", "Boolean", "true", "Whether the banner shows a close control at all"]],
+    events: [["OnDetailsSelect", "Fires when the message or an affected-system chip is tapped, for routing to a full incident page"], ["OnDismiss", "Fires when the close control is used; the host owns whether the banner comes back on the next visit"]],
+    architecture: ["Status is one of exactly four real states, matching Azure's own public status page vocabulary, not an open-ended free-text field a host could misspell or invent new colors for", "AffectedSystems only renders while Status is Degraded or Outage — an Operational or Maintenance banner never shows an empty, confusing systems list", "LastUpdated always renders as relative text (\"4 minutes ago\"), recomputed on every render rather than frozen at whatever time the banner first mounted"],
+    examples: ["Platform status strip", "Scheduled maintenance notice", "Incident banner"],
+    accessibility: ["Status's four states each carry a distinct icon and text label together, not color alone — a Degraded amber banner and an Outage red one never rely on color to tell them apart", "The banner is a live region, so Status changing from Operational to Outage while the page is already open is actually announced, not just repainted silently", "Dismissible's close control has a real accessible name (\"Dismiss status banner\"), not an icon-only affordance"],
+    limitations: ["The component only displays a status someone else determined — it has no monitoring or health-check logic of its own", "Four states only; a system needing more granular sub-statuses needs to roll them up into one of these four before they reach the banner"],
+    variants: [
+      ["Operational", "The calm, minimal state — a thin green strip with the all-clear message, as shown in Preview."],
+      ["Degraded", "Amber, with AffectedSystems listed — some capability is impaired but the platform is still usable."],
+      ["Outage", "Red and the most prominent of the four — a real incident, front and center until resolved."],
+      ["Maintenance", "Blue/informational, for a scheduled window stated in advance rather than an unplanned incident."]
+    ]
+  },
+  "portfolio-risk-matrix": {
+    summary: "A likelihood-by-impact risk heatmap — each cell's count and color come from the same Risks table, never a hardcoded grid.",
+    properties: [["Risks", "Table", "9-cell sample", "Likelihood (1-3), Impact (1-3) and either a Count or a list of named risks per cell"], ["Size", "Number", "3", "3 for a 3x3 grid, 5 for a finer-grained 5x5"], ["ShowLabels", "Boolean", "true", "Draws Likelihood/Impact axis labels around the grid"], ["ShowNames", "Boolean", "false", "Cells show each risk's name instead of a plain count, once there's room for it"]],
+    events: [["OnCellSelect", "Returns the tapped cell's Likelihood, Impact and its full list of risks"]],
+    architecture: ["Cell color is computed from Likelihood x Impact against a standard traffic-light gradient (low-low is green, high-high is red), not a hand-authored color per cell", "Size toggles between a 3x3 and a 5x5 grid from the same Risks data shape — a 5x5 just expects Likelihood/Impact values up to 5 instead of 3", "A cell with zero matching risks still renders, empty, rather than collapsing the grid's geometry — the matrix's shape stays predictable regardless of how risks happen to cluster"],
+    examples: ["Program risk register", "Vendor risk review", "Project intake screening"],
+    accessibility: ["Each cell's color is reinforced by its own count or risk-name text — nothing here is conveyed by the red/amber/green gradient alone", "ShowLabels' axis labels give every cell an accessible position (\"High likelihood, Medium impact\") beyond just its grid coordinates", "OnCellSelect returns the full list of risks in a cell, so a host can build a genuinely keyboard-operable drill-through rather than requiring a mouse hover to see what's inside a cell"],
+    limitations: ["A risk with a Likelihood or Impact outside 1-Size is dropped rather than breaking the grid; validate upstream", "ShowNames only reads cleanly with a small number of risks per cell — a cell with many risks needs the count view, not names, to stay legible"],
+    variants: [
+      ["3x3", "The compact, coarse-grained matrix — as shown in Preview."],
+      ["5x5", "A finer-grained grid for a risk register mature enough to score likelihood and impact on a five-point scale."],
+      ["Compact", "No axis labels, just the colored grid — for a small dashboard tile rather than a full risk-review screen."],
+      ["Detailed", "ShowNames on — each cell lists its risks by name instead of a plain count, once there's room for it."]
+    ]
   }
 };
 
