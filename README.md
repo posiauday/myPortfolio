@@ -217,6 +217,19 @@ its own "Components" back link returns you to Catalog, not home. A direct
 link with no prior in-app navigation, or an id the catalog doesn't
 recognize, both fall back to home rather than erroring.
 
+Detail's own header also carries **Previous/Next** buttons that cycle
+through the full component list (wrapping at both ends) without leaving the
+Detail page — added after noticing the Catalog page itself had shipped with
+no way to reach it from the top nav, and a related gap alongside it: once
+inside a component's Detail page there was no way to browse to another one
+except backing all the way out to Home or Catalog and clicking again. Both
+are now fixed — see "Nav's All Components link" below for the first one.
+Previous/Next use a separate `switchComponent` (not `openComponent`)
+specifically so they don't touch `returnHashRef`: browsing through several
+components in a row and then hitting "back to Components" still returns to
+wherever Detail was *first* opened from, not to the previous component's
+own Detail page.
+
 Deliberately used `pushState` rather than assigning `location.hash =` — the
 latter also triggers the browser's own scroll-to-anchor behavior, which
 matters here because a real element carries the id `"components"` for the
@@ -228,6 +241,25 @@ This intentionally covers only the three views above — which project/slide
 is selected in `ProjectsSection` stays in plain component state, a shallower,
 more transient selection where losing it to a refresh or back-press is a
 reasonable tradeoff against routing it too.
+
+### Nav's "All Components" link
+
+The top nav's four other links (Projects/Experience/Components/Recognition)
+all scroll to a section on the homepage — "All Components" is the odd one
+out, since it opens a different view (Catalog) rather than scrolling. It
+renders as a `<button>` calling `openCatalog()` instead of an `<a href>`,
+placed in `NAV_ITEMS` as `{ label: "All Components" }` with no `href` — the
+one thing that tells the nav's render loop to treat it differently
+(`useActiveSection`'s scroll-spy also filters it out by the same missing
+`href`, since there's no in-page section for it to ever be "active" in).
+
+This exists because the Catalog page originally shipped with no nav entry
+at all — reachable only via the "Browse all 25 components" button inside
+the homepage's Components section, so a visitor who didn't scroll that far
+could miss that it existed. Worth remembering as a general lesson for this
+project: when a new page or view ships, check it's actually *reachable*
+from the site's primary navigation, not just that the view itself works
+correctly in isolation.
 
 ### Adding a project screen
 

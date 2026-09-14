@@ -40,8 +40,18 @@ const IMPACT_STATS = [
 // Module scope so both the nav labels and the scroll-spy's ids array
 // stay referentially stable across renders (an inline literal would
 // re-run useActiveSection's IntersectionObserver setup every render).
-const NAV_ITEMS = ["Projects", "Experience", "Components", "Recognition"];
-const NAV_SECTION_IDS = NAV_ITEMS.map(x => x.toLowerCase());
+// "All Components" is the odd one out: it navigates to a different
+// view (the Catalog page) rather than scrolling to a section on this
+// one, so it carries no `href` — scroll-spy only watches the other
+// four, real, in-page section ids.
+const NAV_ITEMS = [
+  { label: "Projects", href: "#projects" },
+  { label: "Experience", href: "#experience" },
+  { label: "Components", href: "#components" },
+  { label: "All Components" },
+  { label: "Recognition", href: "#recognition" }
+];
+const NAV_SECTION_IDS = NAV_ITEMS.filter(x => x.href).map(x => x.href.slice(1));
 
 /* ============================================================
    MAIN PORTFOLIO
@@ -52,7 +62,7 @@ const NAV_SECTION_IDS = NAV_ITEMS.map(x => x.toLowerCase());
    ============================================================ */
 export default function Portfolio() {
   const [dark, setDark] = useState(false);
-  const { view, openComponent, openCatalog, goHome, closeDetail } = useComponentRoute(components);
+  const { view, openComponent, switchComponent, openCatalog, goHome, closeDetail } = useComponentRoute(components);
   const [menuOpen, setMenuOpen] = useState(false);
   const [barsRef, barsIn] = useReveal();
   const scrolled = useParallax();
@@ -90,7 +100,7 @@ export default function Portfolio() {
     return () => window.removeEventListener("keydown", onKeyDown);
   }, [menuOpen]);
 
-  if (view.name === "detail") return <Detail item={view.item} dark={dark} onBack={closeDetail} />;
+  if (view.name === "detail") return <Detail item={view.item} items={components} dark={dark} onBack={closeDetail} onSwitch={switchComponent} />;
   if (view.name === "catalog") return <Catalog dark={dark} onSelect={openComponent} onBack={goHome} />;
 
   return (
@@ -126,18 +136,29 @@ export default function Portfolio() {
               </div>
             </div>
             <div className="hidden gap-1 md:flex">
-              {NAV_ITEMS.map(x => {
-                const isActive = x.toLowerCase() === activeSection;
+              {NAV_ITEMS.map(({ label, href }) => {
+                if (!href) {
+                  return (
+                    <button
+                      key={label}
+                      onClick={openCatalog}
+                      className="rounded-full px-4 py-2 text-sm font-bold transition-colors hover:bg-green-50 hover:text-[#168326] dark:hover:bg-white/10"
+                    >
+                      {label}
+                    </button>
+                  );
+                }
+                const isActive = href.slice(1) === activeSection;
                 return (
                   <a
-                    key={x}
-                    href={`#${x.toLowerCase()}`}
+                    key={label}
+                    href={href}
                     aria-current={isActive ? "true" : undefined}
                     className={`rounded-full px-4 py-2 text-sm font-bold transition-colors hover:bg-green-50 hover:text-[#168326] dark:hover:bg-white/10 ${
                       isActive ? "bg-green-50 text-[#168326] dark:bg-white/10 dark:text-[#4ADE80]" : ""
                     }`}
                   >
-                    {x}
+                    {label}
                   </a>
                 );
               })}
@@ -161,19 +182,33 @@ export default function Portfolio() {
               id="mobile-nav-menu"
               className="mt-2 flex flex-col gap-1 rounded-2xl border border-white/70 bg-white/95 p-2 shadow-xl backdrop-blur dark:border-white/10 dark:bg-[#101816]/95 md:hidden"
             >
-              {NAV_ITEMS.map(x => {
-                const isActive = x.toLowerCase() === activeSection;
+              {NAV_ITEMS.map(({ label, href }) => {
+                if (!href) {
+                  return (
+                    <button
+                      key={label}
+                      onClick={() => {
+                        setMenuOpen(false);
+                        openCatalog();
+                      }}
+                      className="rounded-xl px-4 py-3 text-left text-sm font-bold transition-colors hover:bg-green-50 hover:text-[#168326] dark:hover:bg-white/10"
+                    >
+                      {label}
+                    </button>
+                  );
+                }
+                const isActive = href.slice(1) === activeSection;
                 return (
                   <a
-                    key={x}
-                    href={`#${x.toLowerCase()}`}
+                    key={label}
+                    href={href}
                     onClick={() => setMenuOpen(false)}
                     aria-current={isActive ? "true" : undefined}
                     className={`rounded-xl px-4 py-3 text-sm font-bold transition-colors hover:bg-green-50 hover:text-[#168326] dark:hover:bg-white/10 ${
                       isActive ? "bg-green-50 text-[#168326] dark:bg-white/10 dark:text-[#4ADE80]" : ""
                     }`}
                   >
-                    {x}
+                    {label}
                   </a>
                 );
               })}

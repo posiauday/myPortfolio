@@ -55,6 +55,17 @@ function useComponentRoute(components) {
     setView({ name: "detail", item });
   }, []);
 
+  // Detail's own Previous/Next controls use this instead of
+  // openComponent: it swaps which component Detail shows without
+  // touching returnHashRef, so "back to Components" after browsing
+  // through several in a row still returns to wherever Detail was
+  // *first* opened from (Home or Catalog) — not to the previous
+  // component's own Detail page.
+  const switchComponent = useCallback(item => {
+    window.history.pushState(null, "", `${DETAIL_PREFIX}${encodeURIComponent(item.id)}`);
+    setView({ name: "detail", item });
+  }, []);
+
   const openCatalog = useCallback(() => {
     window.history.pushState(null, "", CATALOG_HASH);
     setView({ name: "catalog" });
@@ -75,7 +86,7 @@ function useComponentRoute(components) {
     setView(resolveView(target, components));
   }, [components]);
 
-  return { view, openComponent, openCatalog, goHome, closeDetail };
+  return { view, openComponent, switchComponent, openCatalog, goHome, closeDetail };
 }
 
 export default useComponentRoute;

@@ -16,8 +16,14 @@ import ComponentPreview from "./ComponentPreview.jsx";
    shows its own honest "not connected" card until an app id and
    tenant id are configured.
    ============================================================ */
-function Detail({ item, dark, onBack }) {
+function Detail({ item, items, dark, onBack, onSwitch }) {
   const [tab, setTab] = useState("Preview");
+  // Cyclic — Next from the last component wraps to the first and vice
+  // versa, so the pair is always usable regardless of which component
+  // you opened first, rather than dead-ending at either end of the list.
+  const index = items.findIndex(c => c.id === item.id);
+  const prevItem = items[(index - 1 + items.length) % items.length];
+  const nextItem = items[(index + 1) % items.length];
   const [previewView, setPreviewView] = useState("mock");
   const [showLive, setShowLive] = useState(false);
   const [overrides, setOverrides] = useState({});
@@ -255,10 +261,26 @@ function Detail({ item, dark, onBack }) {
   return (
     <main className={dark ? "dark min-h-screen bg-[#0B1110] text-white" : "min-h-screen bg-[#FBFDFB] text-[#17201B]"}>
       <header className="sticky top-0 z-20 border-b border-slate-200 bg-white/95 backdrop-blur dark:border-white/10 dark:bg-[#101816]/95">
-        <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-5">
-          <button onClick={onBack} className="flex items-center gap-2 font-bold"><ArrowLeft size={18} /> Components</button>
-          <b className="hidden sm:block">{item.title}</b>
-          <button onClick={onBack} aria-label="Close, back to components" className="grid h-10 w-10 place-items-center rounded-full bg-slate-100 dark:bg-white/10"><X size={18} /></button>
+        <div className="mx-auto flex h-16 max-w-7xl items-center justify-between gap-2 px-5">
+          <button onClick={onBack} className="flex shrink-0 items-center gap-2 font-bold"><ArrowLeft size={18} /> Components</button>
+          <b className="hidden truncate sm:block">{item.title}</b>
+          <div className="flex shrink-0 items-center gap-1">
+            <button
+              onClick={() => onSwitch(prevItem)}
+              aria-label={`Previous component: ${prevItem.title}`}
+              className="grid h-10 w-10 place-items-center rounded-full bg-slate-100 dark:bg-white/10"
+            >
+              <ArrowLeft size={16} />
+            </button>
+            <button
+              onClick={() => onSwitch(nextItem)}
+              aria-label={`Next component: ${nextItem.title}`}
+              className="grid h-10 w-10 place-items-center rounded-full bg-slate-100 dark:bg-white/10"
+            >
+              <ArrowRight size={16} />
+            </button>
+            <button onClick={onBack} aria-label="Close, back to components" className="grid h-10 w-10 place-items-center rounded-full bg-slate-100 dark:bg-white/10"><X size={18} /></button>
+          </div>
         </div>
       </header>
 
