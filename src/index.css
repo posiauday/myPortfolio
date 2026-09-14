@@ -234,13 +234,19 @@ body {
    travelling down rather than just a line filling in behind it. */
 .rail-beam {
   position: absolute;
+  top: 0;
   width: 11px;
   height: 11px;
   border-radius: 999px;
   transform: translate(-50%, -50%);
   background: radial-gradient(circle, #fff 0%, #168326 60%, transparent 100%);
-  transition: top 0.3s ease-out;
   animation: rail-beam-pulse 1.8s ease-in-out infinite;
+  /* No `transition` on `top` here, deliberately: useScrollFill writes
+     `top` directly on every rAF-throttled scroll frame, so the beam
+     already tracks the real scroll position 1:1. A transition on top
+     of that would make it chase a moving target through an eased
+     delay instead of tracking it — the same rubber-band lag the fill
+     line's own now-removed `transition-[height]` caused. */
 }
 @keyframes rail-beam-pulse {
   0%, 100% {
@@ -298,6 +304,5 @@ body {
   }
   .rail-beam {
     animation: none;
-    transition: none;
   }
 }

@@ -11,7 +11,7 @@ SVG and CSS.
 
 | Section | What it does |
 | --- | --- |
-| **Hero** | Multi-layer parallax backdrop (`useParallax`), a reveal-on-scroll KPI panel (`useReveal`), and a mouse-tracked 3D tilt + cursor glare + cast shadow on the KPI card itself (`useTilt`). The card's header, stat tiles and chart each sit at their own depth inside the tilt's 3D space, so the whole thing visibly parallaxes as it rotates, and it idly bobs even at rest so it never reads as flat. |
+| **Hero** | Multi-layer parallax backdrop (`useParallaxLayer`), a reveal-on-scroll KPI panel (`useReveal`), and a mouse-tracked 3D tilt + cursor glare + cast shadow on the KPI card itself (`useTilt`). The card's header, stat tiles and chart each sit at their own depth inside the tilt's 3D space, so the whole thing visibly parallaxes as it rotates, and it idly bobs even at rest so it never reads as flat. |
 | **Impact strip** | Four stats — years of experience, users under governed delivery, a productivity figure, and the PL-300 cert — pulled together right under the hero rather than left scattered across Experience and Recognition where a skim can miss them. No new claims: every figure here is the same one already stated elsewhere on the page. |
 | **Platform** | Microsoft's own official Power Platform product icons orbiting a central hub in two counter-rotating rings — pure CSS, no animation library (see `PlatformOrbit.jsx`). |
 | **Projects** (`#projects`) | Seven project showcases in a rail-and-window layout: pick a project from the rail, page through its screens in a window-framed preview. Every project is presented under a generic name and every number shown is synthetic. |
@@ -82,8 +82,8 @@ src/
     useCopyFeedback.js   clipboard write + short-lived "Copied" label
     useReveal.js         one-shot IntersectionObserver reveal
     useRevealEach.js     useReveal for a data-driven list — one ref/observer per item
-    useParallax.js       throttled scroll offset, frozen under reduced motion
-    useScrollFill.js     0-1 scroll progress, for a rail that draws itself in
+    useParallaxLayer.js  one hero backdrop layer's scroll transform, written direct to the DOM
+    useScrollFill.js     a rail's fill/beam, written direct to the DOM as you scroll past it
     useTilt.js           mouse-tracked 3D tilt + cursor glare for a card
     useComponentRoute.js syncs the open component Detail page with #components/<id>
   config.js              contact details and the Power Apps embed configuration
@@ -355,7 +355,7 @@ shorter on a phone.
 ### Nav that compacts on scroll
 
 `useScrollThreshold` reports a plain boolean — has the page scrolled past
-a threshold — rather than a continuous offset like `useParallax`, and
+a threshold — rather than a continuous value like `useParallaxLayer`, and
 deliberately isn't frozen under `prefers-reduced-motion`: a compacting
 nav bar is a discrete density change, not drifting motion, so it should
 still work either way. Past the threshold, the nav bar shrinks, the
@@ -379,17 +379,63 @@ order wins, since that's the one just scrolled into. The ids array is a
 module-level constant (`NAV_SECTION_IDS`), not an inline literal, so the
 effect's observer isn't torn down and rebuilt on every render.
 
+### Scroll-linked animations write to the DOM directly, not through React state
+
+`useParallaxLayer` (the hero backdrop) and `useScrollFill` (the Experience
+section's timeline rail) both write style straight to a DOM node inside a
+rAF-throttled scroll listener, using a plain `ref` — never `useState`. This
+wasn't always true: both originally reported their scroll-derived value
+(an offset, a 0-1 progress) as React state, and let the consuming JSX
+recompute its inline `style` on the resulting re-render. That's the actual
+architectural cause of a real jank/overlap bug reported on the live site —
+not "needs more polish," a genuine anti-pattern: a `setState` call on every
+single scroll frame re-renders the whole component it's in, and on a large
+component like `Portfolio.jsx` (most of the homepage in one component) that
+re-render has to walk a lot of tree for a transform that only ever touches
+a handful of small elements. On any but a very fast machine that can't keep
+up with 60fps scroll input, so frames drop, visibly — this is exactly why
+`PlatformOrbit`'s spiral read as smooth while everything scroll-linked
+didn't: it's a pure CSS `@keyframes` animation with no React or scroll
+involvement at all, running entirely on the compositor thread, unaffected
+by whatever the main thread is doing.
+
+The fix uses the same direct-DOM-write pattern `useTilt`/`useSpotlight`
+already used elsewhere in this codebase (see their own comments) — attach
+a `ref` to the element that needs to move, write its style in the
+rAF-throttled callback, skip React entirely. `useParallaxLayer(factor,
+extra)` returns one ref per hero layer (five calls in `Portfolio.jsx`, one
+per backdrop/shadow layer, each with its own lag/lead factor);
+`useScrollFill` returns `{ containerRef, fillRef, beamRef }` for the
+timeline's track, gradient fill and travelling beam dot. Measured before
+and after with a Playwright script sampling `requestAnimationFrame` deltas
+through a full continuous scroll: after the fix, 0 frames exceeded 33ms
+(a dropped frame at 30fps) or 50ms (a visible stutter) out of 151 sampled,
+averaging 16.6ms — a clean 60fps. (Headless Chromium in a container isn't
+identical to every visitor's real machine, but zero dropped frames there is
+strong evidence the *cause* — main-thread re-render churn on the scroll
+path — is actually gone, not just reduced.)
+
+One more contributor, specific to the Experience timeline: the fill
+line's `height` and the beam's `top` both used to carry a CSS `transition`
+(`transition-[height] duration-300` and `.rail-beam`'s own `transition: top
+0.3s ease-out`) on top of the per-frame state updates. Since progress only
+ever changes via scroll, that transition didn't smooth anything — it made
+the rendered line chase a constantly-moving target through a 300ms ease on
+*every* incoming scroll frame, a visible rubber-band lag layered on top of
+the re-render cost. Both transitions are gone now; the rAF-throttled writes
+already track the real scroll position frame-for-frame, so a transition on
+top of that can only make it lag behind, never smooth it.
+
 ### Aurora background
 
 The hero's mesh gradient breathes opacity slowly and each blurred blob
 drifts a few pixels (`hero-mesh-breathe`, `aurora-drift-a/b` in
 `index.css`), all `motion-safe:` only. Each blob's drift lives on an
 *inner* div nested inside the div that already carries the
-scroll-parallax `translate3d` as an inline style (see `layer()` in
-Portfolio.jsx) — animating `transform` on that same outer node would
-just override the inline parallax transform for the animation's
-duration, the same reason `useTilt` and the hero-float layer keep their
-own transforms on separate elements.
+scroll-parallax `translate3d` (see `useParallaxLayer` above) — animating
+`transform` on that same outer node would just override the parallax
+transform for the animation's duration, the same reason `useTilt` and the
+hero-float layer keep their own transforms on separate elements.
 
 ### Magnetic buttons
 

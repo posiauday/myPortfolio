@@ -6,7 +6,7 @@ import { skills } from "../data/skills.js";
 import { buildBrandThemeYaml } from "../lib/themeYaml.js";
 import { CONTACT } from "../config.js";
 import useReveal from "../hooks/useReveal.js";
-import useParallax from "../hooks/useParallax.js";
+import useParallaxLayer from "../hooks/useParallaxLayer.js";
 import useTilt from "../hooks/useTilt.js";
 import useComponentRoute from "../hooks/useComponentRoute.js";
 import useScrollThreshold from "../hooks/useScrollThreshold.js";
@@ -57,7 +57,7 @@ const NAV_SECTION_IDS = NAV_ITEMS.filter(x => x.href).map(x => x.href.slice(1));
    MAIN PORTFOLIO
    Nav labels match the real section ids (Projects / Experience /
    Components / Recognition). The hero's depth, the reveal-on-scroll
-   bars and the card hover lift are all CSS plus the useParallax /
+   bars and the card hover lift are all CSS plus the useParallaxLayer /
    useReveal hooks, so there is still no animation dependency.
    ============================================================ */
 export default function Portfolio() {
@@ -65,7 +65,6 @@ export default function Portfolio() {
   const { view, openComponent, switchComponent, openCatalog, goHome, closeDetail } = useComponentRoute(components);
   const [menuOpen, setMenuOpen] = useState(false);
   const [barsRef, barsIn] = useReveal();
-  const scrolled = useParallax();
   const scrolledPastHero = useScrollThreshold(40);
   const activeSection = useActiveSection(NAV_SECTION_IDS);
   const {
@@ -74,6 +73,14 @@ export default function Portfolio() {
     glareRef: heroGlareRef,
     shadowRef: heroShadowRef
   } = useTilt({ max: 14 });
+  // One ref per hero backdrop layer — each writes its own transform
+  // straight to the DOM on scroll (see useParallaxLayer's own comment
+  // for why: no React state, so no re-render, on every scroll frame).
+  const heroMeshRef = useParallaxLayer(0.42);
+  const auroraARef = useParallaxLayer(0.26);
+  const auroraBRef = useParallaxLayer(0.14);
+  const heroTextRef = useParallaxLayer(0.1);
+  const heroShadowParallaxRef = useParallaxLayer(-0.07);
   const exploreMagnetRef = useMagnetic();
   const browseMagnetRef = useMagnetic();
   const emailMagnetRef = useMagnetic();
@@ -81,11 +88,6 @@ export default function Portfolio() {
   const resumeMagnetRef = useMagnetic();
   const [themeCopied, copyTheme] = useCopyFeedback();
   const themeYamlText = useMemo(() => buildBrandThemeYaml(), []);
-
-  // Clamped so the layers stop drifting once the hero is off screen; each
-  // factor is how much a layer lags (positive) or leads (negative) the page.
-  const p = Math.min(scrolled, 900);
-  const layer = (factor, extra = "") => ({ transform: `translate3d(0,${p * factor}px,0)${extra}` });
 
   // The homepage always shows exactly these 6, in this curated order —
   // browsing the rest is Catalog.jsx's job now, a separate page rather
@@ -228,18 +230,18 @@ export default function Portfolio() {
             same split useTilt and the hero-float layer use. */}
         <div className="pointer-events-none absolute inset-0 -z-10" aria-hidden="true">
           <div
+            ref={heroMeshRef}
             className="hero-mesh absolute inset-0 scale-125 motion-safe:animate-[hero-mesh-breathe_9s_ease-in-out_infinite]"
-            style={layer(0.42)}
           />
-          <div className="absolute -left-24 top-10 h-[26rem] w-[26rem]" style={layer(0.26)}>
+          <div ref={auroraARef} className="absolute -left-24 top-10 h-[26rem] w-[26rem]">
             <div className="h-full w-full rounded-full bg-[#168326]/20 blur-3xl motion-safe:animate-[aurora-drift-a_70s_ease-in-out_infinite]" />
           </div>
-          <div className="absolute -right-20 top-56 h-[22rem] w-[22rem]" style={layer(0.14)}>
+          <div ref={auroraBRef} className="absolute -right-20 top-56 h-[22rem] w-[22rem]">
             <div className="h-full w-full rounded-full bg-[#0F6CBD]/20 blur-3xl motion-safe:animate-[aurora-drift-b_85s_ease-in-out_infinite]" />
           </div>
         </div>
         <div className="relative mx-auto grid max-w-7xl items-center gap-8 px-5 py-10 sm:min-h-[560px] sm:gap-10 sm:py-12 lg:min-h-[700px] lg:grid-cols-2 lg:gap-12 lg:py-16">
-          <div style={layer(0.1)}>
+          <div ref={heroTextRef}>
             <span className="inline-flex items-center gap-2 rounded-full border bg-white/80 px-4 py-2 text-xs font-black text-[#168326] dark:border-white/10 dark:bg-white/10 dark:text-[#4ADE80]"><Sparkles size={14} /> POWER PLATFORM + MICROSOFT 365</span>
             <h1 className="hero-title-size mt-7 font-black leading-[.96] tracking-[-.065em]">I build systems<br /><span className="grad-hero-text bg-clip-text pb-2 text-transparent">people trust.</span></h1>
             <p className="mt-7 max-w-2xl text-lg leading-8 text-slate-600 dark:text-slate-300">Secure, scalable applications, automation, data, analytics and governance, designed from discovery through long-term operations.</p>
@@ -249,7 +251,13 @@ export default function Portfolio() {
             </div>
           </div>
 
-          <div ref={heroShadowRef} className="grad-brand-br rounded-[42px] p-4 shadow-2xl" style={layer(-0.07)}>
+          <div
+            ref={el => {
+              heroShadowRef.current = el;
+              heroShadowParallaxRef.current = el;
+            }}
+            className="grad-brand-br rounded-[42px] p-4 shadow-2xl"
+          >
             {/* Idle float — a slow ambient bob so the card reads as
                 lifted off the page even before the cursor ever touches
                 it, on its own layer so it never fights the parallax

@@ -124,7 +124,7 @@ function ExperienceEntry({ item, revealed, itemRef }) {
 }
 
 function ExperienceSection() {
-  const [lineRef, progress] = useScrollFill();
+  const { containerRef: lineRef, fillRef, beamRef } = useScrollFill();
   const [itemRefs, revealed] = useRevealEach(experience.length);
 
   return (
@@ -139,21 +139,22 @@ function ExperienceSection() {
       <div ref={lineRef} className="relative mt-12">
         {/* Track, then a gradient fill drawn over it as the section scrolls
             through view — percentage height, so it stays correct even
-            while "Show more" changes a card's height below it. */}
+            while "Show more" changes a card's height below it. No CSS
+            transition here deliberately: useScrollFill already writes
+            height on every rAF-throttled scroll frame, so the fill
+            tracks the actual scroll position directly — a transition on
+            top of that would just make it chase a moving target instead
+            of tracking it, which is what read as laggy before. */}
         <span aria-hidden="true" className="absolute inset-y-0 left-[7px] w-px bg-slate-200 dark:bg-white/10 sm:left-[11px]" />
         <span
+          ref={fillRef}
           aria-hidden="true"
-          className="absolute left-[7px] top-0 w-px bg-gradient-to-b from-[#168326] via-[#0F6CBD] to-[#5B5BD6] transition-[height] duration-300 ease-out motion-reduce:transition-none sm:left-[11px]"
-          style={{ height: `${progress * 100}%` }}
+          className="absolute left-[7px] top-0 w-px bg-gradient-to-b from-[#168326] via-[#0F6CBD] to-[#5B5BD6] sm:left-[11px]"
         />
         {/* Travelling beam — a glowing dot riding the same 0-1 progress as
             the fill line above, so the rail reads as a beam moving down
             rather than just a line drawing itself in behind it. */}
-        <span
-          aria-hidden="true"
-          className="rail-beam absolute left-[7px] sm:left-[11px]"
-          style={{ top: `${progress * 100}%` }}
-        />
+        <span ref={beamRef} aria-hidden="true" className="rail-beam absolute left-[7px] sm:left-[11px]" />
 
         <div className="space-y-8">
           {experience.map((item, index) => (
