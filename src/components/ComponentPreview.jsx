@@ -243,33 +243,68 @@ function ComponentPreview({ item, values = {} }) {
 
   if (item.title === "Enterprise Data Table") {
     const rows = [
-      { name: "Website redesign", status: "On track", statusColor: item.color, priority: "High", priorityColor: "#D83B01" },
-      { name: "Data migration", status: "At risk", statusColor: "#D83B01", priority: "Medium", priorityColor: "#0F6CBD" },
-      { name: "Vendor onboarding", status: "Complete", statusColor: "#5B5BD6", priority: "Low", priorityColor: "#64748B" }
+      { name: "Website redesign", status: "On track", statusColor: item.color, priority: "High", priorityColor: "#D83B01", checked: true },
+      { name: "Data migration", status: "At risk", statusColor: "#D83B01", priority: "Medium", priorityColor: "#0F6CBD", checked: false },
+      { name: "Vendor onboarding", status: "Complete", statusColor: "#5B5BD6", priority: "Low", priorityColor: "#64748B", checked: false }
     ];
     return (
-      <div className="overflow-hidden rounded-xl border border-slate-200 dark:border-white/10">
-        <div className="grid grid-cols-[1.4fr_.8fr_.8fr_auto] gap-2 bg-slate-50 px-3 py-2 text-[10px] font-black uppercase text-slate-500 dark:bg-white/10 dark:text-slate-400">
-          <span>Project</span><span>Status</span><span>Priority</span><span />
+      <div>
+        {/* Searchable, live-illustrating the property of the same name
+            rather than a decorative box — same reasoning as ShowSparkline
+            elsewhere in this file: a property that exists should be shown
+            doing something, not only described in the Properties tab. */}
+        <div className="mb-2 flex items-center gap-2 rounded-full border border-slate-200 px-3 py-1.5 text-xs text-slate-500 dark:border-white/10 dark:text-slate-400">
+          <span aria-hidden="true">&#128269;</span>
+          <span>Search 24 records&hellip;</span>
         </div>
-        {rows.map(r => (
-          <div key={r.name} className="grid grid-cols-[1.4fr_.8fr_.8fr_auto] items-center gap-2 border-t border-slate-100 px-3 py-2.5 text-xs dark:border-white/10">
-            <b className="truncate">{r.name}</b>
-            <span
-              className={`w-fit rounded-full px-2 py-0.5 text-[10px] font-black ${CONTAINER_TEXT_CLASS}`}
-              style={container(r.statusColor)}
-            >
-              {r.status}
-            </span>
-            <span
-              className={`w-fit rounded-full px-2 py-0.5 text-[10px] font-black ${CONTAINER_TEXT_CLASS}`}
-              style={container(r.priorityColor)}
-            >
-              {r.priority}
-            </span>
-            <span aria-hidden="true" className="text-slate-500 dark:text-slate-400">&#8942;</span>
+        <div className="overflow-hidden rounded-xl border border-slate-200 dark:border-white/10">
+          <div className="grid grid-cols-[auto_1.4fr_.8fr_.8fr_auto] items-center gap-2 bg-slate-50 px-3 py-2 text-[10px] font-black uppercase text-slate-500 dark:bg-white/10 dark:text-slate-400">
+            <span aria-hidden="true" className="grid h-3.5 w-3.5 place-items-center rounded-sm border border-slate-400 dark:border-white/30" />
+            <span className="flex items-center gap-1">Project <span aria-hidden="true">&#9650;</span></span>
+            <span>Status</span><span>Priority</span><span />
           </div>
-        ))}
+          {rows.map(r => (
+            <div key={r.name} className="grid grid-cols-[auto_1.4fr_.8fr_.8fr_auto] items-center gap-2 border-t border-slate-100 px-3 py-2.5 text-xs dark:border-white/10">
+              <span
+                aria-hidden="true"
+                className={`grid h-3.5 w-3.5 place-items-center rounded-sm border text-[9px] font-black text-white ${r.checked ? "border-transparent" : "border-slate-300 dark:border-white/20"}`}
+                style={r.checked ? { background: item.color } : undefined}
+              >
+                {r.checked ? "✓" : ""}
+              </span>
+              <b className="truncate">{r.name}</b>
+              <span
+                className={`w-fit rounded-full px-2 py-0.5 text-[10px] font-black ${CONTAINER_TEXT_CLASS}`}
+                style={container(r.statusColor)}
+              >
+                {r.status}
+              </span>
+              <span
+                className={`w-fit rounded-full px-2 py-0.5 text-[10px] font-black ${CONTAINER_TEXT_CLASS}`}
+                style={container(r.priorityColor)}
+              >
+                {r.priority}
+              </span>
+              <span aria-hidden="true" className="text-slate-500 dark:text-slate-400">&#8942;</span>
+            </div>
+          ))}
+        </div>
+        {/* PageSize/PageNumber/HasNextPage/HasPreviousPage/TotalRecords —
+            the pager itself is host-built, per the real Creator Kit
+            DetailsList's own paging pattern, but shown here since the
+            component does supply the counts and page state it reads from. */}
+        <div className="mt-2 flex items-center justify-between text-[10px] font-bold text-slate-500 dark:text-slate-400">
+          <span>1&ndash;3 of 24</span>
+          <div className="flex items-center gap-3">
+            {/* A real disabled attribute, not just a light color, marks
+                Prev unavailable on page 1 — WCAG 1.4.3 itself exempts
+                inactive controls from the contrast minimum, but only
+                when the disabled state is actually semantic like this,
+                not implied by low-contrast text alone. */}
+            <button type="button" disabled className="text-[10px] font-bold text-slate-300 dark:text-white/20">&#8249; Prev</button>
+            <button type="button" className="text-[10px] font-bold text-slate-500 dark:text-slate-400">Next &#8250;</button>
+          </div>
+        </div>
       </div>
     );
   }
@@ -430,14 +465,24 @@ function ComponentPreview({ item, values = {} }) {
       { name: "Risk", value: "3 open", target: "0", tone: "#0F6CBD" }
     ];
     return (
-      <div className="grid grid-cols-2 gap-2">
-        {metrics.map(m => (
-          <div key={m.name} className="rounded-xl border-l-4 bg-slate-50 p-3 shadow-sm dark:bg-white/10" style={{ borderColor: m.tone }}>
-            <span className="text-[10px] font-bold text-slate-500 dark:text-slate-400">{m.name}</span>
-            <b className="mt-1 block text-xl">{m.value}</b>
-            <span className="text-[10px] text-slate-500 dark:text-slate-400">Target {m.target}</span>
-          </div>
-        ))}
+      <div>
+        {/* OnExport backs the Print variant — the component only ever
+            hands back this same data; producing an actual file is the
+            host's job via Power Apps' own PDF()/Export-to-Excel. */}
+        <div className="mb-2 flex justify-end">
+          <span className="flex items-center gap-1 rounded-full border border-slate-200 px-2.5 py-1 text-[10px] font-bold text-slate-500 dark:border-white/10 dark:text-slate-400">
+            <span aria-hidden="true">&#8681;</span> Export
+          </span>
+        </div>
+        <div className="grid grid-cols-2 gap-2">
+          {metrics.map(m => (
+            <div key={m.name} className="rounded-xl border-l-4 bg-slate-50 p-3 shadow-sm dark:bg-white/10" style={{ borderColor: m.tone }}>
+              <span className="text-[10px] font-bold text-slate-500 dark:text-slate-400">{m.name}</span>
+              <b className="mt-1 block text-xl">{m.value}</b>
+              <span className="text-[10px] text-slate-500 dark:text-slate-400">Target {m.target}</span>
+            </div>
+          ))}
+        </div>
       </div>
     );
   }
@@ -460,12 +505,17 @@ function ComponentPreview({ item, values = {} }) {
   }
 
   if (item.title === "Project Health Summary") {
+    // TrendDirection and NarrativeText are both optional, host-set fields
+    // (see componentLibrary.js) — Better/Worse/Same renders as an arrow
+    // plus a text word, never the arrow alone, same accessibility rule
+    // every other tone/status indicator in this catalog already follows.
     const dims = [
-      { name: "Scope", tone: item.color, note: "On track, no changes" },
-      { name: "Schedule", tone: "#D83B01", note: "2 weeks behind" },
-      { name: "Budget", tone: item.color, note: "Within approved envelope" },
-      { name: "Quality", tone: "#0F6CBD", note: "Minor defects, tracked" }
+      { name: "Scope", tone: item.color, note: "On track, no changes", trend: "Same" },
+      { name: "Schedule", tone: "#D83B01", note: "2 weeks behind", trend: "Worse" },
+      { name: "Budget", tone: item.color, note: "Within approved envelope", trend: "Better" },
+      { name: "Quality", tone: "#0F6CBD", note: "Minor defects, tracked", trend: "Same" }
     ];
+    const trendGlyph = { Better: "▲", Worse: "▼", Same: "▬" };
     return (
       <div>
         <div className="flex items-center justify-between">
@@ -475,14 +525,22 @@ function ComponentPreview({ item, values = {} }) {
         <div className="mt-3 grid grid-cols-2 gap-2">
           {dims.map(d => (
             <div key={d.name} className="rounded-xl bg-slate-50 p-3 shadow-sm dark:bg-white/10">
-              <div className="flex items-center gap-2">
-                <span aria-hidden="true" className="h-2 w-2 shrink-0 rounded-full" style={{ background: d.tone }} />
-                <b className="text-xs">{d.name}</b>
+              <div className="flex items-center justify-between gap-2">
+                <div className="flex items-center gap-2">
+                  <span aria-hidden="true" className="h-2 w-2 shrink-0 rounded-full" style={{ background: d.tone }} />
+                  <b className="text-xs">{d.name}</b>
+                </div>
+                <span className="flex shrink-0 items-center gap-0.5 text-[9px] font-bold text-slate-500 dark:text-slate-400">
+                  <span aria-hidden="true">{trendGlyph[d.trend]}</span>{d.trend}
+                </span>
               </div>
               <p className="mt-1.5 text-[10px] leading-4 text-slate-500 dark:text-slate-400">{d.note}</p>
             </div>
           ))}
         </div>
+        <p className="mt-3 border-t border-slate-100 pt-3 text-xs leading-5 text-slate-600 dark:border-white/10 dark:text-slate-300">
+          Schedule slip on the vendor integration workstream is the one item steering needs to weigh in on this week.
+        </p>
       </div>
     );
   }
@@ -518,21 +576,30 @@ function ComponentPreview({ item, values = {} }) {
       { date: "Feb 3", decision: "Vendor selection for integration layer", owner: "M. Chen", status: "Open", color: "#0F6CBD" }
     ];
     return (
-      <div className="space-y-2">
-        {decisions.map(d => (
-          <div key={d.decision} className="rounded-xl bg-slate-50 p-3 shadow-sm dark:bg-white/10">
-            <div className="flex items-start justify-between gap-2">
-              <b className="text-xs leading-5">{d.decision}</b>
-              <span
-                className={`shrink-0 rounded-full px-2 py-0.5 text-[9px] font-black ${CONTAINER_TEXT_CLASS}`}
-                style={container(d.color)}
-              >
-                {d.status}
-              </span>
+      <div>
+        {/* OnExport backs the Print variant, same reasoning as Program
+            Scorecard's own Export action just above in this file. */}
+        <div className="mb-2 flex justify-end">
+          <span className="flex items-center gap-1 rounded-full border border-slate-200 px-2.5 py-1 text-[10px] font-bold text-slate-500 dark:border-white/10 dark:text-slate-400">
+            <span aria-hidden="true">&#8681;</span> Export
+          </span>
+        </div>
+        <div className="space-y-2">
+          {decisions.map(d => (
+            <div key={d.decision} className="rounded-xl bg-slate-50 p-3 shadow-sm dark:bg-white/10">
+              <div className="flex items-start justify-between gap-2">
+                <b className="text-xs leading-5">{d.decision}</b>
+                <span
+                  className={`shrink-0 rounded-full px-2 py-0.5 text-[9px] font-black ${CONTAINER_TEXT_CLASS}`}
+                  style={container(d.color)}
+                >
+                  {d.status}
+                </span>
+              </div>
+              <span className="mt-1 block text-[10px] text-slate-500 dark:text-slate-400">{d.date} &middot; {d.owner}</span>
             </div>
-            <span className="mt-1 block text-[10px] text-slate-500 dark:text-slate-400">{d.date} &middot; {d.owner}</span>
-          </div>
-        ))}
+          ))}
+        </div>
       </div>
     );
   }
@@ -666,31 +733,45 @@ function ComponentPreview({ item, values = {} }) {
   }
 
   if (item.title === "Workflow Route Map") {
+    // Lane is optional (see componentLibrary.js) — a Nodes table with no
+    // Lane values renders the original single flat row unchanged; this
+    // sample sets Lane on every node specifically to demonstrate the
+    // Swimlane variant, grouping nodes into bands by owner/team in
+    // first-seen order rather than requiring a second, separate table.
     const nodes = [
-      { label: "Intake", status: "done" },
-      { label: "Triage", status: "done" },
-      { label: "Review", status: "active" },
-      { label: "Resolved", status: "pending" }
+      { label: "Intake", status: "done", lane: "Support" },
+      { label: "Triage", status: "done", lane: "Support" },
+      { label: "Review", status: "active", lane: "Engineering" },
+      { label: "Resolved", status: "pending", lane: "Engineering" }
     ];
+    const renderNode = n => n.status === "active" ? (
+      <span className="rounded-lg border-2 px-2.5 py-1.5 text-[10px] font-bold text-white" style={{ background: item.color, borderColor: item.color }}>
+        {n.label}
+      </span>
+    ) : n.status === "done" ? (
+      <span
+        className={`rounded-lg border-2 px-2.5 py-1.5 text-[10px] font-bold ${CONTAINER_TEXT_CLASS}`}
+        style={{ ...container(item.color), borderColor: item.color }}
+      >
+        {n.label}
+      </span>
+    ) : (
+      <span className="rounded-lg border-2 border-slate-300 px-2.5 py-1.5 text-[10px] font-bold text-slate-500 dark:border-white/20 dark:text-slate-400">{n.label}</span>
+    );
+    const lanes = [...new Set(nodes.map(n => n.lane))];
     return (
-      <div className="flex flex-wrap items-center gap-1.5">
-        {nodes.map((n, i) => (
-          <div key={n.label} className="flex items-center gap-1.5">
-            {n.status === "active" ? (
-              <span className="rounded-lg border-2 px-2.5 py-1.5 text-[10px] font-bold text-white" style={{ background: item.color, borderColor: item.color }}>
-                {n.label}
-              </span>
-            ) : n.status === "done" ? (
-              <span
-                className={`rounded-lg border-2 px-2.5 py-1.5 text-[10px] font-bold ${CONTAINER_TEXT_CLASS}`}
-                style={{ ...container(item.color), borderColor: item.color }}
-              >
-                {n.label}
-              </span>
-            ) : (
-              <span className="rounded-lg border-2 border-slate-300 px-2.5 py-1.5 text-[10px] font-bold text-slate-500 dark:border-white/20 dark:text-slate-400">{n.label}</span>
-            )}
-            {i < nodes.length - 1 && <span aria-hidden="true" className="text-slate-400 dark:text-slate-500">&rarr;</span>}
+      <div className="space-y-2">
+        {lanes.map(lane => (
+          <div key={lane} className="flex items-center gap-2 rounded-xl bg-slate-50 p-2.5 dark:bg-white/5">
+            <span className="w-20 shrink-0 text-[9px] font-black uppercase tracking-wide text-slate-500 dark:text-slate-400">{lane}</span>
+            <div className="flex flex-1 flex-wrap items-center gap-1.5">
+              {nodes.filter(n => n.lane === lane).map((n, i, laneNodes) => (
+                <div key={n.label} className="flex items-center gap-1.5">
+                  {renderNode(n)}
+                  {i < laneNodes.length - 1 && <span aria-hidden="true" className="text-slate-400 dark:text-slate-500">&rarr;</span>}
+                </div>
+              ))}
+            </div>
           </div>
         ))}
       </div>

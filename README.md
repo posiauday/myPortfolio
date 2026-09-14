@@ -273,6 +273,70 @@ best-practice) across all 25 components in both light and dark —
 zero violations, confirming the new shadows and the `container()`
 refactor didn't regress any of the contrast fixes from the pass above.
 
+### Closing real gaps against the actual reference controls
+
+After the two passes above (real content, then real visual polish), the
+next question was harder to dodge: how many of these 25 contracts still
+fall short of what the *real* audience — someone evaluating this catalog
+as actual Power Apps component library work — would expect once they
+looked past the surface? Answering that meant going back to primary
+sources (Microsoft Learn's own canvas control reference, the Creator
+Kit's published DetailsList/Nav/Breadcrumb controls, and Power Automate's
+own approval action) and diffing this catalog's contracts against them
+property by property, not guessing at plausible gaps.
+
+That audit surfaced roughly three dozen real gaps across all 25
+components — documented in full where the audit happened, not
+duplicated here — prioritized into: (1) the Enterprise Data Table
+cluster, since it's the single highest-value gap and was already
+self-flagged with no fix proposed; (2) four components whose own
+`variants` array named a variant (Program Scorecard's "Print", Decision
+Log's "Print", Project Health Summary's "Trend" and "Narrative",
+Workflow Route Map's "Swimlane") with no property in that same
+component's contract actually able to produce it — an internal
+consistency gap worth closing before any external one; (3) the
+cross-cutting localization gap, not yet started.
+
+**Batch 1 — Enterprise Data Table plus the four unwired variants:**
+
+- **Enterprise Data Table** gained `Sortable`/`CurrentSortColumn`/
+  `CurrentSortDirection`/`OnSort` (checked against the real modern Data
+  Grid control's own `Sortable` and the Creator Kit DetailsList's
+  `ColSortable`/`CurrentSortColumn`), `SelectionMode`/`OnSelectionChange`
+  (matching the real Data Grid's `SelectMultiple` and DetailsList's
+  `SelectionType`), `Searchable`/`OnSearch` (the real Data Grid's own
+  `Searchable`/`SearchText`), `PageSize`/`OnPageChange` (the real
+  DetailsList's `PageSize`/`PageNumber`/`HasNextPage` paging contract),
+  and `AccessibilityLabel` (present on all three real reference
+  controls checked). The Preview mockup now actually shows a search box,
+  a sortable column caret, a checkbox column, and a page footer — not
+  just new rows in the Properties tab.
+- **Program Scorecard** and **Decision Log** each gained `OnExport`,
+  backing a "Print" variant that previously had no property behind it
+  at all; both mockups now show a real Export action in their preview.
+- **Project Health Summary** gained `TrendDirection` (on `Dimensions`)
+  and `NarrativeText`, backing its own "Trend" and "Narrative" variants;
+  the mockup now shows a real trend arrow per dimension and a narrative
+  sentence beneath the grid.
+- **Workflow Route Map** gained an optional `Lane` field on `Nodes`,
+  backing its own "Swimlane" variant; the mockup now groups nodes into
+  labeled horizontal bands by lane when the sample data sets one,
+  while a `Nodes` table with no `Lane` values still renders the
+  original flat row unchanged.
+
+Every new property matches a real control's real name where one exists
+(cited above); nothing here was invented to sound plausible. Two real
+contrast issues turned up in the new mockup elements during
+verification — a disabled "Prev" pager button's light gray text
+(1.48:1/1.91:1) and a trend-arrow color pairing that had the light/dark
+values swapped from this project's own established safe combo
+(2.45:1/2.61:1) — both caught by axe-core and fixed (the pager button
+now uses a real `disabled` attribute, which WCAG 1.4.3 itself exempts
+from the contrast minimum, rather than relying on low-contrast text to
+communicate "unavailable"). Re-scanned clean after both fixes: `npm run
+lint && npm run test:yaml && npm run build` clean, zero axe-core
+violations across all 5 touched components in light and dark.
+
 ### YAML schema conformance
 
 Every component gets two generated YAML outputs (`src/lib/componentDocs.js`):
