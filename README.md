@@ -116,7 +116,7 @@ category-level text instead. Both are fixed now; if a future override skips
 a field, double-check it isn't accidentally inheriting a sibling's leftover
 copy rather than genuinely sharing the category default.
 
-### Bespoke, research-grounded component previews (in progress)
+### Bespoke, research-grounded component previews
 
 A real gap, reported directly: every component's catalog entry claimed a
 specific contract, but only Executive KPI Card's Preview tab actually
@@ -161,29 +161,48 @@ one unreviewable pass through all 25:
    demonstrating the property does something, rather than existing only
    as a Properties-tab row.
 
-**Done so far** — all 11 "Verified" components (worked first, since
-they're the ones already claiming a cross-checked contract), plus 9 of
-the 14 "Original" ones, in four batches: Executive KPI Card, Responsive
-Line Chart, Deadline Intelligence, Activity Timeline, Enterprise Calendar;
-then Accordion Record List, Enterprise Data Table, Governed File Upload,
-Governed Email Composer, Enterprise Sidebar; then Enterprise Mega Menu,
-Portfolio Command Card, Program Scorecard, Operational Status Banner,
-Portfolio Risk Matrix; then Project Health Summary, Milestone Tracker,
-Decision Log, Enterprise Dialog, Comments & Mentions. Re-scanned with
-axe-core (WCAG 2A/2AA + best-practice) across every component's Preview
-and Variants tabs, light and dark, after every change — two real findings
-caught this way in earlier batches (documented above/below where each
-happened), zero violations in this batch and zero remaining overall. The
-last 5 "Original" components are still on the generic mockup and
-Standard/Compact/Dark/Mobile variants, worked through next.
+**All 25 components are done**, worked in five batches — "Verified" first
+since those 11 were already claiming a cross-checked contract, then the
+14 "Original" ones: Executive KPI Card, Responsive Line Chart, Deadline
+Intelligence, Activity Timeline, Enterprise Calendar; Accordion Record
+List, Enterprise Data Table, Governed File Upload, Governed Email
+Composer, Enterprise Sidebar; Enterprise Mega Menu, Portfolio Command
+Card, Program Scorecard, Operational Status Banner, Portfolio Risk
+Matrix; Project Health Summary, Milestone Tracker, Decision Log,
+Enterprise Dialog, Comments & Mentions; Responsive Breadcrumbs, Approval
+Journey, Guided Process Stepper, Workflow Route Map, Branded Loading
+Experience. Every one now has a real, component-specific `variants` set
+and a bespoke Preview mockup — the generic fallback in
+`ComponentPreview.jsx` is unreachable code at this point, kept only as a
+documented safety net for a future 26th component added without its own
+mockup yet, not because anything in the catalog still uses it.
 
-Enterprise Dialog is worth calling out: its properties (`Title`,
-`Subtitle`, `ConfirmButtonText`, `CancelButtonText`) are named to match
-Power Apps' own built-in `Confirm()` function's real `OptionsRecord`
-exactly, and its one deliberate addition — `ShowCancel` going false for a
-single-button acknowledge dialog — closes a real, documented gap:
-`Confirm()`'s own FAQ states plainly it always shows both buttons and
-can't be reduced to one.
+Re-scanned with axe-core (WCAG 2A/2AA + best-practice) across every
+component's Preview and Variants tabs, light and dark, after every
+change, plus one final full sweep across all 25 once the last batch
+landed: zero violations, anywhere, in either mode. Three real contrast
+issues were caught and fixed along the way (documented in each batch's
+own commit) — every one the same underlying class of bug: a brand,
+danger or neutral-gray color used directly as text or as a background
+behind white text, without the light/dark-aware treatment
+`darken()`/`lighten()` (`src/lib/color.js`) already established
+elsewhere on this page.
+
+Two components are worth calling out specifically for how their
+grounding turned into a real, concrete addition rather than just
+supporting prose:
+
+- **Portfolio Command Card**'s contract (`Metrics`/`ChartData`) is the
+  *actual* contract this site's own hero card already renders on the
+  homepage — Health/Active/At risk tiles over an 8-bar activity strip —
+  not a separate illustration of a similar idea.
+- **Enterprise Dialog**'s properties (`Title`, `Subtitle`,
+  `ConfirmButtonText`, `CancelButtonText`) are named to match Power
+  Apps' own built-in `Confirm()` function's real `OptionsRecord`
+  exactly, and its one deliberate addition — `ShowCancel` going false
+  for a single-button acknowledge dialog — closes a real, documented
+  gap: `Confirm()`'s own FAQ states plainly it always shows both
+  buttons and can't be reduced to one.
 
 Portfolio Command Card is worth calling out specifically: its contract
 (Metrics/ChartData) is the *actual* contract this site's own hero card on

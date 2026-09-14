@@ -594,6 +594,122 @@ function ComponentPreview({ item, values = {} }) {
     );
   }
 
+  if (item.title === "Responsive Breadcrumbs") {
+    return (
+      <div className="flex flex-wrap items-center gap-1.5 text-xs font-bold">
+        <span className="text-slate-600 dark:text-slate-300">Home</span>
+        <span aria-hidden="true" className="text-slate-400 dark:text-slate-500">/</span>
+        <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-black text-slate-500 dark:bg-white/10 dark:text-slate-400">&hellip;</span>
+        <span aria-hidden="true" className="text-slate-400 dark:text-slate-500">/</span>
+        <span className="text-slate-600 dark:text-slate-300">Change Requests</span>
+        <span aria-hidden="true" className="text-slate-400 dark:text-slate-500">/</span>
+        <span
+          className="text-[color:var(--badge-light)] dark:text-[color:var(--badge-dark)]"
+          style={{ "--badge-light": darken(item.color), "--badge-dark": lighten(item.color) }}
+        >
+          CR-0142
+        </span>
+      </div>
+    );
+  }
+
+  if (item.title === "Approval Journey") {
+    const stages = [
+      { name: "Priya Shah", status: "Approved" },
+      { name: "J. Okafor", status: "Pending" },
+      { name: "M. Chen", status: "Locked" }
+    ];
+    const dotColor = s => (s === "Approved" ? item.color : s === "Pending" ? "#0F6CBD" : "#475569");
+    return (
+      <div className="flex items-center">
+        {stages.map((s, i) => (
+          <div key={s.name} className="flex flex-1 items-center last:flex-none">
+            <div className="flex flex-col items-center text-center">
+              <span className="grid h-8 w-8 shrink-0 place-items-center rounded-full text-[10px] font-black text-white" style={{ background: dotColor(s.status) }}>
+                {s.name.split(" ").map(n => n[0]).join("")}
+              </span>
+              <span className="mt-1.5 text-[9px] font-bold text-slate-600 dark:text-slate-300">{s.name}</span>
+              <span className="text-[9px] text-slate-500 dark:text-slate-400">{s.status}</span>
+            </div>
+            {i < stages.length - 1 && <span aria-hidden="true" className="mx-1 h-px flex-1 bg-slate-200 dark:bg-white/10" />}
+          </div>
+        ))}
+      </div>
+    );
+  }
+
+  if (item.title === "Guided Process Stepper") {
+    const steps = [
+      { label: "Details", status: "done" },
+      { label: "Documents", status: "done" },
+      { label: "Review", status: "current" },
+      { label: "Submit", status: "upcoming" }
+    ];
+    const dotColor = s => (s === "done" ? item.color : s === "current" ? "#0F6CBD" : "#475569");
+    return (
+      <div className="flex items-center">
+        {steps.map((s, i) => (
+          <div key={s.label} className="flex flex-1 items-center last:flex-none">
+            <div className="flex flex-col items-center">
+              <span className="grid h-7 w-7 shrink-0 place-items-center rounded-full text-[10px] font-black text-white" style={{ background: dotColor(s.status) }}>
+                {s.status === "done" ? "✓" : i + 1}
+              </span>
+              <span className="mt-1.5 text-[9px] font-bold text-slate-600 dark:text-slate-300">{s.label}</span>
+            </div>
+            {i < steps.length - 1 && (
+              <span aria-hidden="true" className="mx-1 h-px flex-1" style={{ background: s.status === "done" ? item.color : "#e2e8f0" }} />
+            )}
+          </div>
+        ))}
+      </div>
+    );
+  }
+
+  if (item.title === "Workflow Route Map") {
+    const nodes = [
+      { label: "Intake", status: "done" },
+      { label: "Triage", status: "done" },
+      { label: "Review", status: "active" },
+      { label: "Resolved", status: "pending" }
+    ];
+    return (
+      <div className="flex flex-wrap items-center gap-1.5">
+        {nodes.map((n, i) => (
+          <div key={n.label} className="flex items-center gap-1.5">
+            {n.status === "active" ? (
+              <span className="rounded-lg border-2 px-2.5 py-1.5 text-[10px] font-bold text-white" style={{ background: item.color, borderColor: item.color }}>
+                {n.label}
+              </span>
+            ) : n.status === "done" ? (
+              <span
+                className="rounded-lg border-2 px-2.5 py-1.5 text-[10px] font-bold text-[color:var(--badge-light)] dark:text-[color:var(--badge-dark)]"
+                style={{ background: `${item.color}18`, borderColor: item.color, "--badge-light": darken(item.color), "--badge-dark": lighten(item.color) }}
+              >
+                {n.label}
+              </span>
+            ) : (
+              <span className="rounded-lg border-2 border-slate-300 px-2.5 py-1.5 text-[10px] font-bold text-slate-500 dark:border-white/20 dark:text-slate-400">{n.label}</span>
+            )}
+            {i < nodes.length - 1 && <span aria-hidden="true" className="text-slate-400 dark:text-slate-500">&rarr;</span>}
+          </div>
+        ))}
+      </div>
+    );
+  }
+
+  if (item.title === "Branded Loading Experience") {
+    return (
+      <div className="grid place-items-center rounded-xl bg-slate-50 py-8 dark:bg-white/5">
+        <span className="grid h-12 w-12 place-items-center rounded-2xl text-lg font-black text-white" style={{ background: item.color }}>UP</span>
+        <b className="mt-4 text-sm">Loading your workspace</b>
+        <div className="mt-3 h-1.5 w-40 overflow-hidden rounded-full bg-slate-200 dark:bg-white/10">
+          <div className="h-full rounded-full" style={{ width: "64%", background: item.color }} />
+        </div>
+        <span className="mt-1.5 text-[10px] font-bold text-slate-500 dark:text-slate-400">64%</span>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-3">
       {["Submitted", "In review", "Approved", "Operational"].map((x, i) => (

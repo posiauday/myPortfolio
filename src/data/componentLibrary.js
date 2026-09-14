@@ -468,6 +468,81 @@ const overrides = {
       ["Read-only", "Comments render with no compose box at all, for a closed or archived record."],
       ["Resolved filter", "Adds a toggle hiding comments already marked resolved, for a long-running thread that's accumulated closed side-discussions."]
     ]
+  },
+  "responsive-breadcrumbs": {
+    summary: "A collapsing breadcrumb trail — checked against both Microsoft's own published Creator Kit Breadcrumb control and Fluent UI's real overflow behavior.",
+    properties: [["Items", "Table", "5-level sample", "Label and a routing Key per crumb, root first"], ["MaxDisplayedItems", "Number", "4", "Crumbs shown before the rest collapse into an overflow menu — same name and purpose as Fluent UI Breadcrumb's own maxDisplayedItems"], ["OverflowIndex", "Number", "1", "Where the collapsed \"…\" sits in the trail — matches Fluent UI Breadcrumb's own OverflowIndex, default just after the root"], ["TruncateAt", "Number", "30", "Characters before a single crumb's own label truncates with a tooltip showing the full name — matches Fluent UI's real default"]],
+    events: [["OnItemSelect", "Returns the tapped crumb's Key, for routing"], ["OnOverflowSelect", "Returns the tapped item from the collapsed \"…\" menu"]],
+    architecture: ["MaxDisplayedItems and OverflowIndex are named and behave the same as Fluent UI Breadcrumb's real properties, not an invented collapsing scheme — a maker who already knows that control reads this one for free", "A single crumb's own label truncates independently at TruncateAt characters, with the full label available as a tooltip — the trail collapsing (MaxDisplayedItems) and one label truncating (TruncateAt) are two separate, real behaviors in Fluent UI's own control, not one feature standing in for both", "The current (last) crumb renders as plain text, not a link — it's already the page the visitor is on, so making it tap-through-to-itself is not a real destination"],
+    examples: ["Record hierarchy trail", "File/folder path", "Multi-step wizard location"],
+    accessibility: ["The trail is a landmark nav region with an accessible name (\"Breadcrumb\"), not an unlabeled row of links", "A truncated crumb's full label is still available as its accessible name, not only inside a hover-only tooltip", "The overflow \"…\" control has a real accessible name (\"Show N more\"), not a bare ellipsis glyph with no label"],
+    limitations: ["Routing on OnItemSelect/OnOverflowSelect stays entirely host-owned; the component only reports what was tapped", "A single crumb label longer than the trail's own available width still needs TruncateAt tuned down, since collapsing other crumbs (MaxDisplayedItems) doesn't shrink an individual label that's already too long"],
+    variants: [
+      ["Full trail", "Every level shown, no collapsing — for a shallow hierarchy that always fits, as shown in Preview."],
+      ["Collapsed", "MaxDisplayedItems reached — middle levels collapse into a single \"…\" overflow menu."],
+      ["Compact", "Chevron-separated labels only, smaller type, for a dense toolbar rather than a full-width header."],
+      ["Single-level", "Just Home and the current page — for a two-level app where a full trail would be one crumb too many."]
+    ]
+  },
+  "approval-journey": {
+    summary: "A visual approval chain matching Power Automate's own real approval types — Sequential, or parallel with Everyone-must-approve / First-to-respond.",
+    properties: [["Stages", "Table", "3 sample approvers", "Approver, Status (Pending/Approved/Rejected), RespondedOn"], ["ApprovalType", "Text", "Sequential", "Sequential, Everyone must approve, or First to respond — the same three real Power Automate approval behaviors"], ["Details", "Text", "Blank", "The request's own summary text, shown above the chain"]],
+    events: [["OnApprove", "Fires with response \"Approve\" — matching Power Automate's own case-sensitive Approver response value exactly"], ["OnReject", "Fires with response \"Reject\", same case-sensitivity note"], ["OnStageSelect", "Returns the tapped stage's full detail"]],
+    architecture: ["ApprovalType's three values and their meaning are checked directly against Power Automate's real \"Start and wait for an approval\" action: Sequential asks one approver at a time in order; Everyone must approve waits on every stage and rejects the whole chain on a single Reject; First to respond resolves the instant any one approver responds", "OnApprove/OnReject deliberately return the literal strings \"Approve\"/\"Reject\" — the same case-sensitive values Power Automate's own approval connector uses — so a flow already built around that connector's response shape doesn't need to remap this component's output", "Sequential rendering visually locks stages after the active one (grayed, unreachable) while Everyone/First-to-respond render every stage open and live at once — the layout itself communicates which real approval type is running, not just a text label naming it"],
+    examples: ["Expense approval chain", "Document sign-off", "Change request approval"],
+    accessibility: ["Status always renders as icon plus text word (\"Approved\", \"Pending\") next to each approver's name, never a color-coded dot alone", "Sequential's locked, not-yet-reached stages are announced as unavailable rather than just visually dimmed with no state conveyed to a screen reader", "Details, the request's own summary, always precedes the chain in reading order, so \"what am I approving\" is announced before \"who has to approve it\""],
+    limitations: ["The component visualizes a chain; it triggers no real approval request — wiring OnApprove/OnReject into an actual Power Automate flow (or the same connector) is the host's job", "Custom Responses (the two other real Power Automate approval types, beyond simple Approve/Reject) aren't modeled here — Stages' Status is fixed to Pending/Approved/Rejected"],
+    variants: [
+      ["Sequential", "One approver at a time, later stages locked until their turn — as shown in Preview."],
+      ["Everyone must approve", "All stages open and live at once; any single Reject ends the whole chain."],
+      ["First to respond", "All stages open at once; the first response of either kind resolves the entire request."],
+      ["Compact", "Condensed avatar-and-status pills in a single row, for a record header rather than a full approval screen."]
+    ]
+  },
+  "guided-process-stepper": {
+    summary: "A numbered step indicator for a multi-screen wizard — there's no single official Power Apps \"stepper\" control, so this follows the common wizard pattern instead.",
+    properties: [["Steps", "Table", "5 sample steps", "Label and Status (Complete/Current/Upcoming) per step"], ["CurrentStep", "Number", "1", "1-based index of the active step"], ["AllowStepBack", "Boolean", "true", "Whether a completed step is tappable to return to it, or the wizard only ever moves forward"]],
+    events: [["OnStepChange", "Fires when a step is tapped (only reachable ones, governed by AllowStepBack); the host owns the actual screen navigation"]],
+    architecture: ["Power Apps has no single built-in \"stepper\"/wizard control the way it has a real Data table or Attachments control — this component follows the pattern most Power Apps wizards already use in practice: one screen per step, with this indicator reused across all of them showing the same Steps table and a different CurrentStep", "AllowStepBack false locks every step except CurrentStep as unreachable — a linear intake wizard that shouldn't let someone silently skip ahead or wander back mid-submission", "The component only ever reports which step was tapped; it holds no screen-navigation logic of its own, since that's inherently specific to how each app's screens are actually organized"],
+    examples: ["Multi-step intake form", "Onboarding wizard", "Guided setup flow"],
+    accessibility: ["Each step's Status is announced as text (\"Step 2 of 5, current\"), not conveyed only by a filled vs. outlined dot", "AllowStepBack false still explains why an earlier step can't be tapped, rather than silently doing nothing on tap", "The active step's label carries a visible, non-color-only indicator (bold weight, not just an accent color) so it reads correctly for low-vision and color-blind users alike"],
+    limitations: ["No built-in screen transition or validation — Steps' own Status must be kept in sync with real form progress by the host", "Best for a single, linear flow; a wizard with real branching (different steps depending on an earlier answer) needs host logic beyond what this component tracks"],
+    variants: [
+      ["Horizontal", "Steps in a left-to-right row with a connecting line — as shown in Preview."],
+      ["Vertical", "The same steps stacked top to bottom, for a narrow panel alongside the active step's own form."],
+      ["Numbered", "Each dot shows its step number instead of a plain filled/outline circle."],
+      ["Linear-locked", "AllowStepBack off — completed steps are visually marked done but not tappable, for a submission that can't be revisited once past."]
+    ]
+  },
+  "workflow-route-map": {
+    summary: "A simplified branching route diagram — inspired by Power Automate's own flow-designer canvas, deliberately scaled back from a full graph editor to a read-only route view.",
+    properties: [["Nodes", "Table", "6 sample nodes", "Label, Status (Complete/Active/Pending/Blocked), and Order along the route"], ["Connections", "Table", "Linear + one branch", "From/To node pairs; a node with two outgoing Connections renders as a branch point"], ["Orientation", "Text", "horizontal", "horizontal or vertical"]],
+    events: [["OnNodeSelect", "Returns the tapped node's full detail"]],
+    architecture: ["Deliberately not a general graph editor the way Power Automate's own flow-designer canvas is — Nodes/Connections describe a route through a process, read-only, not an authoring surface for building new workflow logic", "A branch point (a node with more than one outgoing Connection) renders both paths visibly diverging, so a workflow with a real conditional split reads as one at a glance rather than looking identical to a strictly linear one", "Connections is a separate table from Nodes specifically so the same node set can be re-wired into a different route shape without renaming or restructuring the nodes themselves"],
+    examples: ["Intake-to-resolution process map", "Release pipeline stages", "Case routing overview"],
+    accessibility: ["Connections between nodes are decorative; reading order follows Nodes' own Order field, not visual position on the diagram", "Status renders as icon plus text on every node, so a Blocked node reads as blocked in text even where the diagram's own color coding can't be perceived", "A branch point states in text which condition sent the route down each path, not only an unlabeled fork in the diagram"],
+    limitations: ["Read-only — it visualizes a route, it doesn't execute or evaluate the conditions that actually drove a branch", "Best for a route in the low tens of nodes; a genuinely large or deeply branching process needs a real diagramming surface, not this component"],
+    variants: [
+      ["Linear", "A straight left-to-right (or top-to-bottom) sequence with no branch points — as shown in Preview."],
+      ["Branching", "One or more nodes split into two diverging paths, for a process with a real conditional route."],
+      ["Compact", "Smaller nodes and no connector labels, for an overview tile rather than a full process map."],
+      ["Swimlane", "Nodes grouped into horizontal bands by owner or team, for a route that hands off between different groups."]
+    ]
+  },
+  "branded-loading-experience": {
+    summary: "A branded loading state — logo, message and real progress — for the gap between opening an app and its first screen actually being ready.",
+    properties: [["Title", "Text", "Loading your workspace", "Primary loading message"], ["Progress", "Number", "0", "0-100; drives both the progress bar and the announced percentage"], ["LogoUrl", "Text", "Blank", "Optional brand mark shown above the message; falls back to a plain spinner when blank"], ["CanCancel", "Boolean", "false", "Shows a cancel action for a load that's allowed to be interrupted"]],
+    events: [["OnCancel", "Signals a cancellation request; the host owns actually aborting whatever is loading"]],
+    architecture: ["Progress is a real, host-supplied number, not a decorative animation guessing at how long something takes — a data-heavy screen that actually knows how far along its own load is should say so", "LogoUrl blank falls back to a plain spinner rather than an empty space where a logo was expected, so a host that hasn't wired branding in yet still gets a complete, correct-looking loading state", "CanCancel governs a real event, not just a visual affordance — a load a host can't actually interrupt shouldn't offer a button that implies it can"],
+    examples: ["App startup splash", "Large report generation", "Data refresh overlay"],
+    accessibility: ["Progress changes are announced through a live region as the percentage updates, not only a visually moving bar", "The loading state as a whole is announced once on appearing (\"Loading, please wait\"), not silently left for a screen reader to discover on its own", "CanCancel's action has a real accessible name (\"Cancel loading\"), reachable by keyboard, not a bare icon"],
+    limitations: ["The component only displays progress; it has no way to know how long an operation will actually take beyond what Progress reports", "A LogoUrl pointing at a slow or failed image load can itself become a visible delay — a data URI or a pre-cached asset avoids that"],
+    variants: [
+      ["Spinner", "An indeterminate spinner with just the Title message, for a load with no meaningful progress to report."],
+      ["Progress bar", "A real percentage bar driven by Progress — as shown in Preview."],
+      ["Branded splash", "LogoUrl front and center, full-screen, for the very first thing a visitor sees when the app opens."],
+      ["Skeleton", "Content-shaped gray placeholder blocks instead of a spinner or bar, for a screen that's about to fill in with real content in roughly the same layout."]
+    ]
   }
 };
 
