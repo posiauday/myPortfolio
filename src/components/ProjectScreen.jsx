@@ -9,13 +9,13 @@ import { ArrowRight, BarChart3, FileText, Layers3, ShieldCheck, Workflow } from 
 function ProjectScreen({ kind, color }) {
   const Metric = ({ label, value }) => (
     <div className="rounded-xl bg-white p-3 shadow-sm">
-      <span className="text-[9px] text-slate-400">{label}</span>
+      <span className="text-[9px] text-slate-500">{label}</span>
       <b className="mt-1 block text-xl" style={{ color }}>{value}</b>
     </div>
   );
   const Field = ({ label, wide = false }) => (
     <div className={wide ? "md:col-span-2" : ""}>
-      <span className="text-[9px] font-black uppercase tracking-wider text-slate-400">{label}</span>
+      <span className="text-[9px] font-black uppercase tracking-wider text-slate-500">{label}</span>
       <div className="mt-1 h-9 rounded-lg border border-slate-200 bg-white" />
     </div>
   );
@@ -24,7 +24,7 @@ function ProjectScreen({ kind, color }) {
     return (
       <div className="h-full bg-[#F4F6F8] p-4 text-slate-900">
         <div className="flex items-center justify-between rounded-xl bg-white p-3 shadow-sm">
-          <div><b className="block text-sm">Client Projects</b><span className="text-[9px] text-slate-400">Work Scope Management System</span></div>
+          <div><b className="block text-sm">Client Projects</b><span className="text-[9px] text-slate-500">Work Scope Management System</span></div>
           <button className="rounded-lg px-3 py-2 text-[9px] font-black text-white" style={{ background: color }}>+ Add client</button>
         </div>
         <div className="mt-3 grid grid-cols-3 gap-2"><Metric label="Clients" value="128" /><Metric label="Active" value="42" /><Metric label="Pending" value="07" /></div>
@@ -170,7 +170,7 @@ function ProjectScreen({ kind, color }) {
             {["Intake", "Review", "Approval", "Complete"].map((x, i) => (
               <div key={x} className="flex items-center gap-3 rounded-xl bg-white p-3 shadow-sm">
                 <span className="grid h-8 w-8 place-items-center rounded-full text-[10px] font-black text-white" style={{ background: i < 2 ? color : "#CBD5E1" }}>{i < 2 ? "\u2713" : i + 1}</span>
-                <b className="text-xs">{x}</b><span className="ml-auto text-[9px] text-slate-400">{i < 2 ? "Complete" : "Pending"}</span>
+                <b className="text-xs">{x}</b><span className="ml-auto text-[9px] text-slate-500">{i < 2 ? "Complete" : "Pending"}</span>
               </div>
             ))}
           </div>
@@ -278,7 +278,7 @@ function ProjectScreen({ kind, color }) {
         ) : (
           <div className="mt-4 rounded-xl bg-white p-4 shadow-sm">
             <div className="flex justify-between border-b border-slate-100 pb-3">
-              <div><b className="text-sm">{kind === "tender-automation-readiness" ? "Generation checklist" : kind === "tender-automation-invitation" ? "Sample contractor package" : "Sample client package"}</b><span className="block text-[8px] text-slate-400">Reference DEMO-1042</span></div>
+              <div><b className="text-sm">{kind === "tender-automation-readiness" ? "Generation checklist" : kind === "tender-automation-invitation" ? "Sample contractor package" : "Sample client package"}</b><span className="block text-[8px] text-slate-500">Reference DEMO-1042</span></div>
               <span className="rounded-full bg-green-50 px-2 py-1 text-[9px] font-bold text-green-700">Synthetic</span>
             </div>
             {["Exterior repair package", "Mechanical allowance", "Finishing work"].map((x, i) => (

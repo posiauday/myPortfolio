@@ -4,6 +4,7 @@ import { experience } from "../data/experience.js";
 import useScrollFill from "../hooks/useScrollFill.js";
 import useRevealEach from "../hooks/useRevealEach.js";
 import useSpotlight from "../hooks/useSpotlight.js";
+import { darken, lighten } from "../lib/color.js";
 import NumberTicker from "./NumberTicker.jsx";
 import RevealHeading from "./RevealHeading.jsx";
 
@@ -62,8 +63,8 @@ function ExperienceEntry({ item, revealed, itemRef }) {
 
         <div className="flex flex-wrap items-center gap-2">
           <span
-            className="rounded-full px-3 py-1 text-xs font-black"
-            style={{ background: `${item.color}18`, color: item.color }}
+            className="rounded-full px-3 py-1 text-xs font-black text-[color:var(--badge-light)] dark:text-[color:var(--badge-dark)]"
+            style={{ background: `${item.color}18`, "--badge-light": darken(item.color), "--badge-dark": lighten(item.color) }}
           >
             {item.start} &ndash; {item.end}
           </span>
@@ -110,8 +111,8 @@ function ExperienceEntry({ item, revealed, itemRef }) {
             </div>
             <button
               onClick={() => setExpanded(value => !value)}
-              className="mt-4 text-sm font-bold hover:underline"
-              style={{ color: item.color }}
+              className="mt-4 text-sm font-bold hover:underline text-[color:var(--badge-light)] dark:text-[color:var(--badge-dark)]"
+              style={{ "--badge-light": darken(item.color), "--badge-dark": lighten(item.color) }}
             >
               {expanded ? "Show less" : `Show ${extraHighlights.length} more`}
             </button>
@@ -128,7 +129,7 @@ function ExperienceSection() {
 
   return (
     <section id="experience" className="mx-auto max-w-7xl px-5 py-14 sm:py-20 lg:py-24">
-      <p className="text-xs font-black uppercase tracking-[.2em] text-[#168326]">Career timeline</p>
+      <p className="text-xs font-black uppercase tracking-[.2em] text-[#168326] dark:text-[#4ADE80]">Career timeline</p>
       <RevealHeading className="mt-3 text-4xl font-black sm:text-6xl">Where the systems got built.</RevealHeading>
       <p className="mt-5 max-w-3xl text-base leading-7 text-slate-600 dark:text-slate-300">
         <NumberTicker value={5} className="text-lg font-black text-[#168326]" />+ years architecting Power Platform

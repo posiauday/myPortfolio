@@ -13,7 +13,7 @@ function PowerAppsEmbed({ componentId, title }) {
         <div className="max-w-md">
           <span className="mx-auto grid h-14 w-14 place-items-center rounded-2xl bg-violet-100 font-black text-violet-800">PA</span>
           <h3 className="mt-5 text-2xl font-black">Live Power Apps runtime not connected</h3>
-          <p className="mt-3 text-sm leading-6 text-slate-500">Publish a dedicated Canvas showcase app, share it with authorized users, then configure its App ID and Tenant ID. The static preview above remains available without sign-in.</p>
+          <p className="mt-3 text-sm leading-6 text-slate-600 dark:text-slate-300">Publish a dedicated Canvas showcase app, share it with authorized users, then configure its App ID and Tenant ID. The static preview above remains available without sign-in.</p>
           <div className="mt-5 rounded-2xl bg-slate-100 p-4 text-left text-xs dark:bg-white/10">
             <b>Launch parameter</b>
             <code className="mt-2 block break-all text-violet-700 dark:text-violet-300">component={componentId}</code>

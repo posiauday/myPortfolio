@@ -28,12 +28,12 @@ function Catalog({ dark, onSelect, onBack }) {
         <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-5">
           <button onClick={onBack} className="flex items-center gap-2 font-bold"><ArrowLeft size={18} /> Home</button>
           <b className="hidden sm:block">All components</b>
-          <button onClick={onBack} className="grid h-10 w-10 place-items-center rounded-full bg-slate-100 dark:bg-white/10"><X size={18} /></button>
+          <button onClick={onBack} aria-label="Close, back to home" className="grid h-10 w-10 place-items-center rounded-full bg-slate-100 dark:bg-white/10"><X size={18} /></button>
         </div>
       </header>
 
       <div className="mx-auto max-w-7xl px-5 py-10">
-        <p className="text-xs font-black uppercase tracking-[.2em] text-[#168326]">Design system</p>
+        <p className="text-xs font-black uppercase tracking-[.2em] text-[#168326] dark:text-[#4ADE80]">Design system</p>
         <h1 className="mt-3 text-4xl font-black sm:text-6xl">All {components.length} components.</h1>
         <p className="mt-4 max-w-3xl text-lg leading-8 text-slate-600 dark:text-slate-300">
           Search or filter by category, then open any one for its full contract &mdash; Properties, Events,
@@ -54,8 +54,9 @@ function Catalog({ dark, onSelect, onBack }) {
           </div>
         </div>
 
+        <h2 className="sr-only">All components</h2>
         {shown.length === 0 ? (
-          <p className="mt-16 text-center text-sm font-bold text-slate-400">No components match that search and category.</p>
+          <p className="mt-16 text-center text-sm font-bold text-slate-600 dark:text-slate-300">No components match that search and category.</p>
         ) : (
           <div className="mt-8 grid gap-5 sm:grid-cols-2 xl:grid-cols-3">
             {shown.map(c => <ComponentCard key={c.id} item={c} onSelect={onSelect} />)}

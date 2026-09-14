@@ -43,6 +43,55 @@
       href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&family=JetBrains+Mono:wght@400;600&display=swap"
       rel="stylesheet"
     />
+
+    <!-- Person structured data — every value here already appears as real,
+         plain-text content elsewhere on the page (experience.js,
+         certifications.js, config.js); nothing is asserted here that
+         isn't. Two deliberate omissions rather than guesses: no `image`,
+         since schema.org's Person.image expects an actual photo and this
+         repo has none (the OG graphic is a design asset, not a headshot,
+         so using it here would be a mismatched claim); and AB-410 is left
+         out of hasCredential entirely, since that property asserts a
+         credential is held — AB-410 is still "In Progress" per
+         certifications.js, so only the completed PL-300 is listed. -->
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "Person",
+        "name": "Uday Posia",
+        "url": "https://posiauday.github.io/myPortfolio/",
+        "jobTitle": "Senior Programmer Analyst",
+        "description": "Power Platform and Microsoft 365 architect — secure, scalable applications, automation, data, analytics and governance for the public sector.",
+        "email": "mailto:udayposia@gmail.com",
+        "sameAs": ["https://linkedin.com/in/udayposia"],
+        "address": {
+          "@type": "PostalAddress",
+          "addressLocality": "Regina",
+          "addressRegion": "SK",
+          "addressCountry": "CA"
+        },
+        "worksFor": {
+          "@type": "GovernmentOrganization",
+          "name": "Government of Saskatchewan — Ministry of SaskBuilds and Procurement"
+        },
+        "knowsAbout": [
+          "Microsoft Power Apps",
+          "Microsoft Power Platform",
+          "Microsoft Power BI",
+          "Microsoft Dynamics CRM",
+          "OpenText Developer Cloud",
+          "PowerShell"
+        ],
+        "hasCredential": [
+          {
+            "@type": "EducationalOccupationalCredential",
+            "credentialCategory": "certification",
+            "name": "Power BI Data Analyst Associate (PL-300)",
+            "recognizedBy": { "@type": "Organization", "name": "Microsoft" }
+          }
+        ]
+      }
+    </script>
   </head>
   <body>
     <div id="root"></div>

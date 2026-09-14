@@ -10,6 +10,7 @@ import useParallax from "../hooks/useParallax.js";
 import useTilt from "../hooks/useTilt.js";
 import useComponentRoute from "../hooks/useComponentRoute.js";
 import useScrollThreshold from "../hooks/useScrollThreshold.js";
+import useActiveSection from "../hooks/useActiveSection.js";
 import useMagnetic from "../hooks/useMagnetic.js";
 import useCopyFeedback from "../hooks/useCopyFeedback.js";
 import ProjectsSection from "./ProjectsSection.jsx";
@@ -36,6 +37,12 @@ const IMPACT_STATS = [
   { display: "PL-300", label: "Microsoft Certified" }
 ];
 
+// Module scope so both the nav labels and the scroll-spy's ids array
+// stay referentially stable across renders (an inline literal would
+// re-run useActiveSection's IntersectionObserver setup every render).
+const NAV_ITEMS = ["Projects", "Experience", "Components", "Recognition"];
+const NAV_SECTION_IDS = NAV_ITEMS.map(x => x.toLowerCase());
+
 /* ============================================================
    MAIN PORTFOLIO
    Nav labels match the real section ids (Projects / Experience /
@@ -50,6 +57,7 @@ export default function Portfolio() {
   const [barsRef, barsIn] = useReveal();
   const scrolled = useParallax();
   const scrolledPastHero = useScrollThreshold(40);
+  const activeSection = useActiveSection(NAV_SECTION_IDS);
   const {
     wrapperRef: heroWrapperRef,
     cardRef: heroCardRef,
@@ -60,6 +68,7 @@ export default function Portfolio() {
   const browseMagnetRef = useMagnetic();
   const emailMagnetRef = useMagnetic();
   const linkedinMagnetRef = useMagnetic();
+  const resumeMagnetRef = useMagnetic();
   const [themeCopied, copyTheme] = useCopyFeedback();
   const themeYamlText = useMemo(() => buildBrandThemeYaml(), []);
 
@@ -108,7 +117,7 @@ export default function Portfolio() {
               <div>
                 <b className="block text-sm">{CONTACT.name}</b>
                 <span
-                  className={`block overflow-hidden text-[9px] uppercase tracking-widest text-slate-500 transition-all duration-300 motion-reduce:transition-none ${
+                  className={`block overflow-hidden text-[9px] uppercase tracking-widest text-slate-500 transition-all duration-300 motion-reduce:transition-none dark:text-slate-400 ${
                     scrolledPastHero ? "max-h-0 opacity-0" : "max-h-4 opacity-100"
                   }`}
                 >
@@ -117,7 +126,21 @@ export default function Portfolio() {
               </div>
             </div>
             <div className="hidden gap-1 md:flex">
-              {["Projects", "Experience", "Components", "Recognition"].map(x => <a key={x} href={`#${x.toLowerCase()}`} className="rounded-full px-4 py-2 text-sm font-bold hover:bg-green-50 hover:text-[#168326] dark:hover:bg-white/10">{x}</a>)}
+              {NAV_ITEMS.map(x => {
+                const isActive = x.toLowerCase() === activeSection;
+                return (
+                  <a
+                    key={x}
+                    href={`#${x.toLowerCase()}`}
+                    aria-current={isActive ? "true" : undefined}
+                    className={`rounded-full px-4 py-2 text-sm font-bold transition-colors hover:bg-green-50 hover:text-[#168326] dark:hover:bg-white/10 ${
+                      isActive ? "bg-green-50 text-[#168326] dark:bg-white/10 dark:text-[#4ADE80]" : ""
+                    }`}
+                  >
+                    {x}
+                  </a>
+                );
+              })}
             </div>
             <div className="flex items-center gap-1">
               <button onClick={() => setDark(!dark)} className="grid h-10 w-10 place-items-center rounded-full" aria-label={dark ? "Switch to light mode" : "Switch to dark mode"}>{dark ? <Sun size={18} /> : <Moon size={18} />}</button>
@@ -138,16 +161,22 @@ export default function Portfolio() {
               id="mobile-nav-menu"
               className="mt-2 flex flex-col gap-1 rounded-2xl border border-white/70 bg-white/95 p-2 shadow-xl backdrop-blur dark:border-white/10 dark:bg-[#101816]/95 md:hidden"
             >
-              {["Projects", "Experience", "Components", "Recognition"].map(x => (
-                <a
-                  key={x}
-                  href={`#${x.toLowerCase()}`}
-                  onClick={() => setMenuOpen(false)}
-                  className="rounded-xl px-4 py-3 text-sm font-bold hover:bg-green-50 hover:text-[#168326] dark:hover:bg-white/10"
-                >
-                  {x}
-                </a>
-              ))}
+              {NAV_ITEMS.map(x => {
+                const isActive = x.toLowerCase() === activeSection;
+                return (
+                  <a
+                    key={x}
+                    href={`#${x.toLowerCase()}`}
+                    onClick={() => setMenuOpen(false)}
+                    aria-current={isActive ? "true" : undefined}
+                    className={`rounded-xl px-4 py-3 text-sm font-bold transition-colors hover:bg-green-50 hover:text-[#168326] dark:hover:bg-white/10 ${
+                      isActive ? "bg-green-50 text-[#168326] dark:bg-white/10 dark:text-[#4ADE80]" : ""
+                    }`}
+                  >
+                    {x}
+                  </a>
+                );
+              })}
             </div>
           )}
         </div>
@@ -176,7 +205,7 @@ export default function Portfolio() {
         </div>
         <div className="relative mx-auto grid max-w-7xl items-center gap-8 px-5 py-10 sm:min-h-[560px] sm:gap-10 sm:py-12 lg:min-h-[700px] lg:grid-cols-2 lg:gap-12 lg:py-16">
           <div style={layer(0.1)}>
-            <span className="inline-flex items-center gap-2 rounded-full border bg-white/80 px-4 py-2 text-xs font-black text-[#168326] dark:border-white/10 dark:bg-white/10"><Sparkles size={14} /> POWER PLATFORM + MICROSOFT 365</span>
+            <span className="inline-flex items-center gap-2 rounded-full border bg-white/80 px-4 py-2 text-xs font-black text-[#168326] dark:border-white/10 dark:bg-white/10 dark:text-[#4ADE80]"><Sparkles size={14} /> POWER PLATFORM + MICROSOFT 365</span>
             <h1 className="hero-title-size mt-7 font-black leading-[.96] tracking-[-.065em]">I build systems<br /><span className="grad-hero-text bg-clip-text pb-2 text-transparent">people trust.</span></h1>
             <p className="mt-7 max-w-2xl text-lg leading-8 text-slate-600 dark:text-slate-300">Secure, scalable applications, automation, data, analytics and governance, designed from discovery through long-term operations.</p>
             <div className="mt-8 flex flex-wrap gap-3">
@@ -209,7 +238,7 @@ export default function Portfolio() {
                       further forward than the header — real parallax
                       inside the card, not just a single rotated plane. */}
                   <div className="flex justify-between [transform:translateZ(20px)]">
-                    <div><span className="text-xs font-black uppercase tracking-widest text-slate-400">Portfolio command</span><h2 className="mt-2 text-2xl font-black">Executive overview</h2></div>
+                    <div><span className="text-xs font-black uppercase tracking-widest text-slate-500">Portfolio command</span><h2 className="mt-2 text-2xl font-black">Executive overview</h2></div>
                     <BarChart3 className="text-[#168326] [transform:translateZ(35px)]" />
                   </div>
                   <div className="mt-6 grid grid-cols-3 gap-3 [transform:translateZ(28px)]">
@@ -295,7 +324,7 @@ export default function Portfolio() {
         <div className="rounded-[34px] border border-slate-200 bg-white p-8 dark:border-white/10 dark:bg-white/5">
           <Sparkles className="text-[#5B5BD6]" />
           <h2 className="mt-16 text-3xl font-black">Enterprise-scale governance</h2>
-          <p className="mt-2 text-slate-500">Secure and maintainable delivery supporting 5,000+ users.</p>
+          <p className="mt-2 text-slate-600 dark:text-slate-300">Secure and maintainable delivery supporting 5,000+ users.</p>
         </div>
         {certifications.map(cert => {
           const inProgress = cert.status !== "Certified";
@@ -314,14 +343,14 @@ export default function Portfolio() {
                 </span>
               </div>
               <h2 className="mt-14 text-3xl font-black">{cert.name}</h2>
-              <p className="mt-2 text-slate-500">Microsoft Certified &middot; {cert.code}</p>
+              <p className="mt-2 text-slate-600 dark:text-slate-300">Microsoft Certified &middot; {cert.code}</p>
             </div>
           );
         })}
       </section>
 
       <section className="mx-auto max-w-7xl px-5 pb-14 sm:pb-20 lg:pb-24">
-        <p className="text-xs font-black uppercase tracking-[.2em] text-[#168326]">Skills</p>
+        <p className="text-xs font-black uppercase tracking-[.2em] text-[#168326] dark:text-[#4ADE80]">Skills</p>
         <RevealHeading className="mt-3 text-4xl font-black sm:text-5xl">Endorsed by people I&rsquo;ve worked with.</RevealHeading>
         <p className="mt-5 max-w-2xl text-base leading-7 text-slate-600 dark:text-slate-300">
           Straight from LinkedIn &mdash; the checked ones have been endorsed by a colleague.
@@ -345,7 +374,7 @@ export default function Portfolio() {
           href={CONTACT.linkedin}
           target="_blank"
           rel="noreferrer"
-          className="mt-6 inline-flex items-center gap-2 text-sm font-bold text-[#168326] hover:underline"
+          className="mt-6 inline-flex items-center gap-2 text-sm font-bold text-[#168326] hover:underline dark:text-[#4ADE80]"
         >
           View skills on LinkedIn <ArrowRight size={14} />
         </a>
@@ -357,6 +386,14 @@ export default function Portfolio() {
           <div className="mt-7 flex flex-wrap gap-3">
             <a ref={emailMagnetRef} href={`mailto:${CONTACT.email}`} className="rounded-full bg-[#168326] px-6 py-3 font-bold text-white">Email Uday</a>
             <a ref={linkedinMagnetRef} href={CONTACT.linkedin} target="_blank" rel="noreferrer" className="rounded-full bg-white px-6 py-3 font-bold text-[#17201B]">LinkedIn</a>
+            <a
+              ref={resumeMagnetRef}
+              href={`${import.meta.env.BASE_URL}uday-posia-resume.pdf`}
+              download
+              className="rounded-full border border-slate-300 bg-white/70 px-6 py-3 font-bold dark:border-white/20 dark:bg-white/5"
+            >
+              Download résumé
+            </a>
           </div>
         </div>
       </footer>

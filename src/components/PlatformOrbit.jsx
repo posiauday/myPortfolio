@@ -52,7 +52,7 @@ function PlatformOrbit() {
     <section className="mx-auto max-w-7xl px-5 py-14 sm:py-16 lg:py-20">
       <div className="grid items-center gap-8 sm:gap-10 lg:grid-cols-2 lg:gap-12">
         <div>
-          <p className="text-xs font-black uppercase tracking-[.2em] text-[#168326]">Platform</p>
+          <p className="text-xs font-black uppercase tracking-[.2em] text-[#168326] dark:text-[#4ADE80]">Platform</p>
           <RevealHeading className="mt-3 text-4xl font-black sm:text-5xl">One platform. Every capability.</RevealHeading>
           <p className="mt-5 max-w-lg text-base leading-7 text-slate-600 dark:text-slate-300">
             Every system on this page is built on the same core: Power Apps and Power Automate for the

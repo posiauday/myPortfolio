@@ -331,6 +331,22 @@ avatar shrinks, the tagline line collapses away, and the blur/shadow
 both increase — paired with `motion-reduce:transition-none` so the
 change snaps instantly instead of animating when reduced motion is on.
 
+### Scroll-spy nav highlighting
+
+`useActiveSection` highlights whichever of Projects / Experience /
+Components / Recognition is currently in view, in both the desktop and
+mobile nav. One `IntersectionObserver` watches all four section ids at
+once with a narrow `rootMargin` trigger band roughly a third of the way
+down the viewport, rather than a wider band or the default `0px` root —
+narrow enough that only one section is realistically "active" at a time,
+but still forgiving enough that Recognition (the shortest section, right
+at the bottom of the page) reliably gets picked up before the page runs
+out of scroll. If more than one section reports intersecting in the same
+tick — passing quickly between two, or a boundary — the last one in DOM
+order wins, since that's the one just scrolled into. The ids array is a
+module-level constant (`NAV_SECTION_IDS`), not an inline literal, so the
+effect's observer isn't torn down and rebuilt on every render.
+
 ### Aurora background
 
 The hero's mesh gradient breathes opacity slowly and each blurred blob
@@ -367,6 +383,103 @@ to remove the clip can never fire — a self-defeating loop. The fix
 observes a plain, unclipped `<h2>` and puts the `clip-path` on an inner
 `<span>` instead, so IntersectionObserver reads the real, unclipped
 geometry. Keep that split for any future clip-path-based reveal effect.
+
+### Résumé download
+
+The footer's **Download résumé** button links to `public/uday-posia-resume.pdf`,
+a single-page résumé built entirely from data already published elsewhere on
+this site — `experience.js`'s three real roles and their highlight bullets,
+`certifications.js`'s two certifications, `skills.js`'s six skills, and the
+same summary line as the hero. Nothing in it is asserted anywhere it isn't
+already stated in this repository. It deliberately has no phone number —
+only email, LinkedIn and the portfolio URL — since a résumé that leaves the
+site becomes a plain PDF anyone who receives it can forward or store
+indefinitely, unlike the page itself. Regenerating it after an `experience.js`
+or `certifications.js` edit is a manual step today: rebuild the HTML template,
+render it to PDF (a headless-Chromium print, `@page { size: Letter; margin: 0 }`
+with explicit `8.5in x 11in` sizing so it prints as one clean page), and
+replace the file in `public/` — there's no build-time step that keeps it in
+sync automatically, so re-check it by eye against the data files after any
+change to either.
+
+### JSON-LD structured data
+
+`index.html` carries a `Person` schema.org block (`<script
+type="application/ld+json">`) so search engines and social crawlers can read
+name, role, location, employer, skills and certifications as structured data,
+not just prose. Every value in it already appears as plain text elsewhere on
+the page or in this repository's own data files — nothing is asserted here
+that isn't. Two deliberate omissions rather than oversights: no `image`,
+since schema.org's `Person.image` expects an actual photograph and this repo
+has none (the Open Graph card is a designed graphic, not a headshot, so
+reusing it here would be a mismatched claim); and AB-410 is left out of
+`hasCredential` entirely, since that property asserts a credential is
+*held* — AB-410 is still "In Progress" per `certifications.js`, so only the
+completed PL-300 is listed. If AB-410 is completed, add it there too.
+
+### Accessibility
+
+An `axe-core` pass (WCAG 2A/2AA + best-practice rules) across the homepage,
+Catalog and a component Detail page — each in both light and dark mode, plus
+the homepage with every "Show more" experience entry expanded — found and
+fixed three categories of real issue, not stylistic ones:
+
+- **Unlabeled icon buttons.** The Catalog and Detail pages' header close
+  button (`<X>`, no visible text) had no accessible name at all. Both now
+  carry an explicit `aria-label`.
+- **A skipped heading level.** The Catalog page went straight from its `h1`
+  to each card's `h3` with no `h2` between them — the homepage's featured
+  grid sits under a real `h2` ("Reusable components...") so it never had
+  this problem, but Catalog's own header only has the page's `h1`. Fixed
+  with a `sr-only` `<h2>` right before the grid — present for a screen
+  reader's document outline, not meant to be seen.
+- **Text below 4.5:1 contrast**, by far the largest category, in two
+  recurring shapes:
+  - `text-slate-400`, and in a few spots `text-slate-500`, used as real
+    label/caption text (eyebrows, table headers, helper copy) against a
+    white or near-white background. Bumped to `slate-500` or `slate-600`
+    depending on how marginal the specific background was — plain white
+    clears 4.5:1 comfortably at `slate-500` (≈4.76:1); a background already
+    tinted toward a brand color needed `slate-600` to clear it too.
+  - A category/role color (green, blue, purple, magenta, orange) used
+    directly as text — on its own light tint in light mode (the maturity
+    badges, "Synthetic data" pill), or on a dark card/page background in
+    dark mode or the always-dark Projects rail. The raw brand hex clears
+    4.5:1 against *some* of these combinations and not others, so rather
+    than special-case each color, `src/lib/color.js` exports `darken()` and
+    `lighten()` (mix a fixed percentage toward black/white) and every one of
+    these spots now computes both an explicit light-mode and dark-mode
+    shade — set as CSS custom properties (`--badge-light`/`--badge-dark`) so
+    Tailwind's `dark:` variant switches between them for free, without
+    threading a `dark` boolean prop down to components that don't otherwise
+    need one.
+
+  `ProjectScreen.jsx`'s product-mockup screens are the one place `slate-400`
+  is otherwise still used as-authored — they're a fixed, always-light
+  illustration regardless of the site's own dark toggle, so they only
+  needed the flat white-background fix, not a `dark:` pair.
+
+  Keyboard operability was checked too, not just contrast: tab order
+  through the nav, hero CTAs and the first component card is sequential
+  and every stop shows a visible focus outline; the dark-mode toggle,
+  opening a component card, and closing back out of Detail all work with
+  `Enter` alone, with no keyboard trap anywhere in that path.
+
+### Performance and bundle size
+
+`npm run build`'s own report is the source of truth here — checked after
+this session's additions (the Catalog page, the live configurator, YAML
+validation, the résumé PDF link, JSON-LD, scroll-spy): the JS bundle is
+~267 KB raw / ~80 KB gzipped, CSS ~36 KB / ~7.5 KB gzipped, and
+`index.html` under 2 KB gzipped. Production dependencies are just `react`,
+`react-dom` and `lucide-react` — `js-yaml` (used by
+`scripts/validate-yaml.mjs`) is dev-only and confirmed not imported
+anywhere under `src/`, so it never reaches the browser. The one large
+static asset, `og-image.png` (368 KB), is referenced only from Open Graph
+`<meta>` tags — a normal page load never fetches it, only link-preview
+crawlers do — and the résumé PDF (~97 KB) loads only when the download
+button is actually clicked, not on page load. Nothing here needed fixing;
+this is a checkpoint to compare future additions against, not a change.
 
 ## Live Power Apps embed (optional)
 

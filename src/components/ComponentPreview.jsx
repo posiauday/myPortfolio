@@ -24,7 +24,7 @@ function ComponentPreview({ item, values = {} }) {
     const status = values.Status ?? "On track";
     return (
       <div>
-        <span className="text-sm text-slate-500">{label}</span>
+        <span className="text-sm text-slate-600 dark:text-slate-300">{label}</span>
         <div className="mt-2 flex items-end justify-between">
           <b className="text-5xl">{value}</b>
           <span className={`rounded-full px-3 py-1 text-xs font-black ${trendUp ? "bg-green-50 text-green-700" : "bg-red-50 text-red-700"}`}>
@@ -32,7 +32,7 @@ function ComponentPreview({ item, values = {} }) {
           </span>
         </div>
         <div className="mt-6 h-2 rounded-full bg-slate-100"><div className="h-full w-3/4 rounded-full" style={{ background: item.color }} /></div>
-        <span className="mt-3 block text-xs font-bold text-slate-400">{status}</span>
+        <span className="mt-3 block text-xs font-bold text-slate-600 dark:text-slate-300">{status}</span>
       </div>
     );
   }

@@ -1,6 +1,7 @@
 import { useRef, useState } from "react";
 import { ArrowLeft, ArrowRight } from "lucide-react";
 import { projectShowcases } from "../data/projectShowcases.js";
+import { darken, lighten } from "../lib/color.js";
 import ProjectScreen from "./ProjectScreen.jsx";
 import RevealHeading from "./RevealHeading.jsx";
 
@@ -92,12 +93,12 @@ function ProjectsSection() {
               >
                 <span
                   className="text-[10px] font-black tracking-[.2em]"
-                  style={{ color: active ? item.color : "rgba(255,255,255,.35)" }}
+                  style={{ color: active ? lighten(item.color) : "rgba(255,255,255,.55)" }}
                 >
                   {String(index + 1).padStart(2, "0")}
                 </span>
                 <b className="mt-2 block text-sm leading-tight">{item.title}</b>
-                <span className="mt-1 block text-[11px] leading-snug text-white/45">{item.subtitle}</span>
+                <span className="mt-1 block text-[11px] leading-snug text-white/60">{item.subtitle}</span>
               </button>
             );
           })}
@@ -118,12 +119,12 @@ function ProjectsSection() {
                       <i key={dot} className="h-2.5 w-2.5 rounded-full" style={{ background: dot }} />
                     ))}
                   </span>
-                  <span className="truncate text-[10px] font-bold text-slate-500">
+                  <span className="truncate text-[10px] font-bold text-slate-600">
                     {project.title} &mdash; {slide.title}
                   </span>
                   <span
                     className="ml-auto shrink-0 rounded-full px-2 py-0.5 text-[9px] font-black"
-                    style={{ background: `${project.color}1A`, color: project.color }}
+                    style={{ background: `${project.color}1A`, color: darken(project.color) }}
                   >
                     Synthetic data
                   </span>
@@ -179,7 +180,7 @@ function ProjectsSection() {
             {/* Project and slide detail */}
             <div className="flex flex-col justify-between border-t border-white/10 p-6 sm:p-8 lg:border-l lg:border-t-0">
               <div>
-                <span className="text-xs font-black uppercase tracking-[.18em]" style={{ color: project.color }}>
+                <span className="text-xs font-black uppercase tracking-[.18em]" style={{ color: lighten(project.color) }}>
                   {project.subtitle}
                 </span>
                 <h3 className="mt-2 text-4xl font-black">{project.title}</h3>
@@ -195,14 +196,14 @@ function ProjectsSection() {
                   ))}
                 </div>
                 <div className="mt-8 border-t border-white/10 pt-6">
-                  <span className="text-[10px] font-black uppercase tracking-[.18em]" style={{ color: project.color }}>
+                  <span className="text-[10px] font-black uppercase tracking-[.18em]" style={{ color: lighten(project.color) }}>
                     {slide.eyebrow}
                   </span>
                   <h4 className="mt-2 text-2xl font-black">{slide.title}</h4>
                   <p className="mt-3 text-sm leading-6 text-white/60">{slide.description}</p>
                 </div>
               </div>
-              <span className="mt-8 text-xs font-bold text-white/40">
+              <span className="mt-8 text-xs font-bold text-white/60">
                 Screen {String(slideIndex + 1).padStart(2, "0")} / {String(total).padStart(2, "0")}
               </span>
             </div>
