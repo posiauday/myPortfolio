@@ -459,6 +459,141 @@ function ComponentPreview({ item, values = {} }) {
     );
   }
 
+  if (item.title === "Project Health Summary") {
+    const dims = [
+      { name: "Scope", tone: item.color, note: "On track, no changes" },
+      { name: "Schedule", tone: "#D83B01", note: "2 weeks behind" },
+      { name: "Budget", tone: item.color, note: "Within approved envelope" },
+      { name: "Quality", tone: "#0F6CBD", note: "Minor defects, tracked" }
+    ];
+    return (
+      <div>
+        <div className="flex items-center justify-between">
+          <b className="text-sm">Program health</b>
+          <span className="text-[10px] font-bold text-slate-500 dark:text-slate-400">As of Mar 14</span>
+        </div>
+        <div className="mt-3 grid grid-cols-2 gap-2">
+          {dims.map(d => (
+            <div key={d.name} className="rounded-xl bg-slate-50 p-3 dark:bg-white/10">
+              <div className="flex items-center gap-2">
+                <span aria-hidden="true" className="h-2 w-2 shrink-0 rounded-full" style={{ background: d.tone }} />
+                <b className="text-xs">{d.name}</b>
+              </div>
+              <p className="mt-1.5 text-[10px] leading-4 text-slate-500 dark:text-slate-400">{d.note}</p>
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  }
+
+  if (item.title === "Milestone Tracker") {
+    const milestones = [
+      { name: "Kickoff", status: "done" },
+      { name: "Design sign-off", status: "done" },
+      { name: "Build complete", status: "current" },
+      { name: "UAT", status: "upcoming" },
+      { name: "Go-live", status: "upcoming" }
+    ];
+    const dotColor = s => (s === "done" ? item.color : s === "current" ? "#0F6CBD" : "#CBD5E1");
+    return (
+      <div className="relative pt-2">
+        <span aria-hidden="true" className="absolute left-0 right-0 top-[22px] h-px bg-slate-200 dark:bg-white/10" />
+        <div className="relative flex justify-between">
+          {milestones.map(m => (
+            <div key={m.name} className="flex flex-col items-center px-1 text-center" style={{ width: `${100 / milestones.length}%` }}>
+              <span aria-hidden="true" className="grid h-4 w-4 shrink-0 place-items-center rounded-full ring-4 ring-white dark:ring-[#17201B]" style={{ background: dotColor(m.status) }} />
+              <span className="mt-2 break-words text-[9px] font-bold leading-tight text-slate-600 dark:text-slate-300">{m.name}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  }
+
+  if (item.title === "Decision Log") {
+    const decisions = [
+      { date: "Mar 2", decision: "Adopt SharePoint for document storage", owner: "J. Okafor", status: "Decided", color: item.color },
+      { date: "Feb 18", decision: "Delay Phase 2 rollout by 2 weeks", owner: "Priya Shah", status: "Decided", color: item.color },
+      { date: "Feb 3", decision: "Vendor selection for integration layer", owner: "M. Chen", status: "Open", color: "#0F6CBD" }
+    ];
+    return (
+      <div className="space-y-2">
+        {decisions.map(d => (
+          <div key={d.decision} className="rounded-xl bg-slate-50 p-3 dark:bg-white/10">
+            <div className="flex items-start justify-between gap-2">
+              <b className="text-xs leading-5">{d.decision}</b>
+              <span
+                className="shrink-0 rounded-full px-2 py-0.5 text-[9px] font-black text-[color:var(--badge-light)] dark:text-[color:var(--badge-dark)]"
+                style={{ background: `${d.color}18`, "--badge-light": darken(d.color), "--badge-dark": lighten(d.color) }}
+              >
+                {d.status}
+              </span>
+            </div>
+            <span className="mt-1 block text-[10px] text-slate-500 dark:text-slate-400">{d.date} &middot; {d.owner}</span>
+          </div>
+        ))}
+      </div>
+    );
+  }
+
+  if (item.title === "Enterprise Dialog") {
+    return (
+      <div className="grid place-items-center rounded-xl bg-slate-100 p-6 dark:bg-white/5">
+        <div className="w-full max-w-[280px] rounded-2xl bg-white p-5 shadow-xl dark:bg-[#17201B]">
+          <b className="text-sm">Delete confirmation</b>
+          <p className="mt-2 text-xs leading-5 text-slate-600 dark:text-slate-300">This action can&rsquo;t be undone.</p>
+          <div className="mt-4 flex justify-end gap-2">
+            <span className="rounded-full bg-slate-100 px-3 py-1.5 text-xs font-bold dark:bg-white/10">Cancel</span>
+            <span className="rounded-full px-3 py-1.5 text-xs font-bold text-white" style={{ background: "#D13438" }}>Confirm</span>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (item.title === "Comments & Mentions") {
+    return (
+      <div>
+        <div className="space-y-3">
+          <div className="flex gap-2">
+            <span className="grid h-7 w-7 shrink-0 place-items-center rounded-full text-[9px] font-black text-white" style={{ background: item.color }}>PS</span>
+            <div className="min-w-0 flex-1 rounded-xl bg-slate-50 p-2.5 dark:bg-white/10">
+              <div className="flex items-center justify-between gap-2">
+                <b className="text-xs">Priya Shah</b>
+                <span className="shrink-0 text-[10px] text-slate-500 dark:text-slate-400">2h ago</span>
+              </div>
+              <p className="mt-1 text-xs leading-5 text-slate-600 dark:text-slate-300">
+                Can someone loop in{" "}
+                <span
+                  className="font-bold text-[color:var(--badge-light)] dark:text-[color:var(--badge-dark)]"
+                  style={{ "--badge-light": darken(item.color), "--badge-dark": lighten(item.color) }}
+                >
+                  @J. Okafor
+                </span>{" "}
+                on the vendor timeline?
+              </p>
+            </div>
+          </div>
+          <div className="flex gap-2">
+            <span className="grid h-7 w-7 shrink-0 place-items-center rounded-full text-[9px] font-black text-white" style={{ background: "#0F6CBD" }}>JO</span>
+            <div className="min-w-0 flex-1 rounded-xl bg-slate-50 p-2.5 dark:bg-white/10">
+              <div className="flex items-center justify-between gap-2">
+                <b className="text-xs">J. Okafor</b>
+                <span className="shrink-0 text-[10px] text-slate-500 dark:text-slate-400">1h ago</span>
+              </div>
+              <p className="mt-1 text-xs leading-5 text-slate-600 dark:text-slate-300">On it &mdash; will confirm by EOD.</p>
+            </div>
+          </div>
+        </div>
+        <div className="mt-3 flex items-center gap-2 rounded-full border border-slate-200 px-3 py-2 dark:border-white/10">
+          <span className="flex-1 text-xs text-slate-500 dark:text-slate-400">Add a comment&hellip;</span>
+          <span className="rounded-full px-3 py-1 text-xs font-bold text-white" style={{ background: item.color }}>Post</span>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-3">
       {["Submitted", "In review", "Approved", "Operational"].map((x, i) => (

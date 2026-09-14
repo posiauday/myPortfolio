@@ -393,6 +393,81 @@ const overrides = {
       ["Compact", "No axis labels, just the colored grid — for a small dashboard tile rather than a full risk-review screen."],
       ["Detailed", "ShowNames on — each cell lists its risks by name instead of a plain count, once there's room for it."]
     ]
+  },
+  "project-health-summary": {
+    summary: "A four-dimension RAG rollup — Scope, Schedule, Budget, Quality — the standard shape a PM status report's own headline uses.",
+    properties: [["Dimensions", "Table", "4 sample dimensions", "Scope/Schedule/Budget/Quality — each with a Tone (Red/Amber/Green) and a one-line Note"], ["OverallTone", "Text", "Amber", "The report's single headline tone — computed by the host from Dimensions, not derived inside the component"], ["AsOfDate", "DateTime", "Today()", "Shown as \"As of {date}\" under the heading"]],
+    events: [["OnDimensionSelect", "Returns the tapped dimension, for drilling into what's actually driving its tone"]],
+    architecture: ["OverallTone is a host-computed input, not something this component derives from Dimensions itself — different programs roll up a Red among four Greens differently (worst-of, weighted, or a PM's own judgment call), so baking one rule in would be wrong for some of them", "Each dimension's Note is required, not optional — a Red or Amber tone with no explanation is exactly the kind of status report a sponsor has to chase someone down to understand", "Fixed at exactly the four standard PM dimensions (Scope/Schedule/Budget/Quality) rather than an open-ended list, so this always reads as the same shape a status report reader already expects"],
+    examples: ["Weekly status report header", "Steering committee dashboard", "Program health rollup"],
+    accessibility: ["Every Tone renders next to its own text (\"Green\", \"Amber\", \"Red\") and its Note, never the color swatch alone", "OverallTone is announced as a sentence (\"Overall: Amber\") rather than only a colored bar at the top of the card", "AsOfDate is plain, readable text — never conveyed only through a subtle timestamp color or icon"],
+    limitations: ["OverallTone must be computed and passed in; this component has no rollup logic of its own", "Fixed to the 4 standard dimensions — a program tracking a 5th (e.g. Resourcing) needs to fold it into one of the four or use Program Scorecard instead, which takes an open-ended metric list"],
+    variants: [
+      ["Standard", "All 4 dimensions in a grid, each with its Tone and Note — as shown in Preview."],
+      ["Compact", "Dimensions collapse to a single row of colored pills, tone only, no Notes — for a header strip rather than a full card."],
+      ["Trend", "Each dimension adds a direction arrow showing whether it moved better/worse/unchanged since the last report."],
+      ["Narrative", "Standard, plus one free-text summary sentence beneath the grid, for the one line a sponsor actually reads first."]
+    ]
+  },
+  "milestone-tracker": {
+    summary: "A milestone timeline — horizontal strip or vertical rail — where each milestone's own real date decides whether it reads as on-track, at-risk or missed.",
+    properties: [["Milestones", "Table", "6 sample milestones", "Name, DueDate, Status (Complete/OnTrack/AtRisk/Missed), CompletedDate"], ["Orientation", "Text", "horizontal", "horizontal or vertical"], ["ShowDates", "Boolean", "true", "Whether each milestone's due date renders as visible text, not only its relative position on the rail"]],
+    events: [["OnMilestoneSelect", "Returns the tapped milestone in full"]],
+    architecture: ["Status is a value on each Milestones row, not computed from DueDate inside the component — \"at risk\" is a judgment call (schedule buffer, dependencies) a component reading only a date can't make correctly on its own", "Horizontal and vertical orientations render from the exact same Milestones table — switching Orientation never requires reshaping the data, only the layout", "Completed milestones show CompletedDate instead of DueDate once it's set, so the rail reads as a record of what actually happened, not just what was planned"],
+    examples: ["Project roadmap strip", "Contract delivery schedule", "Program gate reviews"],
+    accessibility: ["Status renders as an icon plus a text word (\"Complete\", \"At risk\") on every milestone, never a bare colored dot", "ShowDates keeps each milestone's due or completed date as real visible text — position on the rail alone isn't a reliable way to read \"when\"", "Horizontal orientation's rail is still keyboard-navigable left to right, matching the same order a screen reader announces it in"],
+    limitations: ["Status must be set by the host (or a flow) as milestones progress; the component has no notion of \"today\" driving Status on its own", "Horizontal orientation gets visually tight past roughly 8-10 milestones; Vertical or a paged view reads better beyond that"],
+    variants: [
+      ["Horizontal", "A left-to-right timeline strip, connector line between milestone markers — as shown in Preview."],
+      ["Vertical", "The same milestones as a top-to-bottom rail, better for a narrow panel or a long list."],
+      ["Compact", "Markers only, no labels — ShowDates off, for a small dashboard tile summarizing overall progress at a glance."],
+      ["Upcoming only", "Filtered to just the next few not-yet-Complete milestones, for a \"what's next\" widget rather than the full history."]
+    ]
+  },
+  "decision-log": {
+    summary: "A running register of decisions — date, decision, owner, status — the artifact a governance review actually asks a PM to produce.",
+    properties: [["Decisions", "Table", "5 sample entries", "Date, Decision, Owner, Status (Open/Decided/Superseded), Rationale"], ["SortOrder", "Text", "Newest first", "Newest first or Oldest first"], ["AllowAdd", "Boolean", "true", "Shows the \"Log a decision\" action; false renders a read-only register"]],
+    events: [["OnDecisionSelect", "Returns the tapped decision, for viewing or editing its full Rationale"], ["OnAddDecision", "Fires from \"Log a decision\"; the host owns the actual create"]],
+    architecture: ["Every entry keeps its Rationale alongside the decision itself — a register that only says *what* was decided without *why* stops being useful the moment someone asks 6 months later", "Superseded is its own Status, not a deletion — a decision that got reversed stays in the register with that status, so the log is a true history rather than only current state", "AllowAdd governs the affordance only; the actual write happens in the host's own OnAddDecision handler, the same staging-only pattern Governed File Upload and Governed Email Composer already use elsewhere in this catalog"],
+    examples: ["Project governance log", "Architecture decision record", "Steering committee minutes"],
+    accessibility: ["Status always renders as a text label on the entry, not a color-coded row alone", "SortOrder's current direction is stated in a visible control label (\"Newest first\"), not only implied by list order", "OnAddDecision's affordance carries a clear, specific accessible name (\"Log a decision\"), not a bare plus icon"],
+    limitations: ["The component stages and displays; it performs no Patch or create itself, matching this catalog's usual staging pattern for anything that writes", "Best for a register in the low hundreds of entries; a much longer history needs paging or a per-project filter before it reaches the component"],
+    variants: [
+      ["Standard", "A full table — date, decision, owner, status — as shown in Preview."],
+      ["Compact", "One line per decision, Rationale hidden until tapped, for a longer register in less vertical space."],
+      ["Timeline", "Decisions as chronological cards down a rail, the same connected-rail language Activity Timeline uses elsewhere in this catalog."],
+      ["Print", "A single dense column with no interactive affordances, for a register exported as a governance-review document."]
+    ]
+  },
+  "enterprise-dialog": {
+    summary: "A modal confirm/acknowledge dialog — checked against Power Apps' own real Confirm() function, and deliberately going one step past what it can do.",
+    properties: [["Title", "Text", "Delete confirmation", "Dialog heading — matches Confirm()'s own Title option"], ["Subtitle", "Text", "Blank", "Optional secondary line between Title and Message — matches Confirm()'s own Subtitle option"], ["Message", "Text", "This action can't be undone.", "The dialog's body text"], ["ConfirmButtonText", "Text", "Confirm", "Matches canvas apps' own localized default for Confirm()'s confirm button"], ["ShowCancel", "Boolean", "true", "False renders a single acknowledge-only button — something the native Confirm() function can never do (its own FAQ states the Cancel button can't be hidden)"], ["CancelButtonText", "Text", "Cancel", "Ignored while ShowCancel is false"]],
+    events: [["OnConfirm", "Fires when the confirm button is pressed"], ["OnCancel", "Fires when Cancel, Escape, or an outside tap dismisses the dialog — the same \"treated as no action\" behavior the native Confirm() function itself defines for a non-Cancel dismissal"]],
+    architecture: ["Title/Subtitle/ConfirmButtonText/CancelButtonText are named to match Power Apps' own built-in Confirm() function's OptionsRecord exactly, so a maker already familiar with Confirm() reads this component's contract for free", "The one deliberate difference from Confirm(): ShowCancel can go false for a single-button acknowledge dialog, closing a real, documented gap in the native function — its own FAQ says plainly that Confirm() always shows both buttons and can't be reduced to one", "Rendered as a real modal component (not the Confirm() function itself), so a host that needs a third action, custom body content, or a non-boolean result can still use this same contract instead of hand-rolling a screen-level popup"],
+    examples: ["Delete confirmation", "Unsaved-changes warning", "Single-button acknowledge notice"],
+    accessibility: ["Focus moves into the dialog on open and is trapped there until it closes, matching standard modal dialog behavior rather than leaving focus stranded on whatever triggered it", "ShowCancel false still allows Escape to dismiss, firing OnCancel — an acknowledge-only dialog is not a focus trap with no way out", "Title is exposed as the dialog's own accessible name, so a screen reader announces what's being confirmed immediately on open, before the Message body"],
+    limitations: ["Exactly two real actions (confirm/cancel) by design — a scenario needing three or more choices needs a different pattern, same limit the native Confirm() function itself has", "The component only ever returns a decision; it performs no action itself — Remove/Patch/Navigate all stay in the host's OnConfirm handler, same as Confirm() returning a plain boolean today"],
+    variants: [
+      ["Confirm", "Two buttons, Confirm and Cancel — the default, matching the native Confirm() function's own behavior, as shown in Preview."],
+      ["Acknowledge-only", "ShowCancel false — a single button, for a notice the user must see and dismiss rather than a real either/or choice."],
+      ["Destructive", "ConfirmButtonText styled in the danger color, for a delete or other action with real consequences."],
+      ["Custom content", "Message replaced by arbitrary host-supplied content in the body slot, for a dialog that needs more than one line of text."]
+    ]
+  },
+  "comments-mentions": {
+    summary: "A threaded comment box with @mention autocomplete against a real people directory — assembled from a text input and a gallery, since no single Microsoft 365 surface shares one official comments control.",
+    properties: [["Comments", "Table", "4 sample comments", "Author, Text, Timestamp, and any @Mentions already resolved to people"], ["Directory", "Table", "Required", "People the @mention picker offers — the same DisplayName/Mail shape Governed Email Composer's own Directory already uses"], ["CurrentUser", "Text", "Required", "Used to tell the visitor's own comments apart from everyone else's in the thread"], ["AllowAttachments", "Boolean", "false", "Shows a file-attach affordance on the compose box"]],
+    events: [["OnPost", "Fires when a comment is submitted; hands back the text and any resolved @mentions"], ["OnMentionSelect", "Fires when a rendered @mention chip is tapped, for routing to that person's profile"], ["OnDelete", "Fires from a comment's own delete action; the host owns the actual removal"]],
+    architecture: ["There is deliberately no claim here of matching \"the\" Fluent UI comments control, because no single one exists across Microsoft 365 — Teams chat, SharePoint page comments and Loop components each build their own; this component follows the same general shape all of them share (a multiline compose box plus a chronological gallery) rather than pointing at one official source that doesn't exist", "@mention matching happens locally against Directory as the visitor types \"@\", not a live people-search service call — Directory is a closed, host-provided list the same way it already is for Governed Email Composer", "Reuses that same Directory contract (DisplayName/Mail) deliberately, so a host already wiring people data into the email composer doesn't have to reshape it again for this component"],
+    examples: ["Case discussion thread", "Document review comments", "Record activity comments"],
+    accessibility: ["Each comment's Author and Timestamp are both real visible text, not implied by avatar position or grouping alone", "@mention chips render the person's full DisplayName as their accessible name, not a truncated \"@handle\"", "The compose box's Post action is disabled with a stated reason, not just grayed out, while the text is empty or CurrentUser can't be resolved"],
+    limitations: ["No live typing indicators or real-time sync between visitors — Comments is a snapshot the host re-queries, not a live socket connection", "@mention suggestions are only as complete as Directory; someone missing from that table can be typed but never actually resolved to a person"],
+    variants: [
+      ["Thread", "The full chronological list plus the compose box at the bottom — as shown in Preview."],
+      ["Compact", "A single \"Add a comment\" affordance and a count; tapping it expands into the full Thread view."],
+      ["Read-only", "Comments render with no compose box at all, for a closed or archived record."],
+      ["Resolved filter", "Adds a toggle hiding comments already marked resolved, for a long-running thread that's accumulated closed side-discussions."]
+    ]
   }
 };
 

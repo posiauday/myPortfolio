@@ -162,23 +162,28 @@ one unreviewable pass through all 25:
    as a Properties-tab row.
 
 **Done so far** — all 11 "Verified" components (worked first, since
-they're the ones already claiming a cross-checked contract), plus the
-first 4 "Original" ones, in three batches: Executive KPI Card, Responsive
+they're the ones already claiming a cross-checked contract), plus 9 of
+the 14 "Original" ones, in four batches: Executive KPI Card, Responsive
 Line Chart, Deadline Intelligence, Activity Timeline, Enterprise Calendar;
 then Accordion Record List, Enterprise Data Table, Governed File Upload,
 Governed Email Composer, Enterprise Sidebar; then Enterprise Mega Menu,
 Portfolio Command Card, Program Scorecard, Operational Status Banner,
-Portfolio Risk Matrix. Re-scanned with axe-core (WCAG 2A/2AA +
-best-practice) across every component's Preview and Variants tabs, light
-and dark, after every change — two real findings caught this way: a "Low
-priority" badge's gray too light to darken enough for AA contrast (fixed
-with a properly mid-tone base color), and Portfolio Command Card's metric
-values using a raw brand/danger color as text with no dark-mode pairing
-(fixed with the same `darken()`/`lighten()` CSS-variable treatment used
-everywhere else on this page) — zero violations remaining after each. The
-remaining 10 "Original" components are still on the generic mockup and
-Standard/Compact/Dark/Mobile variants, worked through in the same batches
-next.
+Portfolio Risk Matrix; then Project Health Summary, Milestone Tracker,
+Decision Log, Enterprise Dialog, Comments & Mentions. Re-scanned with
+axe-core (WCAG 2A/2AA + best-practice) across every component's Preview
+and Variants tabs, light and dark, after every change — two real findings
+caught this way in earlier batches (documented above/below where each
+happened), zero violations in this batch and zero remaining overall. The
+last 5 "Original" components are still on the generic mockup and
+Standard/Compact/Dark/Mobile variants, worked through next.
+
+Enterprise Dialog is worth calling out: its properties (`Title`,
+`Subtitle`, `ConfirmButtonText`, `CancelButtonText`) are named to match
+Power Apps' own built-in `Confirm()` function's real `OptionsRecord`
+exactly, and its one deliberate addition — `ShowCancel` going false for a
+single-button acknowledge dialog — closes a real, documented gap:
+`Confirm()`'s own FAQ states plainly it always shows both buttons and
+can't be reduced to one.
 
 Portfolio Command Card is worth calling out specifically: its contract
 (Metrics/ChartData) is the *actual* contract this site's own hero card on
