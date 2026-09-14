@@ -116,6 +116,20 @@ const baseByCategory = {
   }
 };
 
+// Fallback for any component whose override below doesn't yet specify its
+// own variants (name/description pairs) — the same four generic
+// descriptions every component originally showed, kept verbatim here so
+// nothing visually changes for a not-yet-redone component. A redone
+// component's own `variants` in its override replaces this entirely with
+// names and descriptions specific to what that real component actually
+// offers, rather than the same four labels regardless of the component.
+const GENERIC_VARIANTS = [
+  ["Standard", "Full information layout for primary screens."],
+  ["Compact", "Reduced density for galleries and constrained layouts."],
+  ["Dark", "Token-adjusted surfaces, borders and readable states."],
+  ["Mobile", "Narrow layout with touch-friendly actions and stacking."]
+];
+
 // Component-specific overrides. The nine entries below are aligned to the
 // real, published property/event contracts of their closest counterparts
 // in the Power Apps UI component library (uploaded as reference docs),
@@ -124,21 +138,46 @@ const baseByCategory = {
 const overrides = {
   "executive-kpi-card": {
     summary: "A single formatted measure with a trend arrow, a target comparison, and a click-through into supporting detail.",
-    properties: [["Label", "Text", "Active projects", "Metric name"], ["Value", "Text", "156", "Formatted measure"], ["Trend", "Number", "12.4", "Change from comparison period"], ["Target", "Number", "150", "Target value"], ["Status", "Text", "On track", "Accessible status"], ["TooltipText", "Text", "Blank", "Calculation guidance"]],
+    properties: [["Label", "Text", "Active projects", "Metric name"], ["Value", "Text", "156", "Formatted measure"], ["Trend", "Number", "12.4", "Change from comparison period"], ["Target", "Number", "150", "Target value"], ["Status", "Text", "On track", "Accessible status"], ["TooltipText", "Text", "Blank", "Calculation guidance"], ["ShowSparkline", "Boolean", "false", "Draws a trend sparkline under the value — real data, the same ChartData shape ResponsiveLineChart takes, not a decorative squiggle"], ["SparklineData", "Table", "12-point sample", "x/y pairs for the sparkline, ignored while ShowSparkline is false"]],
     events: [["OnSelect", "Opens supporting detail"]],
-    architecture: ["Host provides governed DAX measure", "Card formats value, trend and status", "OnSelect routes to a drill-through page"],
+    architecture: ["Host provides governed DAX measure", "Card formats value, trend and status", "OnSelect routes to a drill-through page", "ShowSparkline reuses the exact SVG-path approach ResponsiveLineChart uses at a smaller scale, rather than a second charting implementation"],
     examples: ["Active projects", "At-risk projects", "Submitted this month"],
-    accessibility: ["Status is its own text property, not inferred from color, so a screen reader announces \"On track\" even where the trend arrow's color can't be perceived", "TooltipText carries the calculation explanation as text, not only as a hover-only visual", "Trend direction reads as a word alongside the arrow glyph, not the glyph alone"],
-    limitations: ["Formatting must match the measure", "Tooltip definitions must be maintained with KPI logic"]
+    accessibility: ["Status is its own text property, not inferred from color, so a screen reader announces \"On track\" even where the trend arrow's color can't be perceived", "TooltipText carries the calculation explanation as text, not only as a hover-only visual", "Trend direction reads as a word alongside the arrow glyph, not the glyph alone", "The sparkline is decorative when ShowSparkline is on — Trend and Status already state the same direction as text, so nothing is lost if the sparkline itself can't be perceived"],
+    limitations: ["Formatting must match the measure", "Tooltip definitions must be maintained with KPI logic"],
+    // Real variant names from researching published Power Apps KPI card
+    // components (powerappsui.com's own KPI Cards catalog ships Standard/
+    // Compact/Minimal/Filled/Chart) rather than this project's previous
+    // generic Standard/Compact/Dark/Mobile set, which named the same four
+    // labels regardless of what the component actually was.
+    variants: [
+      ["Standard", "Label, big value, trend pill and status line — the full card, as shown in Preview."],
+      ["Compact", "Label and value only in a tighter card, for a dense KPI strip of many metrics side by side."],
+      ["Minimal", "Value and label with no trend pill or status line, for a plain number inside a denser layout."],
+      ["Filled", "A solid brand-color background instead of a white card, for the one KPI a screen wants to visually lead with."],
+      ["Chart", "Standard plus ShowSparkline, drawing the trend as a small line under the value instead of only stating it as a percentage."]
+    ]
   },
   "responsive-line-chart": {
     summary: "A single-series trend line rendered as one dependency-free inline SVG, with an auto-scaling axis and a matching gradient fill.",
-    properties: [["ChartData", "Table", "12-month sample", "x (ordinal), y (value), label (axis text); auto-sorted by x"], ["LineColor", "Text", "#168326", "Hex color for the line and its area-fill gradient"], ["Smooth", "Boolean", "true", "Cubic-curve line versus straight segments"], ["ShowPointLabels", "Boolean", "false", "Formatted value shown above each point"], ["Animate", "Boolean", "true", "Staggered draw-in animation on load"]],
+    properties: [["ChartData", "Table", "12-month sample", "x (ordinal), y (value), label (axis text); auto-sorted by x"], ["LineColor", "Text", "#168326", "Hex color for the line and its area-fill gradient"], ["Smooth", "Boolean", "true", "Cubic-curve line versus straight segments"], ["Markers", "Boolean", "false", "Formatted value shown above each point — named to match the real Power Apps Line chart control's own Markers property"], ["MarkerSuffix", "Text", "Blank", "Text appended after each value when Markers is on, e.g. \"%\" or \"K\" — same idea as the native control's MarkerSuffix"], ["YAxisMax", "Number", "0", "Fixes the axis ceiling; 0 means auto-scale to a rounded ceiling above the data's own max"], ["Animate", "Boolean", "true", "Staggered draw-in animation on load"]],
     events: [],
-    architecture: ["The whole chart is one Image control rendering an inline SVG, so it carries no charting-library dependency", "The Y-axis always starts at zero and auto-scales to a rounded ceiling with headroom rather than fitting tightly to the data", "A built-in gradient fades from LineColor to transparent, so the fill always matches whatever accent color is passed in"],
+    architecture: ["The whole chart is one Image control rendering an inline SVG, so it carries no charting-library dependency", "YAxisMax at 0 auto-scales to a rounded ceiling with headroom rather than fitting tightly to the data; set it explicitly to pin the axis instead, the same override the real Line chart control's own YAxisMax/YAxisMin properties give you", "A built-in gradient fades from LineColor to transparent, so the fill always matches whatever accent color is passed in"],
     examples: ["Monthly revenue trend", "Ticket volume over time", "SLA compliance history"],
-    accessibility: ["The chart is one Image control, so it needs AltText summarizing the trend in words (e.g. \"Revenue up 12% over 12 months\") — the SVG itself carries no accessible structure of its own", "ShowPointLabels prints values directly on the chart for anyone who can see the image but not resolve fine gridlines", "Never rely on LineColor alone to convey state; pair it with a text summary elsewhere on the screen"],
-    limitations: ["Single series only; a multi-series comparison needs a different chart", "No interactive tooltips, since inline SVG inside an Image control cannot respond to hover"]
+    accessibility: ["The chart is one Image control, so it needs AltText summarizing the trend in words (e.g. \"Revenue up 12% over 12 months\") — the SVG itself carries no accessible structure of its own", "Markers prints values directly on the chart for anyone who can see the image but not resolve fine gridlines", "Never rely on LineColor alone to convey state; pair it with a text summary elsewhere on the screen"],
+    limitations: ["Single series only; a multi-series comparison needs a different chart", "No interactive tooltips, since inline SVG inside an Image control cannot respond to hover"],
+    // Real Power Apps Line chart properties (Markers, YAxisMax/YAxisMin,
+    // MarkerSuffix) checked against Microsoft's own published control
+    // reference before renaming ShowPointLabels above — see
+    // learn.microsoft.com/power-apps/maker/canvas-apps/controls/control-column-line-chart.
+    // Variants below reflect real ways this exact chart gets reused
+    // elsewhere in this catalog: Sparkline is the compact form
+    // ExecutiveKpiCard's own Chart variant asks for.
+    variants: [
+      ["Standard", "Axis, gradient fill and smoothed line — the full chart, as shown in Preview."],
+      ["Sparkline", "No axis or labels, just the line and fill at a fraction of the size, for embedding inside a KPI card or a table cell."],
+      ["Dashed forecast", "A dashed, unfilled stroke instead of the solid gradient, for a projected or unconfirmed series shown alongside a real one."],
+      ["Point-labeled", "Markers on, every value printed above its point, for a chart that has to stand alone as a static export or screenshot."]
+    ]
   },
   "deadline-intelligence": {
     summary: "A countdown card that excludes weekends and holidays before stating a due date, not just a raw day-count.",
@@ -147,25 +186,46 @@ const overrides = {
     architecture: ["Weekends and observed holidays are excluded before a due date is picked, since an office closed on an observed Friday is still closed", "A bounded window of candidate dates is generated and searched rather than solved analytically, so an arbitrary working week can be priced in", "Every output derives from the inputs with no stored state, so the card is correct the instant it is placed"],
     examples: ["SLA deadline", "Contract response clock", "Compact gallery deadline"],
     accessibility: ["Status uses a dot and a label, not color alone", "The breakdown sentence explains the calculation in words", "The countdown states which unit it is counting"],
-    limitations: ["Day-based, not hour-based", "Store the computed due date and reuse it rather than recalculating on every read, or a later holiday-table correction can quietly move a date someone was already given"]
+    limitations: ["Day-based, not hour-based", "Store the computed due date and reuse it rather than recalculating on every read, or a later holiday-table correction can quietly move a date someone was already given"],
+    variants: [
+      ["Standard", "Status dot, big day-count and the full breakdown sentence — the whole card, as shown in Preview."],
+      ["Compact", "Dot and day-count only, no breakdown sentence, for a table cell or a dense list of many deadlines at once."],
+      ["Badge", "Just a small colored pill (\"12d left\"), for a title bar or a card header where a full card would be too much."],
+      ["Overdue emphasis", "Standard, but the status dot and count switch to a solid red treatment once CompletedDate is blank and the due date has passed."]
+    ]
   },
   "activity-timeline": {
     summary: "A category-colored, rail-connected activity feed with per-category filtering and a loading skeleton state.",
-    properties: [["Items", "Table", "Sample entries", "Event title, description, author, timestamp and category; each card sizes itself to its content"], ["FilterOptions", "Table", "Six categories", "Values shown in the filter dropdown; must match Items' category values"], ["IconMap", "Table", "Default mapping", "Maps each category to an icon and a rail dot color"], ["IsLoading", "Boolean", "false", "Swaps in skeleton placeholder cards instead of data"], ["CardHeight", "Number", "104", "Minimum card height; cards grow past it to fit their content"]],
-    events: [["OnItemSelect", "Returns the tapped record in full"], ["OnExport", "Fires from the toolbar's export action"], ["OnPrint", "Fires from the toolbar's print action"]],
-    architecture: ["A single variable-height gallery draws a rail line connecting category-colored dots to each card", "Entries flagged with a sub-detail render an extra HTML block below the card, for something like an email preview", "Category, icon and dot color are all data-driven through IconMap, never hardcoded per entry"],
+    properties: [["Items", "Table", "Sample entries", "Event title, description, author, timestamp and category; each card sizes itself to its content"], ["FilterOptions", "Table", "Six categories", "Values shown in the filter dropdown; must match Items' category values"], ["IconMap", "Table", "Default mapping", "Maps each category to an icon and a rail dot color"], ["IsLoading", "Boolean", "false", "Swaps in skeleton placeholder cards instead of data"], ["CardHeight", "Number", "104", "Minimum card height; cards grow past it to fit their content"], ["RecordsToLoad", "Number", "10", "How many entries render before a Load more button appears — Dynamics 365's own timeline control caps this at 50 for the same reason: an unbounded feed slows down"]],
+    events: [["OnItemSelect", "Returns the tapped record in full"], ["OnLoadMore", "Fires when Load more is pressed; host supplies the next page of Items"], ["OnExport", "Fires from the toolbar's export action"], ["OnPrint", "Fires from the toolbar's print action"]],
+    architecture: ["A single variable-height gallery draws a rail line connecting category-colored dots to each card", "Entries flagged with a sub-detail render an extra HTML block below the card, for something like an email preview", "Category, icon and dot color are all data-driven through IconMap, never hardcoded per entry", "RecordsToLoad renders only that many rows and reveals Load more past it — the same paging shape Dynamics 365's own Timeline control uses, rather than a client-side gallery holding an entire unbounded history at once"],
     examples: ["Case audit history", "Approval tracking", "CRM activity"],
-    accessibility: ["IsLoading swaps in skeleton cards carrying a text-equivalent \"Loading activity…\" label, not just a bare shimmer", "Each entry's category is announced through its IconMap text label, not only its icon or dot color", "The rail's connecting line is decorative; reading order follows gallery order, not visual position on the line"],
-    limitations: ["A very long sub-detail message grows its card and can slow gallery scrolling; cap it at the source", "Filtering shows one active category at a time, driven by FilterOptions"]
+    accessibility: ["IsLoading swaps in skeleton cards carrying a text-equivalent \"Loading activity…\" label, not just a bare shimmer", "Each entry's category is announced through its IconMap text label, not only its icon or dot color", "The rail's connecting line is decorative; reading order follows gallery order, not visual position on the line", "Load more is a real focusable button with a text label stating what it does, not an infinite-scroll trigger a keyboard or screen-reader user has no way to invoke"],
+    limitations: ["A very long sub-detail message grows its card and can slow gallery scrolling; cap it at the source", "Filtering shows one active category at a time, driven by FilterOptions", "RecordsToLoad pages what's already in Items; fetching the next page's records from the source system is the host's own job on OnLoadMore"],
+    variants: [
+      ["Standard", "Full cards with description, author and timestamp on a connected rail — as shown in Preview."],
+      ["Compact", "One line per entry (dot, title, relative time only), for a sidebar or a panel with limited height."],
+      ["Grouped by date", "Entries clustered under \"Today\" / \"Yesterday\" / \"Earlier\" date headers instead of one continuous rail."],
+      ["Paginated", "Standard, but RecordsToLoad renders as an explicit page with a visible Load more button at the bottom rather than the whole Items table at once."]
+    ]
   },
   "enterprise-calendar": {
     summary: "A month/week/agenda calendar that reports its own visible date window so the host loads only what's on screen.",
     properties: [["Events", "Table", "Required", "Flat occurrences, one row per day an event appears on; a multi-day event is several rows"], ["Channels", "Table", "Required", "Category key, title and color used to tint each chip"], ["FocusDate", "DateTime", "Today()", "Which month or week opens first"], ["View", "Text", "month", "month, week or agenda"], ["Config", "Record", "Default", "Row height, chip slots, first day of week, work hours and holiday tinting"]],
     events: [["OnRangeChange", "Fires whenever the visible window moves; returns the exact start and end drawn"], ["OnViewChange", "Fires when the toolbar switches views"], ["OnSelectDay", "Fires when a day cell or its overflow link is tapped"], ["OnSelectEvent", "Fires when a chip is tapped"]],
-    architecture: ["The component reports the date window it is about to draw, so the host loads only that bounded window rather than a whole list", "Month, week and agenda each render from one flat gallery per view, never nested, so no inner control ever reads a frozen ThisItem", "Recurrence must already be materialized into individual occurrence rows before it reaches the component; it does not expand a rule itself"],
+    architecture: ["The component reports the date window it is about to draw, so the host loads only that bounded window rather than a whole list", "Month, week and agenda each render from one flat gallery per view, never nested, so no inner control ever reads a frozen ThisItem", "Recurrence must already be materialized into individual occurrence rows before it reaches the component; it does not expand a rule itself — real RRULE-based PCF calendar controls hit exactly this wall (RRULE recurrence rules are genuinely hard to expand correctly inside a control), which is the actual reason materializing occurrences upstream, in the host's own Power Automate flow or query, is the pattern used here rather than a rule the component tries to interpret itself"],
     examples: ["Reporting calendar", "Inspection schedule", "Leave and coverage"],
     accessibility: ["Every day cell exposes its full date as an accessible name, not just the day number shown visually", "Channel color tints are always paired with the channel's text title on the chip itself, never color alone", "Switching View (month/week/agenda) goes through the toolbar's own labeled buttons, not a silent visual swap"],
-    limitations: ["No drag-to-reschedule; a chip tap is read-only navigation", "A repeating series must already exist as one row per occurrence"]
+    limitations: ["No drag-to-reschedule; a chip tap is read-only navigation", "A repeating series must already exist as one row per occurrence"],
+    // View's own real values (month/week/agenda) are also the component's
+    // most meaningful variants, plus one presentational mode View doesn't
+    // cover — a small non-interactive month grid for a sidebar date picker.
+    variants: [
+      ["Month view", "A full month grid with day cells, overflow links, and up to Config's chip-slot limit of event chips per day."],
+      ["Week view", "Seven columns across a single week, with more per-day room for chips before anything overflows."],
+      ["Agenda view", "A flat, chronological list of occurrences grouped by day — best for a narrow screen or a long stretch of sparse dates."],
+      ["Compact mini", "A small read-only month grid with no chips, just date dots for days that have events — for a sidebar or a date-picker-sized space."]
+    ]
   },
   "accordion-record-list": {
     summary: "A flat, two-level accordion — parent groups over child rows — that renders any status set through a shared Tag/Tone pair.",
@@ -263,7 +323,7 @@ const components = raw.map(([title, category, maturity], i) => {
     examples: spec.examples || base.examples,
     accessibility: spec.accessibility || base.accessibility,
     limitations: spec.limitations || base.limitations,
-    variants: ["Standard", "Compact", "Dark", "Mobile"],
+    variants: spec.variants || GENERIC_VARIANTS,
     yamlStatus: maturity === "Verified"
       ? "Property and event contract cross-checked against a published reference component; this project's own YAML source is drafted but not yet Studio-tested"
       : "Design specification only; executable YAML not yet built or verified"

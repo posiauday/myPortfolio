@@ -158,11 +158,11 @@ function Detail({ item, items, dark, onBack, onSwitch }) {
           <Panel title="Variants">
             <p className="mt-3 text-slate-600 dark:text-slate-300">Supported presentation modes for this component contract.</p>
             <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-              {item.variants.map((v, i) => (
-                <div key={v} className="rounded-2xl border border-slate-200 p-5 dark:border-white/10">
+              {item.variants.map(([name, desc], i) => (
+                <div key={name} className="rounded-2xl border border-slate-200 p-5 dark:border-white/10">
                   <span className="grid h-10 w-10 place-items-center rounded-xl text-sm font-black text-white" style={{ background: item.color }}>{i + 1}</span>
-                  <h3 className="mt-5 font-black">{v}</h3>
-                  <p className="mt-2 text-sm text-slate-600 dark:text-slate-300">{v === "Compact" ? "Reduced density for galleries and constrained layouts." : v === "Dark" ? "Token-adjusted surfaces, borders and readable states." : v === "Mobile" ? "Narrow layout with touch-friendly actions and stacking." : "Full information layout for primary screens."}</p>
+                  <h3 className="mt-5 font-black">{name}</h3>
+                  <p className="mt-2 text-sm text-slate-600 dark:text-slate-300">{desc}</p>
                 </div>
               ))}
             </div>

@@ -116,6 +116,60 @@ category-level text instead. Both are fixed now; if a future override skips
 a field, double-check it isn't accidentally inheriting a sibling's leftover
 copy rather than genuinely sharing the category default.
 
+### Bespoke, research-grounded component previews (in progress)
+
+A real gap, reported directly: every component's catalog entry claimed a
+specific contract, but only Executive KPI Card's Preview tab actually
+rendered something specific — every other component (Portfolio Risk Matrix
+aside) fell through to the exact same generic "Submitted / In review /
+Approved / Operational" status list regardless of whether it was a
+calendar, a data table, a file upload or a nav menu. `Variants` had the
+same problem one level deeper: every single component, regardless of type,
+showed the identical four labels — Standard/Compact/Dark/Mobile — with the
+identical four descriptions, which never actually described what a variant
+of *that* component would be.
+
+The fix, worked in batches so each one is a reviewable commit rather than
+one unreviewable pass through all 25:
+
+1. **Research first.** Before touching a component's contract, check it
+   against real Power Apps/PCF prior art — Microsoft's own published
+   control reference (`learn.microsoft.com/power-apps/maker/canvas-apps`),
+   Dynamics 365's native Timeline control, and published community PCF
+   components — rather than inventing plausible-sounding properties from
+   scratch. Concretely, this is where `Markers`/`MarkerSuffix`/`YAxisMax`
+   on `responsive-line-chart` (renamed from a made-up `ShowPointLabels` to
+   match the real Line chart control's own property names) and
+   `RecordsToLoad`/`OnLoadMore` on `activity-timeline` (Dynamics 365's own
+   Timeline control caps its own "records to load" at 50 for the same
+   reason) came from.
+2. **Real, component-specific `variants`.** Changed from a flat array of
+   generic labels to `[name, description]` tuples per component (see
+   `GENERIC_VARIANTS` in `componentLibrary.js` for the not-yet-redone
+   fallback, and any of the five components below for what a redone one
+   looks like) — `ComponentDetail.jsx`'s Variants tab renders whichever
+   the component's own override actually provides.
+3. **A bespoke mockup per component**, in `ComponentPreview.jsx` — an
+   actual month grid for Enterprise Calendar, a rail-connected activity
+   feed for Activity Timeline, a real smoothed SVG line chart for
+   Responsive Line Chart, not a shared placeholder. `src/lib/svgPath.js`
+   (Catmull-Rom-to-Bezier smoothing, the same technique
+   `ResponsiveLineChart`'s own architecture describes) is shared between
+   that chart's mockup and Executive KPI Card's new `ShowSparkline`
+   property, so a real, live-editable sparkline replaces the plain
+   progress bar when that property is toggled on in the configurator —
+   demonstrating the property does something, rather than existing only
+   as a Properties-tab row.
+
+**Done so far** (the 5 "Verified" components worked first, since they're
+the ones already claiming a cross-checked contract): Executive KPI Card,
+Responsive Line Chart, Deadline Intelligence, Activity Timeline, Enterprise
+Calendar. Re-scanned with axe-core (WCAG 2A/2AA + best-practice) across
+each one's Preview and Variants tabs, light and dark, after every change —
+zero violations. The remaining 20 components (6 more "Verified", then the
+14 "Original" ones) are still on the old generic mockup and
+Standard/Compact/Dark/Mobile variants, worked through in the same batches.
+
 ### YAML schema conformance
 
 Every component gets two generated YAML outputs (`src/lib/componentDocs.js`):
