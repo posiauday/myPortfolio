@@ -437,6 +437,72 @@ than the usual `text-slate-500 dark:text-slate-400` swap). Re-scanned
 clean: `npm run lint && npm run test:yaml && npm run build` clean, zero
 axe-core violations across all 5 touched components in light and dark.
 
+**Batch 4 — the cross-cutting localization gap:** the one item the
+research report flagged but deliberately didn't fold into a batch of 5,
+since it touches components unevenly rather than as one clean group.
+Power Apps has real, documented `Language()`-aware `Text()`/`Value()`
+formatting for numbers, dates and currency
+(`learn.microsoft.com/power-apps/maker/canvas-apps/global-apps`); none
+of the 25 components' contracts mentioned it anywhere.
+
+Added a `Language` property (a BCP-47 tag, e.g. `"de-DE"`) to the 10
+components where a locale-sensitive number, date or currency value is
+actually central to what the component displays — not to all 25, since
+adding it to a pure-navigation or pure-text component like Enterprise
+Sidebar or Responsive Breadcrumbs would be padding, not a real gap
+closed: Executive KPI Card, Responsive Line Chart, Portfolio Command
+Card, Program Scorecard, Operational Status Banner, Project Health
+Summary, Milestone Tracker, Decision Log, Deadline Intelligence, and
+Enterprise Calendar (the last two already had a `TimeZone` property
+from an earlier batch, so this closes the localization half of the same
+underlying gap).
+
+Two different real mechanisms, both stated plainly per component:
+
+- **Host-side pass-through** (most of the 10): the host's own
+  `Text(value, format, Language)` call formats a Value/Trend/Target/
+  Date string *before* it ever reaches the component — the same
+  pattern Power Apps itself uses. The component only ever displays
+  whatever string it's handed.
+- **Generated inside the component** (Operational Status Banner's
+  relative-time text, Enterprise Calendar's month/weekday names,
+  Deadline Intelligence's breakdown sentence): there's no single
+  formatted value to pass through, since the text is assembled from
+  several computed values, so `Language` is used directly by the
+  component itself.
+
+Since this is a React site, not a running Power Apps host, the actual
+Power Fx `Text()`/`Language()` mechanism can't run here — but its real
+JavaScript equivalent can, and does: Executive KPI Card's mockup now
+computes its Trend line through `Intl.NumberFormat("de-DE", { style:
+"percent" })` (rendering `"12,4 %"`, the real German decimal-comma
+convention, not a hand-typed string standing in for one), and
+Operational Status Banner's mockup computes its own through
+`Intl.RelativeTimeFormat("de-DE")` (rendering `"vor 4 Minuten"`). Both
+are labeled in the mockup as exactly what they are — a demonstration of
+the mechanism, not a live locale switcher — the same "not every
+property is wired to the live configurator" caveat this file's own
+header comment already states. The other 8 components get the property
+and the documentation, consistent with how ShowSparkline is the one
+demonstrated wiring for a pattern several components reference rather
+than each reimplementing its own copy.
+
+Explicitly out of scope, stated in each affected component's own
+Limitations: `Language` formats the locale-sensitive value itself, not
+arbitrary host-supplied text — a component's `Label`, `Status`,
+`Message`, or a `Channels`/`Holidays` table's own text values stay
+whatever language the host's data already contains, which is a
+separate, host-owned translation table, the same pattern Power Apps'
+own global-apps guidance documents for translated strings.
+
+Verified: `npm run lint && npm run test:yaml && npm run build` clean.
+axe-core scanned clean on both components with an actual mockup change
+(Executive KPI Card, Operational Status Banner), light and dark, plus a
+final full sweep across all 25 components — zero violations anywhere,
+confirming this batch didn't regress anything from the three batches
+before it. Playwright screenshots confirm both `Intl`-driven demo lines
+render the real German-formatted strings.
+
 ### YAML schema conformance
 
 Every component gets two generated YAML outputs (`src/lib/componentDocs.js`):

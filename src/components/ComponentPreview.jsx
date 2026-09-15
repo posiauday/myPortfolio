@@ -34,6 +34,12 @@ function ComponentPreview({ item, values = {} }) {
     const trendUp = !String(trend).startsWith("-");
     const status = values.Status ?? "On track";
     const showSparkline = (values.ShowSparkline ?? "false") === "true";
+    // Language — the host formats Value/Trend before this component ever
+    // sees them (see componentLibrary.js), so there's nothing to toggle
+    // live here; this line instead demonstrates the actual mechanism —
+    // Intl.NumberFormat is the real JS equivalent of Power Apps' own
+    // Language()-aware Text() — rather than only describing it in prose.
+    const demoTrendDE = new Intl.NumberFormat("de-DE", { style: "percent", minimumFractionDigits: 1, maximumFractionDigits: 1 }).format(Math.abs(Number(trend)) / 100);
     const sparkValues = [40, 44, 42, 50, 48, 55, 53, 60, 58, 65, 70, 78];
     const { linePath, areaPath } = showSparkline ? buildLinePath(sparkValues, { width: 200, height: 44, padding: 4 }) : {};
     return (
@@ -64,6 +70,10 @@ function ComponentPreview({ item, values = {} }) {
           <div className="mt-6 h-2 rounded-full bg-slate-100"><div className="h-full w-3/4 rounded-full" style={{ background: item.color }} /></div>
         )}
         <span className="mt-3 block text-xs font-bold text-slate-600 dark:text-slate-300">{status}</span>
+        <div className="mt-2 flex items-center gap-1.5 text-[10px] font-bold text-slate-500 dark:text-slate-400">
+          <span aria-hidden="true">&#127760;</span>
+          <span>Language &quot;de-DE&quot; &rarr; {demoTrendDE} Trend</span>
+        </div>
       </div>
     );
   }
@@ -601,6 +611,11 @@ function ComponentPreview({ item, values = {} }) {
   }
 
   if (item.title === "Operational Status Banner") {
+    // Language — LastUpdated's relative-time text is generated inside
+    // this component (see componentLibrary.js), so Intl.RelativeTimeFormat
+    // (the real JS equivalent of what this component would use) can
+    // actually demonstrate it, rather than only describing the property.
+    const demoRelativeDE = new Intl.RelativeTimeFormat("de-DE", { numeric: "auto" }).format(-4, "minute");
     return (
       <div className="space-y-2">
         <div className="flex items-center gap-2 rounded-xl bg-green-50 px-3 py-2.5 dark:bg-green-900/20">
@@ -612,6 +627,10 @@ function ComponentPreview({ item, values = {} }) {
           <span aria-hidden="true" className="h-2 w-2 shrink-0 rounded-full bg-amber-500" />
           <span className="text-xs font-bold text-amber-700 dark:text-amber-300">Degraded performance &mdash; Reporting</span>
           <span className="ml-auto shrink-0 text-[10px] font-bold text-amber-700 dark:text-amber-300">Updated 4m ago</span>
+        </div>
+        <div className="flex items-center gap-1.5 text-[10px] font-bold text-slate-500 dark:text-slate-400">
+          <span aria-hidden="true">&#127760;</span>
+          <span>Language &quot;de-DE&quot; &rarr; &quot;{demoRelativeDE}&quot;</span>
         </div>
       </div>
     );
