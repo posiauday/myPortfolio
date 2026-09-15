@@ -165,18 +165,18 @@ function Detail({ item, items, dark, onBack, onSwitch }) {
             <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
               {item.variants.map(([name, desc], i) => (
                 <div key={name} className="overflow-hidden rounded-2xl border border-slate-200 dark:border-white/10">
-                  <div className="relative h-40 overflow-hidden bg-slate-50 dark:bg-white/5">
+                  <div className="relative h-56 overflow-hidden bg-slate-50 dark:bg-white/5">
                     <div
                       aria-hidden="true"
-                      className="pointer-events-none absolute left-1/2 top-3 w-[340px] origin-top -translate-x-1/2 scale-[0.42] rounded-xl bg-white p-4 shadow-lg dark:bg-[#17201B]"
+                      className="pointer-events-none absolute left-1/2 top-2 w-[340px] origin-top -translate-x-1/2 scale-[0.56] rounded-xl bg-white p-4 shadow-lg dark:bg-[#17201B]"
                     >
                       <ComponentPreview item={item} interactive={false} variant={name} />
                     </div>
                   </div>
-                  <div className="p-5">
-                    <span className="grid h-8 w-8 place-items-center rounded-lg text-xs font-black text-white" style={{ background: item.color }}>{i + 1}</span>
-                    <h3 className="mt-4 font-black">{name}</h3>
-                    <p className="mt-2 text-sm text-slate-600 dark:text-slate-300">{desc}</p>
+                  <div className="p-4">
+                    <span className="grid h-6 w-6 place-items-center rounded-lg text-[10px] font-black text-white" style={{ background: item.color }}>{i + 1}</span>
+                    <h3 className="mt-3 text-sm font-black">{name}</h3>
+                    <p className="mt-1.5 text-xs leading-5 text-slate-600 dark:text-slate-300">{desc}</p>
                   </div>
                 </div>
               ))}
