@@ -113,30 +113,50 @@ function ComponentPreview({ item, values = {} }) {
           <div className="h-full rounded-full" style={{ width: `${elapsedPct}%`, background: item.color }} />
         </div>
         <p className="mt-3 text-xs leading-5 text-slate-500 dark:text-slate-400">
-          Due Nov 14 &mdash; weekends and 2 observed holidays are already excluded from the count above.
+          Due Nov 14, 5:00 PM ET &mdash; weekends and 2 observed holidays are already excluded from the count above.
         </p>
+        {/* ReminderThreshold — shown firing here since daysLeft (12) is
+            past a smaller threshold in a real config; illustrating
+            OnApproachingDue actually doing something, not just existing
+            as a Properties-tab row. */}
+        <div className="mt-2 flex items-center gap-1.5 text-[10px] font-bold text-slate-500 dark:text-slate-400">
+          <span aria-hidden="true">&#128276;</span>
+          <span>Reminder sent &mdash; 3 business days from due</span>
+        </div>
       </div>
     );
   }
 
   if (item.title === "Activity Timeline") {
+    // pinned demonstrates PinnedIds — a pinned entry renders first
+    // regardless of SortDirection, matching the real Dynamics 365
+    // Timeline control's own msdyn_timelinepin precedence.
     const entries = [
+      { title: "Escalation policy acknowledged", time: "3d ago", category: "Escalation", color: "#D83B01", pinned: true },
       { title: "Case escalated to Tier 2", time: "2h ago", category: "Escalation", color: "#D83B01" },
       { title: "Comment added by J. Okafor", time: "5h ago", category: "Comment", color: "#0F6CBD" },
       { title: "Status changed to In Progress", time: "1d ago", category: "Status", color: item.color }
     ];
     return (
       <div>
-        <div className="flex flex-wrap gap-1.5">
-          {["All", "Escalation", "Comment", "Status"].map((f, i) => (
-            <span
-              key={f}
-              className={`rounded-full px-2.5 py-1 text-[10px] font-bold ${i === 0 ? "text-white" : "bg-slate-100 text-slate-600 dark:bg-white/10 dark:text-slate-300"}`}
-              style={i === 0 ? { background: item.color } : undefined}
-            >
-              {f}
-            </span>
-          ))}
+        <div className="flex items-center justify-between gap-2">
+          <div className="flex flex-wrap gap-1.5">
+            {["All", "Escalation", "Comment", "Status"].map((f, i) => (
+              <span
+                key={f}
+                className={`rounded-full px-2.5 py-1 text-[10px] font-bold ${i === 0 ? "text-white" : "bg-slate-100 text-slate-600 dark:bg-white/10 dark:text-slate-300"}`}
+                style={i === 0 ? { background: item.color } : undefined}
+              >
+                {f}
+              </span>
+            ))}
+          </div>
+          {/* SortDirection — a real toggle, matching the real Dynamics
+              365 Timeline control's own explicit sort button, not an
+              implied fixed order. */}
+          <button type="button" className="shrink-0 flex items-center gap-1 text-[10px] font-bold text-slate-500 dark:text-slate-400">
+            <span aria-hidden="true">&#8645;</span> Newest first
+          </button>
         </div>
         <div className="relative mt-4 space-y-3 pl-5">
           <span aria-hidden="true" className="absolute inset-y-1 left-[3px] w-px bg-slate-200 dark:bg-white/10" />
@@ -145,14 +165,20 @@ function ComponentPreview({ item, values = {} }) {
               <span aria-hidden="true" className="absolute -left-[21px] top-4 h-2 w-2 rounded-full" style={{ background: e.color }} />
               <div className="flex items-center justify-between gap-2">
                 <b className="text-xs">{e.title}</b>
-                <span className="shrink-0 text-[10px] font-bold text-slate-500 dark:text-slate-400">{e.time}</span>
+                <span className="flex shrink-0 items-center gap-1.5">
+                  {e.pinned && <span className="text-[9px] font-black uppercase text-slate-400 dark:text-slate-500" aria-hidden="true">&#128204;</span>}
+                  <span className="text-[10px] font-bold text-slate-500 dark:text-slate-400">{e.time}</span>
+                </span>
               </div>
-              <span
-                className={`mt-1 block w-fit rounded px-1.5 py-0.5 text-[10px] font-bold ${CONTAINER_TEXT_CLASS}`}
-                style={container(e.color)}
-              >
-                {e.category}
-              </span>
+              <div className="mt-1 flex items-center justify-between gap-2">
+                <span
+                  className={`block w-fit rounded px-1.5 py-0.5 text-[10px] font-bold ${CONTAINER_TEXT_CLASS}`}
+                  style={container(e.color)}
+                >
+                  {e.category}
+                </span>
+                {e.pinned && <span className="text-[9px] font-bold text-slate-500 dark:text-slate-400">Pinned</span>}
+              </div>
             </div>
           ))}
         </div>
@@ -165,7 +191,9 @@ function ComponentPreview({ item, values = {} }) {
     const monthDays = Array.from({ length: 30 }, (_, i) => i + 1);
     const leadingBlanks = 3;
     const today = 14;
-    const events = { 6: { label: "Sprint review", color: "#0F6CBD" }, 14: { label: "Release", color: item.color }, 22: { label: "Audit", color: "#C239B3" } };
+    // recurring flags SeriesId — Sprint review repeats weekly, so it
+    // gets the "part of a series" marker; Release and Audit don't.
+    const events = { 6: { label: "Sprint review", color: "#0F6CBD", recurring: true }, 14: { label: "Release", color: item.color }, 22: { label: "Audit", color: "#C239B3" } };
     return (
       <div>
         <div className="flex items-center justify-between">
@@ -190,9 +218,18 @@ function ComponentPreview({ item, values = {} }) {
         </div>
         <div className="mt-3 space-y-1.5">
           {Object.entries(events).map(([day, e]) => (
-            <div key={day} className="flex items-center gap-2 text-[10px] font-bold">
-              <span aria-hidden="true" className="h-2 w-2 rounded-full" style={{ background: e.color }} />
-              <span className="text-slate-600 dark:text-slate-300">{e.label}</span>
+            <div key={day} className="flex items-center justify-between gap-2 text-[10px] font-bold">
+              <span className="flex items-center gap-2">
+                <span aria-hidden="true" className="h-2 w-2 shrink-0 rounded-full" style={{ background: e.color }} />
+                <span className="text-slate-600 dark:text-slate-300">{e.label}</span>
+                {e.recurring && <span aria-hidden="true" className="text-slate-400 dark:text-slate-500">&#8635;</span>}
+              </span>
+              {/* OnRequestChange — the accessible, keyboard-reachable
+                  stand-in for drag-to-reschedule this read-only calendar
+                  offers, shown on today's own event. */}
+              {day === String(today) && (
+                <button type="button" className="shrink-0 text-[9px] font-bold text-slate-500 underline dark:text-slate-400">Request a change</button>
+              )}
             </div>
           ))}
         </div>
@@ -201,42 +238,57 @@ function ComponentPreview({ item, values = {} }) {
   }
 
   if (item.title === "Accordion Record List") {
+    // SelectionMode Multiple — checked demonstrates OnSelectionChange's
+    // real checkbox column rather than only describing it in Properties.
     const groups = [
       {
         name: "Order #4821 — Acme Corp",
         expanded: true,
         children: [
-          { name: "Line 1 — Widget A x200", tag: "Shipped", color: item.color },
-          { name: "Line 2 — Widget B x50", tag: "Processing", color: "#0F6CBD" }
+          { name: "Line 1 — Widget A x200", tag: "Shipped", color: item.color, checked: true },
+          { name: "Line 2 — Widget B x50", tag: "Processing", color: "#0F6CBD", checked: false }
         ]
       },
       { name: "Order #4820 — Globex Inc", expanded: false, children: [] }
     ];
     return (
-      <div className="space-y-2">
-        {groups.map(g => (
-          <div key={g.name} className="rounded-xl border border-slate-200 dark:border-white/10">
-            <div className="flex items-center justify-between p-3">
-              <b className="text-xs">{g.name}</b>
-              <span aria-hidden="true" className={`text-slate-500 transition-transform dark:text-slate-400 ${g.expanded ? "rotate-180" : ""}`}>&#9660;</span>
-            </div>
-            {g.expanded && g.children.length > 0 && (
-              <div className="space-y-1.5 border-t border-slate-100 p-3 dark:border-white/10">
-                {g.children.map(c => (
-                  <div key={c.name} className="flex items-center justify-between rounded-lg bg-slate-50 px-3 py-2 shadow-sm dark:bg-white/10">
-                    <span className="text-xs">{c.name}</span>
-                    <span
-                      className={`rounded-full px-2 py-0.5 text-[10px] font-black ${CONTAINER_TEXT_CLASS}`}
-                      style={container(c.color)}
-                    >
-                      {c.tag}
-                    </span>
-                  </div>
-                ))}
+      <div>
+        <div className="mb-2 flex items-center justify-between text-[10px] font-bold text-slate-500 dark:text-slate-400">
+          <span>1 selected</span>
+          <span>Page 1 of 3</span>
+        </div>
+        <div className="space-y-2">
+          {groups.map(g => (
+            <div key={g.name} className="rounded-xl border border-slate-200 dark:border-white/10">
+              <div className="flex items-center justify-between p-3">
+                <b className="text-xs">{g.name}</b>
+                <span aria-hidden="true" className={`text-slate-500 transition-transform dark:text-slate-400 ${g.expanded ? "rotate-180" : ""}`}>&#9660;</span>
               </div>
-            )}
-          </div>
-        ))}
+              {g.expanded && g.children.length > 0 && (
+                <div className="space-y-1.5 border-t border-slate-100 p-3 dark:border-white/10">
+                  {g.children.map(c => (
+                    <div key={c.name} className="flex items-center gap-2 rounded-lg bg-slate-50 px-3 py-2 shadow-sm dark:bg-white/10">
+                      <span
+                        aria-hidden="true"
+                        className={`grid h-3.5 w-3.5 shrink-0 place-items-center rounded-sm border text-[9px] font-black text-white ${c.checked ? "border-transparent" : "border-slate-300 dark:border-white/20"}`}
+                        style={c.checked ? { background: item.color } : undefined}
+                      >
+                        {c.checked ? "✓" : ""}
+                      </span>
+                      <span className="min-w-0 flex-1 truncate text-xs">{c.name}</span>
+                      <span
+                        className={`shrink-0 rounded-full px-2 py-0.5 text-[10px] font-black ${CONTAINER_TEXT_CLASS}`}
+                        style={container(c.color)}
+                      >
+                        {c.tag}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
       </div>
     );
   }
@@ -666,14 +718,20 @@ function ComponentPreview({ item, values = {} }) {
   }
 
   if (item.title === "Enterprise Dialog") {
+    // Size: Small — the default; the 280px cap below is that slot.
+    // Medium/Large widen the same slot for a Custom content dialog
+    // carrying more than one line of text.
     return (
       <div className="grid place-items-center rounded-xl bg-slate-100 p-6 dark:bg-white/5">
-        <div className="w-full max-w-[280px] rounded-2xl bg-white p-5 shadow-xl dark:bg-[#17201B]">
-          <b className="text-sm">Delete confirmation</b>
-          <p className="mt-2 text-xs leading-5 text-slate-600 dark:text-slate-300">This action can&rsquo;t be undone.</p>
-          <div className="mt-4 flex justify-end gap-2">
-            <span className="rounded-full bg-slate-100 px-3 py-1.5 text-xs font-bold dark:bg-white/10">Cancel</span>
-            <span className="rounded-full px-3 py-1.5 text-xs font-bold text-white" style={{ background: "#D13438" }}>Confirm</span>
+        <div className="w-full max-w-[280px]">
+          <span className="mb-1.5 block w-fit rounded-full bg-slate-200 px-2 py-0.5 text-[9px] font-black uppercase tracking-wide text-slate-600 dark:bg-white/10 dark:text-slate-300">Size: Small</span>
+          <div className="rounded-2xl bg-white p-5 shadow-xl dark:bg-[#17201B]">
+            <b className="text-sm">Delete confirmation</b>
+            <p className="mt-2 text-xs leading-5 text-slate-600 dark:text-slate-300">This action can&rsquo;t be undone.</p>
+            <div className="mt-4 flex justify-end gap-2">
+              <span className="rounded-full bg-slate-100 px-3 py-1.5 text-xs font-bold dark:bg-white/10">Cancel</span>
+              <span className="rounded-full px-3 py-1.5 text-xs font-bold text-white" style={{ background: "#D13438" }}>Confirm</span>
+            </div>
           </div>
         </div>
       </div>

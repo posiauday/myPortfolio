@@ -387,6 +387,56 @@ dark:text-slate-400`, the same fix applied last batch. Re-scanned
 clean: `npm run lint && npm run test:yaml && npm run build` clean, zero
 axe-core violations across all 5 touched components in light and dark.
 
+**Batch 3 — the remaining Data Display components, plus Enterprise
+Dialog's own size gap:**
+
+- **Deadline Intelligence** gained `TimeZone` (an IANA/Windows zone
+  name StartDate is computed in, converted through Power Apps' own
+  real `TimeZoneOffset`/`TimeZoneInformation` functions upstream) and
+  `ReminderThreshold`/`OnApproachingDue` — the same reminder concept
+  Power Automate's own "Start and wait for an approval" action offers
+  for an approval nearing its deadline, here as a component event. The
+  mockup now shows a real reminder line beneath the countdown.
+- **Activity Timeline** gained `SortDirection` (matching the real
+  Dynamics 365 Timeline control's own explicit sort toggle, rather
+  than an implied fixed order), `PinnedIds`/`OnPin` (the real Timeline
+  control's own `msdyn_timelinepin` precedent for keeping a record
+  visible through paging and filtering), and `HasLoadError`/
+  `OnLoadMoreError` — a real failed-fetch state, distinct from
+  `IsLoading`'s normal in-flight one. The mockup now shows a pinned
+  entry (rendered first, marked "Pinned") and a real sort toggle.
+- **Enterprise Calendar** gained `TimeZone` (same reasoning as Deadline
+  Intelligence), a `SeriesId` marker on `Events` for a recurring
+  occurrence, and `OnRequestChange` — the accessible, keyboard-reachable
+  alternative this read-only calendar offers in place of
+  drag-to-reschedule. The mockup now shows a recurring-series icon and
+  a real "Request a change" action on today's event.
+- **Accordion Record List** gained `SelectionMode`/`OnSelectionChange`
+  (matching Enterprise Data Table's own multi-select contract) and
+  `PageSize`/`OnPageChange` (the same paging contract Enterprise Data
+  Table and the real Creator Kit DetailsList both use), closing the
+  "past the low hundreds of groups" ceiling this component's own
+  Limitations already named with no fix. The mockup now shows real
+  checkboxes and a page indicator.
+- **Enterprise Dialog** gained `Size` (Small/Medium/Large) — the one
+  addition in this pass not grounded in a specific Microsoft control
+  property, since `Confirm()` has no size concept at all; grounded
+  instead in Fluent's own Dialog/Panel components, which do offer this
+  exact sizing scale, and in this component's own "Custom content"
+  variant needing more room than a one-line message does. The mockup
+  now shows the current size as a visible chip above the dialog.
+
+Three real contrast issues turned up in this batch — all the same
+swapped-light/dark-combo class of bug as the previous two batches:
+Activity Timeline's "Pinned" label, Enterprise Calendar's "Request a
+change" action, and Enterprise Dialog's "Size: Small" chip (the last of
+these against a *different* tinted background than the usual white/near
+-black page background, so the fix there was swapping to a
+higher-contrast pair — `text-slate-600 dark:text-slate-300` — rather
+than the usual `text-slate-500 dark:text-slate-400` swap). Re-scanned
+clean: `npm run lint && npm run test:yaml && npm run build` clean, zero
+axe-core violations across all 5 touched components in light and dark.
+
 ### YAML schema conformance
 
 Every component gets two generated YAML outputs (`src/lib/componentDocs.js`):
