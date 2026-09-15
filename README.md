@@ -640,6 +640,84 @@ viewport confirm a single "← Home" button with "All components" visible
 next to it, and a desktop grid confirms multiple cards are now visually
 distinct from one another.
 
+### Variants tab: real rendered variants, not four description cards
+
+A comparison against a real, published Power Apps component (a Line Chart
+whose own YAML genuinely self-renders — a single `Image` control whose
+`Image` property is a Power Fx formula that builds an SVG data URI, so
+pasting it into Studio actually draws a chart with no host code at all)
+surfaced two honest findings. First, this project's own generated YAML
+(`buildComponentYaml`) emits `CustomProperties` only, with no `Children` —
+a real, schema-valid property/event contract, but not self-rendering;
+paste it into Studio and the property panel is right, but nothing draws
+itself. Rebuilding every component's YAML into genuinely executable,
+formula-generated visuals to match would be a different, much larger kind
+of engineering (hand-authoring nested Power Fx string formulas per
+component) than this project has done — a real option, but a separate
+decision from the one actually asked for here. Second, and the one this
+pass fixes: the Detail page's own **Variants** tab rendered each of a
+component's 4 (5 for Executive KPI Card) listed presentation modes as a
+numbered card with a name and a sentence — real, specific text from
+earlier in this project, but no actual visual, on a tab whose entire
+purpose is showing what each variant *looks like*.
+
+`ComponentPreview.jsx` gains a `variant` prop (default `null`) that each
+component's mockup now reads to render that one named variant for real —
+Responsive Line Chart's "Sparkline" actually draws a smaller, axis-less
+line; "Dashed forecast" draws a solid actual segment continuing into a
+genuinely dashed, unfilled one; Enterprise Calendar's four variants are
+four structurally different views (a month grid, a 7-day week strip, a
+flat chronological agenda, a tiny read-only mini-grid) instead of one
+view with a caption; Enterprise Dialog's four variants are four different
+real dialogs (a neutral Confirm, a single-button Acknowledge-only, a
+red-styled Destructive delete, and a wider Custom-content form); Branded
+Loading Experience's four are an indeterminate spinner, the progress bar,
+a full-bleed branded splash, and content-shaped skeleton blocks. All 25
+components' mockups were extended this way — every one of their variants
+(101 total across the catalog) now renders a genuine, distinct visual
+rather than only being described next to one.
+
+`null` (and, for every component, its first-listed variant name — almost
+always "Standard" or the base layout) both fall through to the same
+default render already used everywhere else, so neither the Preview tab
+nor the Catalog/homepage card thumbnail — neither of which pass `variant`
+— changed behavior at all.
+
+Building this out surfaced a handful of real, pre-existing mismatches
+between a variant's own written description and what the *default*
+mockup actually showed, independent of the new variant-rendering work,
+and fixed them in the same pass: Project Health Summary's trend arrows
+and narrative sentence were both always visible regardless of variant,
+when TrendDirection and NarrativeText are each one specific variant's own
+addition; Workflow Route Map's default mockup showed the swimlane-grouped
+layout even though "Linear" (a flat sequence with no lanes) is the
+catalog's first-listed variant for it; Responsive Breadcrumbs' default
+showed a collapsed "…" trail when "Full trail" (every level, nothing
+collapsed) is listed first; Enterprise Dialog's Confirm button was always
+styled in the danger red that's actually Destructive's own defining
+difference from a neutral Confirm(). Each is now correct for its actual
+variant.
+
+The `ComponentDetail.jsx` side of this reuses the same scaled-thumbnail
+technique `ComponentCard.jsx` established for the Catalog: each variant
+card embeds a real, cropped, `interactive={false}` render of that
+variant at `scale-[0.42]`, aria-hidden since the adjacent name and
+description already carry the accessible content.
+
+Verified: `npm run lint && npm run build && npm run test:yaml` clean.
+axe-core scanned all 25 components' Variants tabs, light and dark —
+caught 15 real violations across 8 components (several instances of this
+project's own recurring swapped-light/dark-contrast-pair bug, a CSS
+`opacity` wrapper silently dragging already-modest text below the
+contrast minimum on two different "disabled/locked" states, and a few
+new colors that simply hadn't been checked against their backgrounds
+yet). Fixed each and rescanned clean, then re-ran the full 25-component
+sweep against the Preview tab and the Catalog/homepage card grid to
+confirm the `variant` prop's `null` default path was untouched — zero
+violations. Playwright screenshots across five components (light and
+dark) confirm each shows four genuinely distinct renders matching its
+own description.
+
 ### YAML schema conformance
 
 Every component gets two generated YAML outputs (`src/lib/componentDocs.js`):

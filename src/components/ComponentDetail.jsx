@@ -157,12 +157,27 @@ function Detail({ item, items, dark, onBack, onSwitch }) {
         return (
           <Panel title="Variants">
             <p className="mt-3 text-slate-600 dark:text-slate-300">Supported presentation modes for this component contract.</p>
+            {/* Each card shows a real, scaled-down render of that exact
+                variant — the same ComponentPreview mockup the Preview tab
+                and the Catalog card thumbnail both use, driven this time
+                by the `variant` prop — instead of only a name and a
+                sentence describing a look this tab never actually showed. */}
             <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
               {item.variants.map(([name, desc], i) => (
-                <div key={name} className="rounded-2xl border border-slate-200 p-5 dark:border-white/10">
-                  <span className="grid h-10 w-10 place-items-center rounded-xl text-sm font-black text-white" style={{ background: item.color }}>{i + 1}</span>
-                  <h3 className="mt-5 font-black">{name}</h3>
-                  <p className="mt-2 text-sm text-slate-600 dark:text-slate-300">{desc}</p>
+                <div key={name} className="overflow-hidden rounded-2xl border border-slate-200 dark:border-white/10">
+                  <div className="relative h-40 overflow-hidden bg-slate-50 dark:bg-white/5">
+                    <div
+                      aria-hidden="true"
+                      className="pointer-events-none absolute left-1/2 top-3 w-[340px] origin-top -translate-x-1/2 scale-[0.42] rounded-xl bg-white p-4 shadow-lg dark:bg-[#17201B]"
+                    >
+                      <ComponentPreview item={item} interactive={false} variant={name} />
+                    </div>
+                  </div>
+                  <div className="p-5">
+                    <span className="grid h-8 w-8 place-items-center rounded-lg text-xs font-black text-white" style={{ background: item.color }}>{i + 1}</span>
+                    <h3 className="mt-4 font-black">{name}</h3>
+                    <p className="mt-2 text-sm text-slate-600 dark:text-slate-300">{desc}</p>
+                  </div>
                 </div>
               ))}
             </div>
