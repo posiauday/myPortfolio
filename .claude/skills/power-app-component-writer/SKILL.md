@@ -33,9 +33,38 @@ post-mortems folded into the rules below.
    `Default` even though the bare schema doesn't list them as `required` — Studio's
    real compiler is stricter than the schema's `required:` list.
 
+3. **Wrong shape (builds cleanly, passes every check, isn't what the user asked for).**
+   No script catches this one — it's a design mistake, not a syntax mistake, and it's
+   the most expensive kind because everything downstream (properties, Children:,
+   sample data, the site's own preview) gets built consistently *wrong*, so it looks
+   finished. It happened once already on this catalog's own KPI Card: a real
+   "enterprise" reference the user shared used one `Data` table plus a `Gallery` to
+   render an arbitrary number of cards from one pasted component — a genuinely good
+   pattern for a component whose job is *rendering a list*. KPI Card's job is being
+   *one card* — you place one instance per metric on a screen, and each instance's
+   own scalar properties (`Label`, `Value`, `Icon`, `Style`, ...) configure that one
+   card. Copying the reference's *architecture* (Gallery-over-a-Data-table) instead of
+   its *techniques* (StyleConfig tokens, the SVG icon/sparkline patterns, skeleton
+   loading) turned a single reusable card into a fixed dashboard-row container — every
+   property, every sample default, every preview mockup built cleanly on top of the
+   wrong foundation, and none of it errored until the user asked why pasting the
+   component produced a whole row instead of one card they could place per metric.
+   **Before building a component's Properties/Children shape, settle whether it's a
+   single-instance widget (its own properties describe *itself*; you place N of them
+   for N cards) or a container that renders a collection (one `Table`-typed property,
+   one `Gallery`, an arbitrary number of rows from one instance) — a component's own
+   plain-English name is usually the tell ("Card" is one thing; "List", "Row", "Grid",
+   "Table" hold many), and when a reference example's shape is ambiguous against that
+   name, ask rather than default to whichever shape the reference happened to use.**
+   A sophisticated technique (a real SVG-icon library, a real generated sparkline, a
+   real StyleConfig token set, real skeleton loading) is reusable in *either* shape —
+   don't let "the reference did it this way" settle the shape question by itself.
+
 Both of these shipped silently in this catalog before `scripts/validate-yaml.mjs`
 checked for them. If you add a new failure mode, add a check for it in that script
 too — a rule that isn't enforced by a script gets forgotten under the next deadline.
+The third failure mode (wrong shape) can't be caught by a script at all — it needs
+to be settled with the user before any code gets written, not discovered after.
 
 ## Control property reference (this project's own findings)
 
@@ -194,13 +223,16 @@ paraphrase, when documenting a component's own Examples):
 
 ## Applying this to the rest of the catalog
 
-Each of the other 27 components needs the same treatment KPI Card got: a real
-`Data`-table-driven (where the component is naturally a list — most of them are) or
-scalar-property-driven (where it's genuinely a single instance, e.g. a Dialog) shape,
-a real `Children:` tree using the control table above, `sampleFormulas.js` entries for
-every `Table`/`Record`/`Color` property, and the same verification pipeline. Do them
-one at a time, each through the full verification discipline above, rather than
-batching many components through steps 1-3 before any of them sees step 4 — the whole
-point of this file existing is that steps 1-3 catch syntax and geometry, not every
-real Studio compiler quirk, and quirks compound across components faster than they
-get caught if verification is deferred.
+Each of the other 27 components needs the same treatment KPI Card got — but settle its
+shape (failure mode 3 above) explicitly first, per component, against its own name and
+what the user actually says they'll do with it (place one per X? or feed it a
+collection?), not by assuming a shape from whatever reference happened to be at hand.
+Some of the 27 genuinely are collections (a list, a menu, a stepper) where one
+`Table`-typed property plus a `Gallery` is right; KPI Card looked like it might be one
+too and wasn't. Once the shape is settled, build a real `Children:` tree using the
+control table above, `sampleFormulas.js` entries for every `Table`/`Record`/`Color`
+property, and run the same verification pipeline. Do them one at a time, each through
+the full verification discipline above, rather than batching many components through
+steps 1-3 before any of them sees step 4 — the whole point of this file existing is
+that steps 1-3 catch syntax and geometry, not every real Studio compiler quirk (and
+none of them catch a wrong shape at all — only the user, asked early, does that).

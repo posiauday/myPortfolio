@@ -151,42 +151,46 @@ const GENERIC_VARIANTS = [
 // verbatim, since that library's YAML and prose are its own.
 const overrides = {
   "kpi-card": {
-    summary: "A real, data-driven dashboard row — one Table property renders any number of KPI cards through a Gallery, themed by a single Style switch and a centralized StyleConfig token set, not a fixed handful of scalar properties.",
+    summary: "A single, individually-placed KPI card — one instance per metric, its own scalar properties describing that one card — themed by a Style switch and a centralized StyleConfig token set, not a dashboard row rendering many cards from one table.",
     properties: [
-      ["Data", "Table", "2 sample cards", "KPI rows. ID (Number, recommended — used as OnCardClick's context), Icon (Text, required — a name matching an Icons row), Value (Number, required — auto-abbreviated at StyleConfig.abbreviateThreshold), Label (Text, required — card title; containing \"value\"/\"price\"/\"cost\" auto-formats Value as currency), PercentChange (Number, optional — trend %, blank hides it and the sparkline color follows its sign), PercentLabel (Text, optional — footer sub-text, blank hides it), IconBg (Text, required — hex background for the icon circle, becomes the whole card's background in Filled), IconColor (Text, required — hex stroke for the icon SVG, becomes all text/percent color in Filled), SparklineData (Text, optional — comma-separated numbers e.g. \"10,25,18,42\", shown only in Standard/Chart), isHidden (Boolean, optional — hides a row without removing it from the source)"],
+      ["Label", "Text", "All Assets", "Card title, rendered uppercase; containing \"value\"/\"price\"/\"cost\" auto-formats Value as currency"],
+      ["Value", "Number", "118", "The headline number; auto-abbreviated at StyleConfig.abbreviateThreshold (e.g. 42000 becomes \"42.0K\")"],
+      ["Icon", "Text", "Box", "A name matching a row in Icons"],
+      ["IconBg", "Text", "#EBF5FF", "Hex background for the icon circle; becomes the whole card's background in Filled"],
+      ["IconColor", "Text", "#1565C0", "Hex stroke for the icon SVG; becomes all text/percent color in Filled"],
+      ["PercentChange", "Number", "14", "Trend %; the arrow/color follow its sign, and IsBlankOrError(PercentChange) hides it entirely when cleared"],
+      ["PercentLabel", "Text", "vs last month", "Footer sub-text; blank hides the footer line"],
+      ["SparklineData", "Text", "10,25,18,42,38,56,61,70", "Comma-separated numbers; shown only in Standard/Chart, blank hides it in those too"],
       ["Style", "Text", "Standard", "Standard, Compact, Minimal, Filled or Chart — every control's Visible/Height/Width/Color/Fill reads this one property rather than five separately exported trees"],
-      ["IsLoading", "Boolean", "false", "True hides the data Gallery and shows a mirrored skeleton Gallery (same WrapCount/TemplateSize, so nothing jumps when real data arrives) instead"],
+      ["IsLoading", "Boolean", "false", "True hides the card and shows a plain colored skeleton placeholder, sized to match the active Style's own layout, instead"],
       ["StyleConfig", "Record", "Light theme tokens", "Centralized colors (cardBg/border/text/textMuted/positive/negative/neutral/skeletonBase/skeletonShine), space (xs..xl), radius (md/lg), type sizes (value/label/body) and abbreviateThreshold — every control references this instead of repeating literal colors/sizes"],
-      ["Icons", "Table", "8 built-in icons", "Name/SVG rows; each SVG string carries the literal placeholder text COLOR where a stroke value goes, substituted at render time with that row's own IconColor — one shared icon set, per-row recoloring, no per-icon-color asset variants"],
-      ["ColumnsLayout", "Record", "{Mobile:1, Tablet:2, Desktop:4}", "Column counts plus MobileBreakpoint/TabletBreakpoint/DesktopBreakpoint, sourced from the host app's own App.SizeBreakpoints with a safe numeric fallback — drives the Gallery's real responsive WrapCount and the component's own dynamic Height"],
-      ["AnimationEffect", "Text", "Pop", "\"Pop\" (scale in), \"Push\" (slide) or \"None\" (instant) — the Gallery's own Transition"]
+      ["Icons", "Table", "8 built-in icons", "Name/SVG rows; each SVG string carries the literal placeholder text COLOR where a stroke value goes, substituted at render time with this card's own IconColor — one shared icon set, no per-color asset variants"]
     ],
-    events: [["OnCardClick", "Fires when a card is tapped; carries the tapped row as a ClickedItem parameter (the same shape as a Data row), so the host never has to re-look-up which card was pressed"]],
+    events: [["OnSelect", "Fires when the card is tapped — no parameters, since a single-instance card never needs to say which one was pressed; the host already knows, because it placed this exact instance"]],
     architecture: [
-      "One Data table plus one Gallery renders any number of cards — not N hand-authored near-duplicate children capped at a fixed count",
+      "One instance is one card — place as many as a screen needs, one per metric, and configure each through its own Label/Value/Icon/... properties, the same way any other single component is placed and configured per-instance in Studio",
       "Style is a single Text property read by If()/Switch() throughout every control's Visible/Height/Width/Color/Fill, rather than five separately exported component trees for five looks",
       "StyleConfig centralizes every color/spacing/radius/type-size token in one Record property, so retheming touches one place instead of every control that happens to repeat a literal RGBA(...)",
-      "ColumnsLayout's breakpoints, read against the host app's own App.SizeBreakpoints, drive both the Gallery's WrapCount and the component's own dynamic Height (visible row count ÷ columns × card height), so it never clips when cards wrap to more rows",
-      "IsLoading swaps in a second Gallery (Sequence(8), same WrapCount/TemplateSize as the real one) of plain colored placeholder bars rather than a spinner — the real skeleton-loading pattern",
-      "The sparkline is a generated SVG data: URI Image, built from a plain comma-separated Text value per row (MatchAll/ForAll/Concat), not a nested Table and not a second charting implementation",
-      "The icon library is an SVG-with-COLOR-placeholder Table, recolored per row at render time via Substitute() — one shared asset set instead of per-color icon variants",
-      "The component itself never references SharePoint, Dataverse, or any specific data source — only the screen-level binding to Data does, which is what makes the same component reusable across totally different sources (see Examples for three real binding patterns)"
+      "IsLoading swaps in a sibling GroupContainer of plain colored placeholder bars matching the active Style's own layout, rather than a spinner — the real skeleton-loading pattern, sized to this one card rather than a whole Gallery of them",
+      "The sparkline is a generated SVG data: URI Image, built from a plain comma-separated Text value (MatchAll/ForAll/Concat), not a nested Table and not a second charting implementation",
+      "The icon library is an SVG-with-COLOR-placeholder Table, recolored at render time via Substitute() — one shared asset set instead of per-color icon variants",
+      "A screen that needs several of these from one live query builds its own Gallery templating cmpKPICard once per row, binding each instance's Label/Value/Icon/... to ThisItem — that Gallery lives on the screen, never inside this component, so the exact same card works equally well placed once by hand or templated by the dozen (see Examples)"
     ],
     examples: [
-      ["Static demo data", "cmpKPI.Data: =Table({ID:1,Icon:\"Box\",Value:118,Label:\"All Assets\",PercentChange:14,PercentLabel:\"vs last month\",IconBg:\"#EBF5FF\",IconColor:\"#1565C0\",SparklineData:\"10,25,18,42,38,56,61,70\"}, ...) — fine for a demo screen, never for production data."],
-      ["Auto-refreshing named formula", "App.OnStart runs ClearCollect(colKPIData, <source query>); a named formula nfKPIData = ForAll(colKPIData, {...reshaped into Data's exact columns...}) recalculates automatically whenever colKPIData changes; the screen sets cmpKPI.Data: =nfKPIData — no manual refresh call needed anywhere."],
-      ["Live SharePoint/Dataverse, reshaped in place", "cmpKPI.Data: =ForAll(GroupBy(Assets, \"Status\", \"Group\"), {ID: CountRows(Group), Icon: Switch(Status, \"Available\", \"Package\", \"In Use\", \"TrendLines\", \"Box\"), Value: CountRows(Group), Label: Status, IconBg: Switch(Status, \"Available\", \"#E8F5E9\", \"#EBF5FF\"), IconColor: Switch(Status, \"Available\", \"#2E7D32\", \"#1565C0\"), SparklineData: \"\"}) — GroupBy/Switch turn a real list straight into the component's expected shape; the component's own definition never mentions SharePoint at all."]
+      ["One static card", "cmpKPICard.Value: =118, Label: =\"All Assets\", Icon: =\"Box\", IconBg: =\"#EBF5FF\", IconColor: =\"#1565C0\" — placed directly on a screen, no collection or Gallery involved."],
+      ["Several cards from one live query", "A screen-level Gallery (galDashboardKPIs) with Items: =ForAll(GroupBy(Assets, \"Status\", \"Group\"), {Label: Status, Value: CountRows(Group), Icon: Switch(Status, \"Available\", \"Package\", \"In Use\", \"TrendLines\", \"Box\"), IconBg: Switch(Status, \"Available\", \"#E8F5E9\", \"#EBF5FF\"), IconColor: Switch(Status, \"Available\", \"#2E7D32\", \"#1565C0\")}) templates one cmpKPICard per row, each property bound to ThisItem.* — the Gallery is the screen's own; this component's own definition still only ever describes one card."],
+      ["Auto-refreshing metric", "A named formula nfActiveAssetCount = CountRows(Filter(Assets, Status = \"Active\")) recalculates automatically; the screen sets cmpKPICard.Value: =nfActiveAssetCount — no manual refresh call needed anywhere."]
     ],
     accessibility: [
       "PercentChange's direction reads as a real arrow glyph plus a signed percentage in text, never color alone",
-      "IsLoading's skeleton cards are plain, textless colored fills, so a screen reader doesn't announce meaningless placeholder content while data loads",
-      "Icon SVGs are decorative — IconBg/IconColor already convey the same category visually — with Label carrying the real accessible name for each card",
-      "btnCardOverlay is a real focusable, selectable button over each card (not a bare click handler on a container), so OnCardClick fires the same way for keyboard and screen-reader activation as it does for a mouse click"
+      "IsLoading's skeleton is a plain, textless colored fill, so a screen reader doesn't announce meaningless placeholder content while data loads",
+      "The icon SVG is decorative — IconBg/IconColor already convey the same category visually — with Label carrying the real accessible name for the card",
+      "btnCardOverlay is a real focusable, selectable button over the card (not a bare click handler on a container), so OnSelect fires the same way for keyboard and screen-reader activation as it does for a mouse click"
     ],
     limitations: [
       "Value is a real Number, not pre-formatted text — use Label's own value/price/cost keyword-triggered currency formatting, or extend the abbreviation formula, for other units",
       "The sparkline is decorative and intentionally omitted from Compact/Minimal/Filled — PercentChange and PercentLabel already state the same trend as text in those styles",
-      "ColumnsLayout's breakpoints read from App.SizeBreakpoints with a 640/1024/1366 fallback if the host app has fewer than three configured; a host wanting different fallback numbers edits ColumnsLayout directly rather than App.SizeBreakpoints"
+      "Rendering several cards from one collection is the host screen's own job (a Gallery templating this component, per the second Example) — this component intentionally carries no Data/Table property or internal Gallery of its own, so pasting one instance always produces exactly the one card it describes, never more"
     ],
     variants: [
       ["Standard", "Icon, label, abbreviated/currency-formatted value, sparkline, and a footer trend + sub-label line — the full card."],
@@ -194,7 +198,7 @@ const overrides = {
       ["Minimal", "88px dense card, no icon, no trend, no sparkline, no footer — a plain number and label."],
       ["Filled", "IconBg becomes the entire card background and IconColor becomes all text/percent color — no icon glyph, no sparkline."],
       ["Chart", "Sparkline as the card's hero element, edge-to-edge across the bottom, trend percentage shown inline in the value row instead of a footer."],
-      ["Skeleton", "IsLoading = true — a mirrored gallery of plain colored placeholder bars matching the active Style's own layout and row count."]
+      ["Skeleton", "IsLoading = true — a sibling container of plain colored placeholder bars, sized and laid out to match the active Style, replaces the card until real data arrives."]
     ]
   },
   "responsive-line-chart": {
@@ -691,7 +695,7 @@ const components = raw.map(([title, category, maturity], i) => {
     // yamlStatus says exactly that instead of the same disclaimer every
     // other still-contract-only component carries.
     yamlStatus: CHILDREN_BUILDERS[title]
-      ? "Property/event contract plus a real visual control tree (GroupContainer/ModernText/Gallery/Image/Classic-Button) — pastes as an actual visible, data-driven component, not just the property scaffold"
+      ? "Property/event contract plus a real visual control tree (GroupContainer/ModernText/Image/Classic-Button) — pastes as an actual visible component, not just the property scaffold"
       : maturity === "Verified"
       ? "Property and event contract cross-checked against a published reference component; this project's own YAML source is drafted but not yet Studio-tested"
       : "Design specification only; executable YAML not yet built or verified"

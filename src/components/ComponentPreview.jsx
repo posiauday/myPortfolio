@@ -5,8 +5,8 @@ import { darken, lighten, container, CONTAINER_TEXT_CLASS } from "../lib/color.j
    COMPONENT PREVIEW (the small mockup shown in the Detail page)
    `values` (name -> current value, from the detail page's live
    configurator) is honored only where a component's own mockup already
-   reads specific properties by name — KPI Card's Label/Value/
-   Trend/Status/ShowSparkline is the deepest example. Every other
+   reads specific properties by name — Risk Matrix's Size/ShowNames/
+   ShowLabels is the deepest example. Every other
    component's mockup is a fixed illustration regardless of what's
    edited in the configurator; the YAML output next to it always
    reflects the edit either way. Wiring every mockup to every property
@@ -128,34 +128,25 @@ function ComponentPreview({ item, values = {}, interactive = true, variant = nul
   }
 
   if (item.title === "KPI Card") {
-    // The real component (componentChildren.js's kpiCard()) renders any
-    // number of cards from one Data table through a Gallery — this
-    // mockup uses the catalog's own KPI-Card::Data-adjacent sample rows
-    // (the same 4-card set the real component's own "Basic static
-    // data" Example shows) so it demonstrates that architecture
-    // directly, rather than illustrating a single hardcoded card the
-    // way the old scalar-Label/Value/Trend contract had to.
-    const kpiIcons = {
-      box: "M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z M3.29 7 12 12l8.71-5 M12 22V12",
-      trend: "M22 12h-4l-3 9L9 3l-3 9H2",
-      package: "M16.5 9.4l-9-5.19 M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z M3.29 7 12 12l8.71-5 M12 22V12",
-      warning: "M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z M12 9v4 M12 17h.01"
-    };
+    // One card, not a data-driven row of them — the real component
+    // (componentChildren.js's kpiCard()) is a single-instance widget a
+    // host places once per metric, per the skill file's failure mode 3
+    // (an earlier draft copied a reference's Data-table + Gallery shape
+    // and rendered several cards from one instance, which wasn't what
+    // "KPI Card" was ever supposed to mean). This mockup renders
+    // exactly one card per Style variant, using the same default
+    // sample values as the catalog's own Properties tab.
+    const boxIconPath = "M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z M3.29 7 12 12l8.71-5 M12 22V12";
     // fg is IconColor, which the Filled variant uses as this card's own
-    // text color on its IconBg background — chosen (matching
-    // sampleFormulas.js's KPI Card::Data) to clear 4.5:1 contrast
+    // text color on its IconBg background — chosen (matching the
+    // catalog's own IconColor/IconBg defaults) to clear 4.5:1 contrast
     // against that specific bg, not just to look like a plausible
     // brand color. A real axe-core run against Filled caught the
     // original lighter Material-palette values failing this pairing.
-    const kpiData = [
-      { icon: "box", value: 118, label: "All Assets", pct: 14, pctLabel: "vs last month", bg: "#EBF5FF", fg: "#1565C0", spark: [10, 25, 18, 42, 38, 56, 61, 70] },
-      { icon: "trend", value: 6, label: "In Use", pct: -8, pctLabel: "vs last month", bg: "#FFF3E0", fg: "#BF360C", spark: [50, 44, 38, 30, 28, 20, 14, 6] },
-      { icon: "package", value: 111, label: "Available", pct: 12, pctLabel: "vs last month", bg: "#E8F5E9", fg: "#2E7D32", spark: [60, 70, 75, 85, 90, 100, 105, 111] },
-      { icon: "warning", value: 1, label: "Expiring Soon", pct: null, pctLabel: "Warranty expiring in less than 30 days", bg: "#FFEBEE", fg: "#C62828", spark: null }
-    ];
-    const KpiIcon = ({ name, color, size = 22 }) => (
+    const d = { value: 118, label: "All Assets", pct: 14, pctLabel: "vs last month", bg: "#EBF5FF", fg: "#1565C0", spark: [10, 25, 18, 42, 38, 56, 61, 70] };
+    const KpiIcon = ({ color, size = 22 }) => (
       <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-        {kpiIcons[name].split(" M").map((seg, i) => <path key={i} d={i === 0 ? seg : `M${seg}`} />)}
+        {boxIconPath.split(" M").map((seg, i) => <path key={i} d={i === 0 ? seg : `M${seg}`} />)}
       </svg>
     );
     const Trend = ({ pct, className = "" }) => pct === null ? null : (
@@ -175,89 +166,65 @@ function ComponentPreview({ item, values = {}, interactive = true, variant = nul
     };
 
     if (variant === "Skeleton") return (
-      <div className="grid grid-cols-2 gap-3">
-        {kpiData.map((_, i) => (
-          <div key={i} className="relative h-[88px] rounded-xl border border-slate-200 p-3 dark:border-white/10">
-            <div className="h-2.5 w-16 rounded bg-slate-200 dark:bg-white/10" />
-            <div className="mt-3 h-5 w-12 rounded bg-slate-200 dark:bg-white/10" />
-            <div className="absolute right-3 top-3 h-8 w-8 rounded-full bg-slate-200 dark:bg-white/10" />
-          </div>
-        ))}
+      <div className="relative h-[190px] w-[280px] max-w-full rounded-xl border border-slate-200 p-4 dark:border-white/10">
+        <div className="h-2.5 w-16 rounded bg-slate-200 dark:bg-white/10" />
+        <div className="mt-3 h-6 w-14 rounded bg-slate-200 dark:bg-white/10" />
+        <div className="absolute right-4 top-4 h-10 w-10 rounded-full bg-slate-200 dark:bg-white/10" />
+        <div className="absolute bottom-4 left-4 h-2.5 w-28 rounded bg-slate-100 dark:bg-white/5" />
       </div>
     );
 
     if (variant === "Compact") return (
-      <div className="grid grid-cols-2 gap-3">
-        {kpiData.map((d, i) => (
-          <div key={i} className="flex items-center gap-3 rounded-xl border border-slate-200 p-3 dark:border-white/10">
-            <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full" style={{ background: d.bg }}><KpiIcon name={d.icon} color={d.fg} size={18} /></span>
-            <div className="min-w-0">
-              <p className="truncate text-[10px] font-black uppercase tracking-wide text-slate-500 dark:text-slate-400">{d.label}</p>
-              <div className="flex items-center gap-1.5"><b className="text-xl">{d.value}</b><Trend pct={d.pct} /></div>
-            </div>
-          </div>
-        ))}
+      <div className="flex w-[280px] max-w-full items-center gap-3 rounded-xl border border-slate-200 p-3 dark:border-white/10">
+        <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full" style={{ background: d.bg }}><KpiIcon color={d.fg} size={18} /></span>
+        <div className="min-w-0">
+          <p className="truncate text-[10px] font-black uppercase tracking-wide text-slate-500 dark:text-slate-400">{d.label}</p>
+          <div className="flex items-center gap-1.5"><b className="text-xl">{d.value}</b><Trend pct={d.pct} /></div>
+        </div>
       </div>
     );
 
     if (variant === "Minimal") return (
-      <div className="grid grid-cols-2 gap-3">
-        {kpiData.map((d, i) => (
-          <div key={i} className="rounded-xl border border-slate-200 p-3 dark:border-white/10">
-            <p className="truncate text-[10px] font-black uppercase tracking-wide text-slate-500 dark:text-slate-400">{d.label}</p>
-            <b className="text-xl">{d.value}</b>
-          </div>
-        ))}
+      <div className="w-[280px] max-w-full rounded-xl border border-slate-200 p-3 dark:border-white/10">
+        <p className="truncate text-[10px] font-black uppercase tracking-wide text-slate-500 dark:text-slate-400">{d.label}</p>
+        <b className="text-xl">{d.value}</b>
       </div>
     );
 
     if (variant === "Filled") return (
-      <div className="grid grid-cols-2 gap-3">
-        {kpiData.map((d, i) => (
-          <div key={i} className="rounded-xl p-4" style={{ background: d.bg, color: d.fg }}>
-            <p className="text-[10px] font-black uppercase tracking-wide" style={{ color: d.fg }}>{d.label}</p>
-            <b className="mt-2 block text-2xl" style={{ color: d.fg }}>{d.value}</b>
-            <Spark spark={d.spark} color={d.fg} height={30} />
-            <div className="mt-1 flex items-center gap-1.5 text-[10px] font-bold" style={{ color: d.fg }}>
-              {d.pct !== null && <span>{d.pct >= 0 ? "▲" : "▼"} {d.pct >= 0 ? "+" : ""}{d.pct}%</span>}
-              <span className="truncate">{d.pctLabel}</span>
-            </div>
-          </div>
-        ))}
+      <div className="w-[280px] max-w-full rounded-xl p-4" style={{ background: d.bg, color: d.fg }}>
+        <p className="text-[10px] font-black uppercase tracking-wide" style={{ color: d.fg }}>{d.label}</p>
+        <b className="mt-2 block text-2xl" style={{ color: d.fg }}>{d.value}</b>
+        <div className="mt-1 flex items-center gap-1.5 text-[10px] font-bold" style={{ color: d.fg }}>
+          <span>{d.pct >= 0 ? "▲" : "▼"} {d.pct >= 0 ? "+" : ""}{d.pct}%</span>
+          <span className="truncate">{d.pctLabel}</span>
+        </div>
       </div>
     );
 
     if (variant === "Chart") return (
-      <div className="grid grid-cols-2 gap-3">
-        {kpiData.map((d, i) => (
-          <div key={i} className="overflow-hidden rounded-xl border border-slate-200 dark:border-white/10">
-            <div className="p-3 pb-2">
-              <p className="truncate text-[10px] font-black uppercase tracking-wide text-slate-500 dark:text-slate-400">{d.label}</p>
-              <div className="mt-1 flex items-center gap-1.5"><b className="text-xl">{d.value}</b><Trend pct={d.pct} /></div>
-            </div>
-            {d.spark ? <Spark spark={d.spark} color={d.pct >= 0 ? "#22C55E" : "#EF4444"} height={64} /> : (
-              <div className="grid h-16 place-items-center bg-slate-50 text-[10px] font-bold text-slate-500 dark:bg-white/5 dark:text-slate-400">No trend data</div>
-            )}
-          </div>
-        ))}
+      <div className="w-[280px] max-w-full overflow-hidden rounded-xl border border-slate-200 dark:border-white/10">
+        <div className="p-3 pb-2">
+          <p className="truncate text-[10px] font-black uppercase tracking-wide text-slate-500 dark:text-slate-400">{d.label}</p>
+          <div className="mt-1 flex items-center gap-1.5"><b className="text-xl">{d.value}</b><Trend pct={d.pct} /></div>
+        </div>
+        {d.spark ? <Spark spark={d.spark} color={d.pct >= 0 ? "#22C55E" : "#EF4444"} height={64} /> : (
+          <div className="grid h-16 place-items-center bg-slate-50 text-[10px] font-bold text-slate-500 dark:bg-white/5 dark:text-slate-400">No trend data</div>
+        )}
       </div>
     );
 
     // Standard
     return (
-      <div className="grid grid-cols-2 gap-3">
-        {kpiData.map((d, i) => (
-          <div key={i} className="relative rounded-xl border border-slate-200 p-4 pr-14 dark:border-white/10">
-            <span className="absolute right-4 top-4 grid h-10 w-10 place-items-center rounded-full" style={{ background: d.bg }}><KpiIcon name={d.icon} color={d.fg} /></span>
-            <p className="truncate text-[10px] font-black uppercase tracking-wide text-slate-500 dark:text-slate-400">{d.label}</p>
-            <b className="mt-1.5 block text-3xl">{d.value}</b>
-            {d.spark && <div className="mt-3"><Spark spark={d.spark} color={d.pct >= 0 ? "#22C55E" : "#EF4444"} /></div>}
-            <div className="mt-3 flex items-center gap-1.5 text-[11px] font-bold text-slate-500 dark:text-slate-400">
-              {d.pct !== null && <Trend pct={d.pct} />}
-              <span className="truncate">{d.pctLabel}</span>
-            </div>
-          </div>
-        ))}
+      <div className="relative w-[280px] max-w-full rounded-xl border border-slate-200 p-4 pr-14 dark:border-white/10">
+        <span className="absolute right-4 top-4 grid h-10 w-10 place-items-center rounded-full" style={{ background: d.bg }}><KpiIcon color={d.fg} /></span>
+        <p className="truncate text-[10px] font-black uppercase tracking-wide text-slate-500 dark:text-slate-400">{d.label}</p>
+        <b className="mt-1.5 block text-3xl">{d.value}</b>
+        {d.spark && <div className="mt-3"><Spark spark={d.spark} color={d.pct >= 0 ? "#22C55E" : "#EF4444"} /></div>}
+        <div className="mt-3 flex items-center gap-1.5 text-[11px] font-bold text-slate-500 dark:text-slate-400">
+          <Trend pct={d.pct} />
+          <span className="truncate">{d.pctLabel}</span>
+        </div>
       </div>
     );
   }

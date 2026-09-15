@@ -139,8 +139,8 @@ function Detail({ item, items, dark, onBack, onSwitch }) {
                   </div>
                   <p className="mt-4 text-xs leading-5 text-slate-600 dark:text-slate-300">
                     The YAML on the next tab always reflects these exact values. The mockup above only
-                    updates live for components whose preview is wired to real properties (Executive KPI
-                    Card, for now) — everything else keeps its illustrative default view regardless of what
+                    updates live for components whose preview is wired to real properties (Risk Matrix,
+                    for now) — everything else keeps its illustrative default view regardless of what
                     you change here.
                   </p>
                 </aside>
