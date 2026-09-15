@@ -53,7 +53,7 @@ function ComponentPreview({ item, values = {}, interactive = true, variant = nul
     // reads wrong (two whole rows would land on the same tone), so a
     // real 5-band severity scale backs the larger grid instead of just
     // repeating the 3x3 palette.
-    const size = variant === "5x5" ? 5 : 3;
+    const size = variant === "5x5" ? 5 : Number(values.Size ?? 3);
     const tones3 = ["#DCFCE7", "#FEF3C7", "#FEE2E2"];
     const tones5 = ["#DCFCE7", "#BBF7D0", "#FEF3C7", "#FED7AA", "#FEE2E2"];
     const tones = size === 5 ? tones5 : tones3;
@@ -61,6 +61,17 @@ function ComponentPreview({ item, values = {}, interactive = true, variant = nul
     const counts5 = [1, 1, 2, 1, 0, 1, 2, 3, 2, 1, 2, 3, 4, 2, 1, 1, 3, 5, 3, 1, 0, 1, 2, 1, 1];
     const cells = size === 5 ? counts5 : counts3;
     const namedRisks = { 4: "Vendor delay", 7: "Budget overrun" };
+    const showNames = variant === "Detailed" || values.ShowNames === "true";
+    // ShowLabels defaults true — real, live axis labels here, not just
+    // described in Properties. Likelihood runs bottom-to-top (row 0 of
+    // `cells` is the lowest-likelihood row), matching the standard
+    // PMBOK risk-matrix reading direction; Impact runs left-to-right.
+    // Compact's own contract is "no axis labels", so its variant check
+    // wins over a live ShowLabels toggle the same way other components'
+    // variant-forces-a-property pattern already works (e.g. Executive
+    // KPI Card's Chart variant forcing ShowSparkline).
+    const showLabels = variant === "Compact" ? false : values.ShowLabels !== "false";
+    const likelihoodLabels = size === 5 ? ["1", "2", "3", "4", "5"] : ["1", "2", "3"];
     return (
       <div>
         {/* Searchable and OnExport — shown as real header affordances
@@ -81,16 +92,36 @@ function ComponentPreview({ item, values = {}, interactive = true, variant = nul
             </span>
           </div>
         )}
-        <div className="grid gap-1.5" style={{ gridTemplateColumns: `repeat(${size}, minmax(0, 1fr))` }}>
-          {cells.map((n, i) => (
-            <div
-              key={i}
-              className={`grid place-items-center rounded-xl font-black text-slate-900 ${variant === "Detailed" && namedRisks[i] ? "aspect-square p-1 text-center text-[8px] font-bold leading-tight" : "aspect-square"}`}
-              style={{ background: tones[Math.floor((i / cells.length) * tones.length)] }}
-            >
-              {variant === "Detailed" && namedRisks[i] ? namedRisks[i] : n}
+        <div className="flex gap-2">
+          {showLabels && (
+            <div className="flex shrink-0 flex-col items-end gap-1">
+              <span className="text-[8px] font-black uppercase tracking-wide text-slate-500 dark:text-slate-400">Likelihood</span>
+              <div className="flex flex-1 flex-col-reverse justify-between text-right text-[9px] font-bold text-slate-500 dark:text-slate-400">
+                {likelihoodLabels.map(l => <span key={l} className="grid flex-1 place-items-center">{l}</span>)}
+              </div>
             </div>
-          ))}
+          )}
+          <div className="min-w-0 flex-1">
+            <div className="grid gap-1.5" style={{ gridTemplateColumns: `repeat(${size}, minmax(0, 1fr))` }}>
+              {cells.map((n, i) => (
+                <div
+                  key={i}
+                  className={`grid place-items-center rounded-xl font-black text-slate-900 ${showNames && namedRisks[i] ? "aspect-square p-1 text-center text-[8px] font-bold leading-tight" : "aspect-square"}`}
+                  style={{ background: tones[Math.floor((i / cells.length) * tones.length)] }}
+                >
+                  {showNames && namedRisks[i] ? namedRisks[i] : n}
+                </div>
+              ))}
+            </div>
+            {showLabels && (
+              <>
+                <div className="mt-1.5 grid gap-1.5 text-center text-[9px] font-bold text-slate-500 dark:text-slate-400" style={{ gridTemplateColumns: `repeat(${size}, minmax(0, 1fr))` }}>
+                  {likelihoodLabels.map(l => <span key={l}>{l}</span>)}
+                </div>
+                <p className="mt-0.5 text-center text-[8px] font-black uppercase tracking-wide text-slate-500 dark:text-slate-400">Impact</p>
+              </>
+            )}
+          </div>
         </div>
       </div>
     );
