@@ -40,6 +40,14 @@ function Detail({ item, items, dark, onBack, onSwitch }) {
     return resolved;
   }, [item, overrides]);
   const setOverride = (name, value) => setOverrides(prev => ({ ...prev, [name]: value }));
+  // A Record-typed property's own authored Default (Config, on every
+  // component that has one) only ever applies inside this live preview
+  // and the generated definition YAML -- Power Apps does not carry a
+  // component's own property Default onto a pasted screen instance for
+  // a Record, the way it does for a Text or Number. Surfaced only for
+  // components that actually have one, rather than a blanket caption
+  // every component pays for.
+  const recordProp = item.properties.find(p => p[1] === "Record");
 
   // Detail doesn't always remount between components — a direct hash
   // navigation from one #components/<id> straight to another (rather
@@ -322,6 +330,9 @@ function Detail({ item, items, dark, onBack, onSwitch }) {
         <p className="mt-2 text-xs text-slate-600 dark:text-slate-300">
           <b className="font-bold text-slate-600 dark:text-slate-300">Copy YAML</b> defines the component once &mdash; Components tab &rarr; New component &rarr; Import from code.{" "}
           <b className="font-bold text-slate-600 dark:text-slate-300">Copy as screen control</b> drops one instance of it onto a screen afterward &mdash; paste directly into the tree view. Press F5 to preview either way &mdash; this is standard behavior for any YAML-imported component, since Studio&rsquo;s own editor doesn&rsquo;t fully evaluate nested gallery templates until a preview cycle, so a pasted instance can look incomplete right up until then.
+          {recordProp && (
+            <> A pasted instance also won&rsquo;t pick up <code>{recordProp[0]}</code>&rsquo;s own authored Default &mdash; that default only ever applies inside this preview and the generated definition YAML, since Power Apps doesn&rsquo;t carry a Record-typed property&rsquo;s Default onto a pasted screen instance the way it does for a Text or Number one. Set every one of <code>{recordProp[0]}</code>&rsquo;s keys explicitly on the instance instead of relying on that default.</>
+          )}
         </p>
 
         <nav className="mt-8 flex gap-1 overflow-x-auto border-b border-slate-200 dark:border-white/10">

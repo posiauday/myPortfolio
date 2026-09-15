@@ -918,6 +918,34 @@ Preview, Variants and Properties tabs, light and dark — clean after the
 contrast fix — plus a full 28-component Preview+Variants-tab resweep
 confirming no regression elsewhere.
 
+### A fourth real gotcha: a Record property's Default doesn't survive a paste
+
+The same Calendar Pro reference page that surfaced the three gaps above
+also documents its own "After you paste" checklist — real, specific
+platform behavior for anyone who's just pasted a screen instance of a
+YAML-imported component, not marketing copy. One line in it is a real
+gap in what this project told people until now: **fill every `Config`
+key, including the ones left at their defaults — a Record-typed
+property's own authored Default does not reach a pasted instance.**
+Unlike a `Text` or `Number` property, whose Default really does carry
+onto a pasted instance, a `Record`-typed one (`Config`, on every
+component in this catalog that has one — Enterprise Calendar,
+Accordion Record List, Deadline Intelligence) only applies its Default
+inside this project's own live preview and the generated definition
+YAML; paste a screen instance of the real component and every `Config`
+key needs to be set by hand, or the instance renders with an empty
+record instead of the described default.
+
+The install caption under **Copy YAML** / **Copy as screen control**
+now states this, but only for a component that actually has a
+`Record`-typed property — derived from `item.properties` at render
+time (`item.properties.find(p => p[1] === "Record")`) rather than a
+blanket sentence every component pays for whether or not it applies,
+the same reasoning behind every other conditional caption already on
+this page.
+
+Verified: `npm run lint && npm run build` clean.
+
 ### New components: closing a real category gap (25 → 28)
 
 The same PowerAppsUI research that produced the two gap-closing passes
