@@ -502,19 +502,43 @@ function ComponentPreview({ item, values = {}, interactive = true, variant = nul
             </div>
           ))}
         </div>
-        <div className="mt-3 space-y-1.5">
+        <div className="mt-3 space-y-2">
           {Object.entries(events).map(([day, e]) => (
-            <div key={day} className="flex items-center justify-between gap-2 text-[10px] font-bold">
-              <span className="flex items-center gap-2">
-                <span aria-hidden="true" className="h-2 w-2 shrink-0 rounded-full" style={{ background: e.color }} />
-                <span className="text-slate-600 dark:text-slate-300">{e.label}</span>
-                {e.recurring && <span aria-hidden="true" className="text-slate-400 dark:text-slate-500">&#8635;</span>}
-              </span>
-              {/* OnRequestChange — the accessible, keyboard-reachable
-                  stand-in for drag-to-reschedule this read-only calendar
-                  offers, shown on today's own event. */}
-              {day === String(today) && (
-                <Btn type="button" className="shrink-0 text-[9px] font-bold text-slate-500 underline dark:text-slate-400">Request a change</Btn>
+            <div key={day}>
+              <div className="flex items-center justify-between gap-2 text-[10px] font-bold">
+                <span className="flex items-center gap-2">
+                  <span aria-hidden="true" className="h-2 w-2 shrink-0 rounded-full" style={{ background: e.color }} />
+                  <span className="text-slate-600 dark:text-slate-300">{e.label}</span>
+                  {e.recurring && <span aria-hidden="true" className="text-slate-400 dark:text-slate-500">&#8635;</span>}
+                </span>
+                {/* OnRequestChange — the accessible, keyboard-reachable
+                    stand-in for drag-to-reschedule this read-only calendar
+                    offers, shown on today's own event and on the
+                    recurring one. */}
+                {(day === String(today) || e.recurring) && (
+                  <Btn type="button" className="shrink-0 text-[9px] font-bold text-slate-500 underline dark:text-slate-400">Request a change</Btn>
+                )}
+              </div>
+              {/* RequestedScope — a recurring occurrence asks which
+                  occurrences the change applies to before OnRequestChange
+                  fires (the same this-event/this-and-following/all-events
+                  choice Outlook's own recurring-event edit dialog offers);
+                  today's own Release, not recurring, has nothing to scope
+                  and fires straight through — shown here so the contrast
+                  between the two paths is visible, not only described. */}
+              {e.recurring && (
+                <div className="mt-1.5 flex flex-wrap gap-1">
+                  {["This event", "This and following", "All events"].map((s, i) => (
+                    <Btn
+                      key={s}
+                      type="button"
+                      className={`rounded-full px-2 py-0.5 text-[9px] font-bold ${i === 0 ? "text-white" : "bg-slate-100 text-slate-600 dark:bg-white/10 dark:text-slate-300"}`}
+                      style={i === 0 ? { background: item.color } : undefined}
+                    >
+                      {s}
+                    </Btn>
+                  ))}
+                </div>
               )}
             </div>
           ))}

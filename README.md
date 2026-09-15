@@ -820,6 +820,48 @@ one real edit, in `ComponentDetail.jsx`.
 
 Verified: `npm run lint && npm run build` clean.
 
+### Enterprise Calendar: recurring-event edit scope
+
+The one concrete workflow gap the same research turned up: PowerAppsUI's
+own catalog lists a dedicated Event Form component whose defining
+feature is editing a calendar event's recurrence with the standard
+this-event / this-and-following / all-events scope choice (the same
+choice Outlook's own recurring-event edit dialog offers). This
+project's Enterprise Calendar already marks a recurring chip via
+`SeriesId` and offers `OnRequestChange` as its read-only calendar's
+accessible escape hatch for asking to change something — but the event
+never asked *which* occurrences a change should apply to, so a host
+had no way to build that Outlook-familiar flow.
+
+Closed as a property and event addition to the existing component, not
+a new one, matching Enterprise Calendar's own established scope
+(computes and reports, never mutates): a new `RequestedScope` output
+property (`"This event"`, `"This and following"`, `"All events in the
+series"`, or blank for a non-recurring occurrence, since there's
+nothing to scope). `OnRequestChange`'s own description now states that
+for an occurrence carrying a `SeriesId`, the component asks which
+occurrences first — three small, individually-labeled buttons under
+that occurrence's own "Request a change" action — before firing, while
+a non-recurring occurrence still fires straight through exactly as
+before. Architecture and Limitations both restate this catalog's
+existing component-computes-host-decides split explicitly for the new
+property: Enterprise Calendar's job stops at asking and reporting the
+scope choice; applying an edit across however many materialized rows
+that scope implies is entirely the host's own job, the same as
+`OnRequestChange` always was.
+
+The mockup now shows both paths side by side in one illustration:
+"Sprint review" (the sample data's own recurring occurrence) shows
+"Request a change" plus the three scope buttons already expanded;
+"Release" (today's own non-recurring occurrence) shows only the plain
+action with no scope buttons at all, so the contrast between the two
+is visible rather than only described.
+
+Verified: `npm run lint && npm run build && npm run test:yaml` clean.
+axe-core scanned Enterprise Calendar's Preview, Variants and Properties
+tabs, light and dark — clean — plus a full 25-component Variants-tab
+resweep confirming no regression elsewhere.
+
 ### YAML schema conformance
 
 Every component gets two generated YAML outputs (`src/lib/componentDocs.js`):
