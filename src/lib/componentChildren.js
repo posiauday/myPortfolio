@@ -284,7 +284,15 @@ function kpiCard(pascal) {
   };
 
   return {
-    properties: { Height: `With({bp: ${self}.ColumnsLayout, w: App.Width, cardCount: CountRows(Filter(${self}.Data, !IfError(isHidden, false)))}, With({cols: Max(1, If(w < bp.MobileBreakpoint, bp.Mobile, w < bp.TabletBreakpoint, bp.Tablet, bp.Desktop))}, With({rows: RoundUp(cardCount / cols, 0), gap: ${self}.StyleConfig.space.lg}, rows * (${cardHeight} + gap) + gap)))`, Width: "Parent.Width" },
+    // Root Width is App.Width, not Parent.Width: this row is meant to
+    // always span the full app/screen width it's placed on, the same
+    // way the real reference component's own root does — matching
+    // WrapCount/Height's own breakpoint math, which already reads
+    // App.Width for exactly that reason. A host nesting it inside a
+    // narrower container would need to override Width on the pasted
+    // instance explicitly; that's a real, accepted tradeoff for a
+    // top-level dashboard row, not an oversight.
+    properties: { Height: `With({bp: ${self}.ColumnsLayout, w: App.Width, cardCount: CountRows(Filter(${self}.Data, !IfError(isHidden, false)))}, With({cols: Max(1, If(w < bp.MobileBreakpoint, bp.Mobile, w < bp.TabletBreakpoint, bp.Tablet, bp.Desktop))}, With({rows: RoundUp(cardCount / cols, 0), gap: ${self}.StyleConfig.space.lg}, rows * (${cardHeight} + gap) + gap)))`, Width: "App.Width" },
     children: [
       {
         name: "cntStatsRow",
