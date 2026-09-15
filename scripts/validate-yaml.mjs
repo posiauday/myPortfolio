@@ -123,6 +123,18 @@ function validateComponentDefinition(item) {
 
 const CONTROL_REF_PATTERN = /^[\w/]+@\d+\.\d+\.\d+$/;
 
+/* Properties confirmed, by a real Studio "Import from code" paste
+   error (PA2108 "Unknown property"), NOT to exist on a given control
+   type — as opposed to properties that merely look plausible from
+   GitHub examples, which can carry properties only present because an
+   app was exported after configuring them via the Studio UI, that
+   Studio won't necessarily accept on a fresh hand-authored paste. Keep
+   this list growing with whatever a real paste error reports next,
+   rather than trusting an unverified property name a second time. */
+const KNOWN_INVALID_CONTROL_PROPERTIES = {
+  Rectangle: ["RadiusTopLeft", "RadiusTopRight", "RadiusBottomLeft", "RadiusBottomRight"]
+};
+
 /* A component listed in CHILDREN_BUILDERS claims a real, pasteable
    visual layer, not just the property contract — so its Properties:/
    Children: block gets checked as strictly as CustomProperties does:
@@ -151,7 +163,12 @@ function validateChildrenTree(definition, context) {
     }
     const props = entry?.Properties;
     if (typeof props !== "object" || props === null) return fail(entryContext, "missing Properties:");
-    Object.entries(props).forEach(([propName, value]) => assertFormula(value, `${entryContext} > ${propName}`));
+    const controlType = String(entry?.Control).split("@")[0];
+    const invalidForType = KNOWN_INVALID_CONTROL_PROPERTIES[controlType] || [];
+    Object.entries(props).forEach(([propName, value]) => {
+      if (invalidForType.includes(propName)) fail(`${entryContext} > ${propName}`, `${controlType} does not support this property (confirmed via a real Studio PA2108 paste error) — remove it, don't rename it`);
+      assertFormula(value, `${entryContext} > ${propName}`);
+    });
   });
 }
 

@@ -17,7 +17,22 @@
    Children: block from buildComponentYaml; everything else remains the
    honest contract-only YAML it always was (see yamlStatus in
    componentLibrary.js) rather than a fabricated tree no one has
-   actually verified renders sensibly. */
+   actually verified renders sensibly.
+
+   CONFIRMED AGAINST A REAL STUDIO PASTE (not just GitHub examples,
+   which can include properties an app only carries from an export
+   round-trip and that Studio won't accept on a fresh Import from
+   code): Rectangle@2.3.0 does NOT support RadiusTopLeft/RadiusTopRight/
+   RadiusBottomLeft/RadiusBottomRight — Studio rejects all four with
+   PA2108 "Unknown property". A first version of KPI Card's cardBg/
+   trendPill/barTrack/barFill used them for rounded corners; removed
+   everywhere, corners are square now. Confirmed still-fine on the same
+   real paste: Rectangle's Fill/X/Y/Width/Height/Visible/BorderColor/
+   BorderThickness, every Label@2.5.1 property used below, and every
+   Classic/Button@2.2.0 property used below — none of those errored.
+   Don't reintroduce Radius* on a Rectangle without independent proof
+   (a real complete .pa.yaml known to import cleanly, not just export
+   output) that a specific Studio version accepts it. */
 
 function kpiCard(pascal) {
   const self = `cmp${pascal}`;
@@ -75,11 +90,7 @@ function kpiCard(pascal) {
           X: "200",
           Y: "44",
           Width: "80",
-          Height: "28",
-          RadiusTopLeft: "14",
-          RadiusTopRight: "14",
-          RadiusBottomLeft: "14",
-          RadiusBottomRight: "14"
+          Height: "28"
         }
       },
       {
@@ -107,11 +118,7 @@ function kpiCard(pascal) {
           X: "20",
           Y: "150",
           Width: "260",
-          Height: "8",
-          RadiusTopLeft: "4",
-          RadiusTopRight: "4",
-          RadiusBottomLeft: "4",
-          RadiusBottomRight: "4"
+          Height: "8"
         }
       },
       {
@@ -126,11 +133,7 @@ function kpiCard(pascal) {
           // contract documents it (a comparison point), capped at 100%
           // so an over-target Value never draws past the track.
           Width: `260 * Min(1, Value(${self}.Value) / Max(1, ${self}.Target))`,
-          Height: "8",
-          RadiusTopLeft: "4",
-          RadiusTopRight: "4",
-          RadiusBottomLeft: "4",
-          RadiusBottomRight: "4"
+          Height: "8"
         }
       },
       // Five bars, one per SparklineData row (sampleFormulas.js's own
