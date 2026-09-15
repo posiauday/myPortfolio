@@ -321,7 +321,7 @@ function Detail({ item, items, dark, onBack, onSwitch }) {
         </div>
         <p className="mt-2 text-xs text-slate-600 dark:text-slate-300">
           <b className="font-bold text-slate-600 dark:text-slate-300">Copy YAML</b> defines the component once &mdash; Components tab &rarr; New component &rarr; Import from code.{" "}
-          <b className="font-bold text-slate-600 dark:text-slate-300">Copy as screen control</b> drops one instance of it onto a screen afterward &mdash; paste directly into the tree view. Press F5 to preview either way.
+          <b className="font-bold text-slate-600 dark:text-slate-300">Copy as screen control</b> drops one instance of it onto a screen afterward &mdash; paste directly into the tree view. Press F5 to preview either way &mdash; this is standard behavior for any YAML-imported component, since Studio&rsquo;s own editor doesn&rsquo;t fully evaluate nested gallery templates until a preview cycle, so a pasted instance can look incomplete right up until then.
         </p>
 
         <nav className="mt-8 flex gap-1 overflow-x-auto border-b border-slate-200 dark:border-white/10">

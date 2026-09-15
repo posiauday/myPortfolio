@@ -779,6 +779,47 @@ axe-core scanned Accordion Record List's Preview, Variants and
 Properties tabs, light and dark — clean — plus a full 25-component
 Variants-tab resweep confirming no regression elsewhere.
 
+### Three real Power Apps gotchas, checked against this project
+
+A broader look at PowerAppsUI's own catalog page and its Activity
+Timeline component's public comment thread — real developers hitting
+real problems, not marketing copy — surfaced three platform behaviors
+worth checking this project's own claims against, beyond the two
+component-specific comparisons above:
+
+1. **YAML-imported components look incomplete in Studio until F5.** A
+   real, repeated point of confusion in that thread (three separate
+   people asked about it) — Studio's own editor doesn't fully evaluate
+   nested gallery templates until a preview cycle, so a pasted instance
+   can look broken right up until then. This project's own install
+   instructions already said "Press F5 to preview either way" but never
+   said why; that line now states the real reason, so it reads as an
+   explained platform behavior instead of an unexplained ritual step.
+2. **AutoLayout containers can silently zero out their width** when a
+   component is first dropped onto a screen, especially inside a parent
+   that also has AutoLayout enabled — a real, named Canvas Apps quirk,
+   not user error, per that thread's own troubleshooting exchange. This
+   project's own generated YAML has no `Children` tree yet (see the
+   Line Chart and Accordion Record List comparisons above), so it isn't
+   something today's output can hit — but it's exactly the kind of
+   gotcha whoever eventually builds a real `Children` tree for one of
+   these components (Accordion Record List's own `GroupContainer`-based
+   reference, for instance) needs to know about, so it's recorded here
+   rather than only in a private note.
+3. **Gallery cards must grow to fit content, never clip it.** The
+   Activity Timeline thread's single functional bug report was a fixed
+   card height truncating a long comment; the fix made every card
+   height a stated minimum instead. Checked this project's own Activity
+   Timeline against the same failure mode: `CardHeight`'s description
+   already reads "Minimum card height; cards grow past it to fit their
+   content" — independently correct before this research, not a change
+   made because of it.
+
+No code changed for points 2 and 3; point 1's install caption is the
+one real edit, in `ComponentDetail.jsx`.
+
+Verified: `npm run lint && npm run build` clean.
+
 ### YAML schema conformance
 
 Every component gets two generated YAML outputs (`src/lib/componentDocs.js`):
