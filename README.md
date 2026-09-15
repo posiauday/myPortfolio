@@ -825,15 +825,23 @@ Verified: `npm run lint && npm run build` clean.
 ### Enterprise Calendar: recurring-event edit scope
 
 The one concrete workflow gap the same research turned up: PowerAppsUI's
-own catalog lists a dedicated Event Form component whose defining
-feature is editing a calendar event's recurrence with the standard
-this-event / this-and-following / all-events scope choice (the same
-choice Outlook's own recurring-event edit dialog offers). This
-project's Enterprise Calendar already marks a recurring chip via
-`SeriesId` and offers `OnRequestChange` as its read-only calendar's
-accessible escape hatch for asking to change something — but the event
-never asked *which* occurrences a change should apply to, so a host
-had no way to build that Outlook-familiar flow.
+own catalog lists an Event Form component under its own "Coming Soon"
+section — not a shipped component with a real, documented contract, but
+a blurred preview mockup behind that badge, with only a name and a
+one-line description rendered as real (unblurred) text. That line
+states the card's own intended defining feature: editing a calendar
+event's recurrence with the standard this-event / this-and-following /
+all-events scope choice — the same choice Outlook's own recurring-event
+edit dialog already offers today, for real. Outlook's own dialog, not
+Event Form's own unbuilt status, is what this project actually verified
+and built against — the same distinction `componentLibrary.js`'s own
+`RequestedScope` property and architecture notes already draw, citing
+only Outlook by name. This project's Enterprise Calendar already marks
+a recurring chip via `SeriesId` and offers `OnRequestChange` as its
+read-only calendar's accessible escape hatch for asking to change
+something — but the event never asked *which* occurrences a change
+should apply to, so a host had no way to build that Outlook-familiar
+flow.
 
 Closed as a property and event addition to the existing component, not
 a new one, matching Enterprise Calendar's own established scope
