@@ -226,16 +226,16 @@ function Detail({ item, items, dark, onBack, onSwitch }) {
       case "Examples":
         return (
           <Panel title="Examples">
-            <div className="mt-6 grid gap-4 md:grid-cols-3">{item.examples.map((x, i) => (
-              <div key={x} className="rounded-2xl bg-slate-50 p-5 dark:bg-white/10">
+            <div className="mt-6 grid gap-4 md:grid-cols-3">{item.examples.map(([name, desc], i) => (
+              <div key={name} className="rounded-2xl bg-slate-50 p-5 dark:bg-white/10">
                 <span
                   className="text-xs font-black text-[color:var(--badge-light)] dark:text-[color:var(--badge-dark)]"
                   style={{ "--badge-light": darken(item.color), "--badge-dark": lighten(item.color) }}
                 >
                   EXAMPLE {String(i + 1).padStart(2, "0")}
                 </span>
-                <h3 className="mt-3 text-lg font-black">{x}</h3>
-                <p className="mt-2 text-sm text-slate-600 dark:text-slate-300">Use the property contract while the host app owns data access, security and persistence.</p>
+                <h3 className="mt-3 text-lg font-black">{name}</h3>
+                <p className="mt-2 text-sm text-slate-600 dark:text-slate-300">{desc}</p>
               </div>
             ))}</div>
           </Panel>

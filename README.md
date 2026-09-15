@@ -503,6 +503,80 @@ confirming this batch didn't regress anything from the three batches
 before it. Playwright screenshots confirm both `Intl`-driven demo lines
 render the real German-formatted strings.
 
+**Batch 5 — the remaining 5 untouched components:** the last of the
+gap-research report's findings — the components that had never been
+touched by any of the previous four batches, rather than gaps within an
+already-updated one.
+
+- **Portfolio Risk Matrix** gained `Searchable`/`OnSearch` (the same
+  host-executed-filter pattern Enterprise Data Table's own `OnSearch`
+  uses) and `OnExport`, plus an optional per-risk `TrendDirection`
+  field. Preview now shows a real search box and Export action above
+  the grid.
+- **Comments & Mentions** gained `AllowReactions`/`OnReact` (Teams' own
+  comment surfaces support emoji reactions), `AllowReply`/`ParentId`
+  for one level of threading, and `OnEdit` gated to a visitor's own
+  comments. Preview now shows a real reaction pill, an "edited" marker,
+  and a nested reply.
+- **Approval Journey** gained `DueDate`/`ReminderDays`/`OnApproachingDue`
+  (the same reminder concept Power Automate's own approval action
+  offers near a deadline) and `DelegatedTo`/`OnDelegate`. Preview shows
+  a due date on the pending stage and a delegate arrow on the locked one.
+- **Guided Process Stepper** gained `CanAdvance` (closing the gap where
+  the component had no shared signal for "this step isn't done yet")
+  and `ResumeKey`/`OnResume` for a wizard resumed after being abandoned
+  mid-flow. Preview shows a real disabled Next button with the stated
+  reason.
+- **Branded Loading Experience** gained `HasError`/`ErrorMessage`/
+  `OnRetry` (a real failed-load state, distinct from the success-path
+  `Progress` value) and `EstimatedSecondsRemaining`. Preview shows both
+  the in-flight state with an ETA and the error/retry state side by side.
+
+Verified: `npm run lint && npm run test:yaml && npm run build` clean.
+axe-core scanned clean across all 5 touched components in light and
+dark, plus a final full sweep across all 25 — zero violations. Playwright
+screenshots confirm the visual result for all 5.
+
+### Examples tab: real content instead of one repeated sentence
+
+A separate, unrelated finding while reviewing the Detail page's own
+tabs: the **Examples** tab's three cards, on every single one of the
+25 components, all rendered the exact same hardcoded sentence — "Use
+the property contract while the host app owns data access, security
+and persistence" — regardless of which example or which component it
+was. 75 rendered cards, one sentence, none of them saying anything
+about the specific scenario named above it. Every other tab (Variants,
+Properties, Events, Architecture, Accessibility, Limitations) already
+carried real, bespoke, per-component text from the passes documented
+above; Examples was the one tab still showing this project's own
+oldest, unaddressed placeholder.
+
+Fixed the same way `variants` was fixed earlier in this project: the
+`examples` field changed shape from a flat array of three name strings
+to `[name, description]` tuples, and `ComponentDetail.jsx`'s Examples
+tab now renders each real description instead of the shared generic
+line. Wrote a genuine, specific description for all 75 examples across
+the 25 components — naming the actual property values, states, or
+variant that example scenario would set (e.g. Executive KPI Card's
+"At-risk projects" example: "Status set to a warning tone and Trend
+rising, so the color and the text say the same thing without a second
+glance") — plus the 8 unreachable `baseByCategory` fallback entries,
+kept in sync with the same shape for a future 26th component added
+without its own override yet.
+
+No other tab needed removing or restructuring: Preview, Variants,
+Properties, Events, Architecture, Accessibility and Limitations were
+all already carrying real, component-specific content from the
+research-grounding and gap-closing passes earlier in this project —
+Examples was the one exception, not a sign the tab itself didn't
+belong.
+
+Verified: `npm run lint && npm run test:yaml && npm run build` clean.
+axe-core scanned the Examples tab specifically across all 25
+components, light and dark — zero violations, confirming the tuple
+shape change didn't introduce any rendering issue. Playwright
+screenshots confirm the real per-example text renders correctly.
+
 ### YAML schema conformance
 
 Every component gets two generated YAML outputs (`src/lib/componentDocs.js`):

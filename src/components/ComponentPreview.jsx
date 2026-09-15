@@ -24,7 +24,26 @@ import { darken, lighten, container, CONTAINER_TEXT_CLASS } from "../lib/color.j
    ============================================================ */
 function ComponentPreview({ item, values = {} }) {
   if (item.title === "Portfolio Risk Matrix") {
-    return <div className="grid grid-cols-3 gap-2">{[1, 2, 1, 3, 4, 2, 1, 3, 5].map((n, i) => <div key={i} className="grid aspect-square place-items-center rounded-xl font-black text-slate-900" style={{ background: ["#DCFCE7", "#FEF3C7", "#FEE2E2"][Math.floor(i / 3)] }}>{n}</div>)}</div>;
+    return (
+      <div>
+        {/* Searchable and OnExport — shown as real header affordances
+            rather than only described, matching every other opt-in
+            property in this file. Searchable itself only filters named
+            risks (ShowNames on), so it's illustrated here as an
+            available control rather than a functioning filter over
+            this Standard, count-only view. */}
+        <div className="mb-2 flex items-center justify-between gap-2">
+          <div className="flex flex-1 items-center gap-2 rounded-full border border-slate-200 px-3 py-1.5 text-xs text-slate-500 dark:border-white/10 dark:text-slate-400">
+            <span aria-hidden="true">&#128269;</span>
+            <span>Search risks&hellip;</span>
+          </div>
+          <span className="flex shrink-0 items-center gap-1 rounded-full border border-slate-200 px-2.5 py-1.5 text-[10px] font-bold text-slate-500 dark:border-white/10 dark:text-slate-400">
+            <span aria-hidden="true">&#8681;</span> Export
+          </span>
+        </div>
+        <div className="grid grid-cols-3 gap-2">{[1, 2, 1, 3, 4, 2, 1, 3, 5].map((n, i) => <div key={i} className="grid aspect-square place-items-center rounded-xl font-black text-slate-900" style={{ background: ["#DCFCE7", "#FEF3C7", "#FEE2E2"][Math.floor(i / 3)] }}>{n}</div>)}</div>
+      </div>
+    );
   }
 
   if (item.title === "Executive KPI Card") {
@@ -778,16 +797,36 @@ function ComponentPreview({ item, values = {} }) {
                 </span>{" "}
                 on the vendor timeline?
               </p>
+              {/* AllowReactions — a real reaction pill with its own text
+                  count, not a bare emoji, matching the accessibility
+                  rule stated for ReactionCounts. */}
+              <span className="mt-2 inline-flex w-fit items-center gap-1 rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-bold text-slate-600 dark:bg-white/10 dark:text-slate-300">
+                &#128077; 3
+              </span>
             </div>
           </div>
           <div className="flex gap-2">
             <span className="grid h-7 w-7 shrink-0 place-items-center rounded-full text-[9px] font-black text-white" style={{ background: "#0F6CBD" }}>JO</span>
-            <div className="min-w-0 flex-1 rounded-xl bg-slate-50 p-2.5 shadow-sm dark:bg-white/10">
-              <div className="flex items-center justify-between gap-2">
-                <b className="text-xs">J. Okafor</b>
-                <span className="shrink-0 text-[10px] text-slate-500 dark:text-slate-400">1h ago</span>
+            <div className="min-w-0 flex-1">
+              <div className="rounded-xl bg-slate-50 p-2.5 shadow-sm dark:bg-white/10">
+                <div className="flex items-center justify-between gap-2">
+                  <b className="text-xs">J. Okafor</b>
+                  <span className="shrink-0 text-[10px] text-slate-500 dark:text-slate-400">1h ago &middot; edited</span>
+                </div>
+                <p className="mt-1 text-xs leading-5 text-slate-600 dark:text-slate-300">On it &mdash; will confirm by EOD.</p>
               </div>
-              <p className="mt-1 text-xs leading-5 text-slate-600 dark:text-slate-300">On it &mdash; will confirm by EOD.</p>
+              {/* AllowReply — ParentId nesting one level deep, the same
+                  flat-thread limit stated in Limitations. */}
+              <div className="mt-2 flex gap-2 pl-4">
+                <span className="grid h-6 w-6 shrink-0 place-items-center rounded-full text-[8px] font-black text-white" style={{ background: "#5B5BD6" }}>MC</span>
+                <div className="min-w-0 flex-1 rounded-xl bg-slate-50 p-2 shadow-sm dark:bg-white/10">
+                  <div className="flex items-center justify-between gap-2">
+                    <b className="text-[11px]">M. Chen</b>
+                    <span className="shrink-0 text-[9px] text-slate-500 dark:text-slate-400">40m ago</span>
+                  </div>
+                  <p className="mt-0.5 text-[11px] leading-4 text-slate-600 dark:text-slate-300">Confirmed on my end too.</p>
+                </div>
+              </div>
             </div>
           </div>
         </div>
@@ -824,10 +863,13 @@ function ComponentPreview({ item, values = {} }) {
   }
 
   if (item.title === "Approval Journey") {
+    // DueDate/DelegatedTo are both optional per-stage fields (see
+    // componentLibrary.js) — Priya Shah's stage carries neither,
+    // demonstrating both are additive, not required on every stage.
     const stages = [
       { name: "Priya Shah", status: "Approved" },
-      { name: "J. Okafor", status: "Pending" },
-      { name: "M. Chen", status: "Locked" }
+      { name: "J. Okafor", status: "Pending", due: "Due Fri" },
+      { name: "M. Chen", status: "Locked", delegatedTo: "R. Singh" }
     ];
     const dotColor = s => (s === "Approved" ? item.color : s === "Pending" ? "#0F6CBD" : "#475569");
     return (
@@ -840,6 +882,8 @@ function ComponentPreview({ item, values = {} }) {
               </span>
               <span className="mt-1.5 text-[9px] font-bold text-slate-600 dark:text-slate-300">{s.name}</span>
               <span className="text-[9px] text-slate-500 dark:text-slate-400">{s.status}</span>
+              {s.due && <span className="text-[9px] font-bold text-slate-500 dark:text-slate-400">{s.due}</span>}
+              {s.delegatedTo && <span className="text-[9px] italic text-slate-500 dark:text-slate-400">&rarr; {s.delegatedTo}</span>}
             </div>
             {i < stages.length - 1 && <span aria-hidden="true" className="mx-1 h-px flex-1 bg-slate-200 dark:bg-white/10" />}
           </div>
@@ -856,21 +900,33 @@ function ComponentPreview({ item, values = {} }) {
       { label: "Submit", status: "upcoming" }
     ];
     const dotColor = s => (s === "done" ? item.color : s === "current" ? "#0F6CBD" : "#475569");
+    // CanAdvance false — the active step's own screen hasn't satisfied
+    // whatever the host considers complete yet, so Next stays disabled
+    // with a stated reason rather than a silently grayed-out button.
+    const canAdvance = false;
     return (
-      <div className="flex items-center">
-        {steps.map((s, i) => (
-          <div key={s.label} className="flex flex-1 items-center last:flex-none">
-            <div className="flex flex-col items-center">
-              <span className="grid h-7 w-7 shrink-0 place-items-center rounded-full text-[10px] font-black text-white" style={{ background: dotColor(s.status) }}>
-                {s.status === "done" ? "✓" : i + 1}
-              </span>
-              <span className="mt-1.5 text-[9px] font-bold text-slate-600 dark:text-slate-300">{s.label}</span>
+      <div>
+        <div className="flex items-center">
+          {steps.map((s, i) => (
+            <div key={s.label} className="flex flex-1 items-center last:flex-none">
+              <div className="flex flex-col items-center">
+                <span className="grid h-7 w-7 shrink-0 place-items-center rounded-full text-[10px] font-black text-white" style={{ background: dotColor(s.status) }}>
+                  {s.status === "done" ? "✓" : i + 1}
+                </span>
+                <span className="mt-1.5 text-[9px] font-bold text-slate-600 dark:text-slate-300">{s.label}</span>
+              </div>
+              {i < steps.length - 1 && (
+                <span aria-hidden="true" className="mx-1 h-px flex-1" style={{ background: s.status === "done" ? item.color : "#e2e8f0" }} />
+              )}
             </div>
-            {i < steps.length - 1 && (
-              <span aria-hidden="true" className="mx-1 h-px flex-1" style={{ background: s.status === "done" ? item.color : "#e2e8f0" }} />
-            )}
-          </div>
-        ))}
+          ))}
+        </div>
+        <div className="mt-4 flex items-center justify-between gap-2">
+          <span className="text-[10px] font-bold text-slate-500 dark:text-slate-400">
+            {canAdvance ? "" : "Complete the required fields to continue"}
+          </span>
+          <button type="button" disabled={!canAdvance} className="shrink-0 rounded-full px-3 py-1.5 text-xs font-bold text-white disabled:opacity-40" style={{ background: item.color }}>Next</button>
+        </div>
       </div>
     );
   }
@@ -923,13 +979,24 @@ function ComponentPreview({ item, values = {} }) {
 
   if (item.title === "Branded Loading Experience") {
     return (
-      <div className="grid place-items-center rounded-xl bg-slate-50 py-8 dark:bg-white/5">
-        <span className="grid h-12 w-12 place-items-center rounded-2xl text-lg font-black text-white" style={{ background: item.color }}>UP</span>
-        <b className="mt-4 text-sm">Loading your workspace</b>
-        <div className="mt-3 h-1.5 w-40 overflow-hidden rounded-full bg-slate-200 dark:bg-white/10">
-          <div className="h-full rounded-full" style={{ width: "64%", background: item.color }} />
+      <div className="space-y-3">
+        <div className="grid place-items-center rounded-xl bg-slate-50 py-8 dark:bg-white/5">
+          <span className="grid h-12 w-12 place-items-center rounded-2xl text-lg font-black text-white" style={{ background: item.color }}>UP</span>
+          <b className="mt-4 text-sm">Loading your workspace</b>
+          <div className="mt-3 h-1.5 w-40 overflow-hidden rounded-full bg-slate-200 dark:bg-white/10">
+            <div className="h-full rounded-full" style={{ width: "64%", background: item.color }} />
+          </div>
+          <span className="mt-1.5 text-[10px] font-bold text-slate-500 dark:text-slate-400">64% &middot; About 12 seconds left</span>
         </div>
-        <span className="mt-1.5 text-[10px] font-bold text-slate-500 dark:text-slate-400">64%</span>
+        {/* HasError/OnRetry — a distinct state from the in-flight one
+            above, shown side by side rather than only described, the
+            same reasoning Governed File Upload's own two dropzone
+            states use elsewhere in this file. */}
+        <div className="grid place-items-center rounded-xl bg-red-50 py-6 dark:bg-red-900/20">
+          <span aria-hidden="true" className="text-xl">&#9888;&#65039;</span>
+          <b className="mt-2 text-xs text-red-900 dark:text-red-100">Couldn&rsquo;t load your workspace</b>
+          <button type="button" className="mt-3 rounded-full bg-white px-3 py-1.5 text-[10px] font-bold text-red-900 shadow-sm dark:bg-white/10 dark:text-red-100">Retry</button>
+        </div>
       </div>
     );
   }
