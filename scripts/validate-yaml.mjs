@@ -7,15 +7,17 @@
    Microsoft's own published schema for Power Apps source YAML:
    https://github.com/microsoft/PowerApps-Tooling/blob/master/schemas/pa-yaml/v3.0/pa.schema.yaml
 
-   This exists because two real mistakes shipped silently before this
-   script did: `DataType: String` (the schema's real enum value is
-   `Text`, not `String`) and every property default being wrapped as a
-   quoted text literal even for Number/Boolean properties, which Power
-   Apps Studio's own paste-time validation would reject as a type
-   mismatch. Both were only caught by fetching the actual schema and
-   diffing it against this project's output by hand — this script
-   makes that check automatic instead of something that has to be
-   remembered.
+   This exists because real mistakes shipped silently before this
+   script caught them: `DataType: String` (the schema's real enum value
+   is `Text`, not `String`), every property default being wrapped as a
+   quoted text literal even for Number/Boolean properties, and every
+   Event property missing `ReturnType`/`Default` entirely (Studio's
+   real paste-time compiler rejects that with PA1011/PA2231, even
+   though the bare schema-conformant shape of an Event property doesn't
+   require them at parse time) — all only caught by testing an actual
+   paste into Studio or diffing against real shipped component YAML by
+   hand. This script makes that check automatic instead of something
+   that has to be remembered.
 
    This can't launch Power Apps Studio itself to confirm a real paste
    succeeds — short of that, it's the strongest check available:
@@ -31,6 +33,7 @@ import { buildBrandThemeYaml } from "../src/lib/themeYaml.js";
 const VALID_DEFINITION_TYPES = ["CanvasComponent", "CommandComponent"];
 const VALID_PROPERTY_KINDS = ["Input", "Output", "InputFunction", "OutputFunction", "Event", "Action"];
 const VALID_DATA_TYPES = ["Text", "Number", "Boolean", "DateAndTime", "Screen", "Record", "Table", "Image", "VideoOrAudio", "Color", "Currency"];
+const VALID_RETURN_TYPES = [...VALID_DATA_TYPES, "None"];
 
 const errors = [];
 const fail = (context, message) => errors.push(`${context}: ${message}`);
@@ -96,6 +99,12 @@ function validateComponentDefinition(item) {
     const eventContext = `${context} > ${name}`;
     if (!entry) return fail(eventContext, "missing from CustomProperties");
     if (entry.PropertyKind !== "Event") fail(eventContext, `expected PropertyKind Event, got "${entry.PropertyKind}"`);
+    // Studio's real paste-time compiler (not just the schema's bare
+    // key list) rejects an Event property missing either of these —
+    // PA1011 for a missing ReturnType, PA2231 for an empty Default —
+    // confirmed against real shipped component YAML on GitHub.
+    if (!VALID_RETURN_TYPES.includes(entry.ReturnType)) fail(eventContext, `ReturnType "${entry.ReturnType}" not in ${JSON.stringify(VALID_RETURN_TYPES)}`);
+    assertFormula(entry.Default, eventContext);
   });
 }
 

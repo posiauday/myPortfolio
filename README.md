@@ -96,7 +96,7 @@ src/
 1. Add a `[title, category, maturity]` row to `raw` in
    `src/data/componentLibrary.js`.
 2. Optionally add an entry to `overrides`, keyed by the slugified title
-   (`"Enterprise Calendar"` → `"enterprise-calendar"`), to replace the
+   (`"Calendar"` → `"enterprise-calendar"`), to replace the
    category defaults for `summary`, `properties`, `events`, `architecture`,
    `examples`, `accessibility` or `limitations`.
 
@@ -121,8 +121,8 @@ copy rather than genuinely sharing the category default.
 ### Bespoke, research-grounded component previews
 
 A real gap, reported directly: every component's catalog entry claimed a
-specific contract, but only Executive KPI Card's Preview tab actually
-rendered something specific — every other component (Portfolio Risk Matrix
+specific contract, but only KPI Card's Preview tab actually
+rendered something specific — every other component (Risk Matrix
 aside) fell through to the exact same generic "Submitted / In review /
 Approved / Operational" status list regardless of whether it was a
 calendar, a data table, a file upload or a nav menu. `Variants` had the
@@ -152,12 +152,12 @@ one unreviewable pass through all 25:
    looks like) — `ComponentDetail.jsx`'s Variants tab renders whichever
    the component's own override actually provides.
 3. **A bespoke mockup per component**, in `ComponentPreview.jsx` — an
-   actual month grid for Enterprise Calendar, a rail-connected activity
+   actual month grid for Calendar, a rail-connected activity
    feed for Activity Timeline, a real smoothed SVG line chart for
    Responsive Line Chart, not a shared placeholder. `src/lib/svgPath.js`
    (Catmull-Rom-to-Bezier smoothing, the same technique
    `ResponsiveLineChart`'s own architecture describes) is shared between
-   that chart's mockup and Executive KPI Card's new `ShowSparkline`
+   that chart's mockup and KPI Card's new `ShowSparkline`
    property, so a real, live-editable sparkline replaces the plain
    progress bar when that property is toggled on in the configurator —
    demonstrating the property does something, rather than existing only
@@ -165,15 +165,13 @@ one unreviewable pass through all 25:
 
 **All 25 components are done**, worked in five batches — "Verified" first
 since those 11 were already claiming a cross-checked contract, then the
-14 "Original" ones: Executive KPI Card, Responsive Line Chart, Deadline
-Intelligence, Activity Timeline, Enterprise Calendar; Accordion Record
-List, Enterprise Data Table, Governed File Upload, Governed Email
-Composer, Enterprise Sidebar; Enterprise Mega Menu, Portfolio Command
-Card, Program Scorecard, Operational Status Banner, Portfolio Risk
-Matrix; Project Health Summary, Milestone Tracker, Decision Log,
-Enterprise Dialog, Comments & Mentions; Responsive Breadcrumbs, Approval
-Journey, Guided Process Stepper, Workflow Route Map, Branded Loading
-Experience. Every one now has a real, component-specific `variants` set
+14 "Original" ones: KPI Card, Responsive Line Chart, Deadline Tracker,
+Activity Timeline, Calendar; Accordion List, Data Table, File Upload,
+Email Composer, Sidebar; Mega Menu, Command Card, Program Scorecard,
+Operational Status Banner, Risk Matrix; Project Health Summary,
+Milestone Tracker, Decision Log, Dialog, Comments & Mentions;
+Responsive Breadcrumbs, Approval Journey, Process Stepper, Route Map,
+Loading Screen. Every one now has a real, component-specific `variants` set
 and a bespoke Preview mockup — the generic fallback in
 `ComponentPreview.jsx` is unreachable code at this point, kept only as a
 documented safety net for a future 26th component added without its own
@@ -194,11 +192,11 @@ Two components are worth calling out specifically for how their
 grounding turned into a real, concrete addition rather than just
 supporting prose:
 
-- **Portfolio Command Card**'s contract (`Metrics`/`ChartData`) is the
+- **Command Card**'s contract (`Metrics`/`ChartData`) is the
   *actual* contract this site's own hero card already renders on the
   homepage — Health/Active/At risk tiles over an 8-bar activity strip —
   not a separate illustration of a similar idea.
-- **Enterprise Dialog**'s properties (`Title`, `Subtitle`,
+- **Dialog**'s properties (`Title`, `Subtitle`,
   `ConfirmButtonText`, `CancelButtonText`) are named to match Power
   Apps' own built-in `Confirm()` function's real `OptionsRecord`
   exactly, and its one deliberate addition — `ShowCancel` going false
@@ -206,7 +204,7 @@ supporting prose:
   gap: `Confirm()`'s own FAQ states plainly it always shows both
   buttons and can't be reduced to one.
 
-Portfolio Command Card is worth calling out specifically: its contract
+Command Card is worth calling out specifically: its contract
 (Metrics/ChartData) is the *actual* contract this site's own hero card on
 the homepage already renders — Health/Active/At risk plus the 8-bar
 activity strip — not a separate illustration of a similar idea. When a
@@ -238,31 +236,31 @@ a blank slate:
    `container()`/`CONTAINER_TEXT_CLASS` (`src/lib/color.js`) name that
    pattern once instead of leaving it an unlabeled convention repeated by
    hand, and every qualifying call site — Activity Timeline's category
-   tag, Accordion Record List's child-row tag, Enterprise Data Table's
-   status/priority badges, Decision Log's status badge, Workflow Route
-   Map's completed-node badge — now goes through it. Call sites using a
-   brand color as *text only*, with no background tint to pair it with
-   (Portfolio Command Card's metric values, Comments & Mentions'
-   `@mention`, Responsive Breadcrumbs' current crumb), correctly kept
+   tag, Accordion List's child-row tag, Data Table's status/priority
+   badges, Decision Log's status badge, Route Map's completed-node
+   badge — now goes through it. Call sites using a brand color as
+   *text only*, with no background tint to pair it with (Command
+   Card's metric values, Comments & Mentions' `@mention`, Responsive
+   Breadcrumbs' current crumb), correctly kept
    direct `darken()`/`lighten()` calls rather than being forced into a
    role that doesn't apply to them.
 2. **Elevation as a real signal, not decoration.** MD3 uses shadow depth
    to say which surfaces are distinct, raised content versus which are
    flat groupings. Added `shadow-sm` to the mockup elements that actually
    represent individual raised cards — Activity Timeline's entries,
-   Accordion Record List's child rows, Governed File Upload's file rows,
+   Accordion List's child rows, File Upload's file rows,
    Project Health Summary's dimension tiles, Decision Log's cards,
    Comments & Mentions' comment bubbles, Program Scorecard's metric
-   tiles, Portfolio Command Card's metric tiles and bar-chart panel — and
-   `shadow-lg` to Enterprise Mega Menu's dropdown panel, a floating
+   tiles, Command Card's metric tiles and bar-chart panel — and
+   `shadow-lg` to Mega Menu's dropdown panel, a floating
    overlay that a plain border alone doesn't read as. Left flat by design
    everywhere elevation would be wrong for what the surface actually is:
-   Enterprise Data Table's rows (a bordered table, not floating cards),
-   Enterprise Calendar's day cells, Operational Status Banner's strips,
-   Portfolio Risk Matrix's heatmap cells, Branded Loading Experience's
+   Data Table's rows (a bordered table, not floating cards),
+   Calendar's day cells, Operational Status Banner's strips,
+   Risk Matrix's heatmap cells, Loading Screen's
    outer frame.
 
-One structural change beyond color and shadow: **Enterprise Sidebar**'s
+One structural change beyond color and shadow: **Sidebar**'s
 active nav item went from a solid brand-color fill with white text to
 MD3's tonal "active indicator" — a pill-shaped container tint instead of
 a hard-filled rectangle — for consistency with the container pattern used
@@ -289,19 +287,19 @@ property by property, not guessing at plausible gaps.
 
 That audit surfaced roughly three dozen real gaps across all 25
 components — documented in full where the audit happened, not
-duplicated here — prioritized into: (1) the Enterprise Data Table
+duplicated here — prioritized into: (1) the Data Table
 cluster, since it's the single highest-value gap and was already
 self-flagged with no fix proposed; (2) four components whose own
 `variants` array named a variant (Program Scorecard's "Print", Decision
 Log's "Print", Project Health Summary's "Trend" and "Narrative",
-Workflow Route Map's "Swimlane") with no property in that same
+Route Map's "Swimlane") with no property in that same
 component's contract actually able to produce it — an internal
 consistency gap worth closing before any external one; (3) the
 cross-cutting localization gap, not yet started.
 
-**Batch 1 — Enterprise Data Table plus the four unwired variants:**
+**Batch 1 — Data Table plus the four unwired variants:**
 
-- **Enterprise Data Table** gained `Sortable`/`CurrentSortColumn`/
+- **Data Table** gained `Sortable`/`CurrentSortColumn`/
   `CurrentSortDirection`/`OnSort` (checked against the real modern Data
   Grid control's own `Sortable` and the Creator Kit DetailsList's
   `ColSortable`/`CurrentSortColumn`), `SelectionMode`/`OnSelectionChange`
@@ -320,7 +318,7 @@ cross-cutting localization gap, not yet started.
   and `NarrativeText`, backing its own "Trend" and "Narrative" variants;
   the mockup now shows a real trend arrow per dimension and a narrative
   sentence beneath the grid.
-- **Workflow Route Map** gained an optional `Lane` field on `Nodes`,
+- **Route Map** gained an optional `Lane` field on `Nodes`,
   backing its own "Swimlane" variant; the mockup now groups nodes into
   labeled horizontal bands by lane when the sample data sets one,
   while a `Nodes` table with no `Lane` values still renders the
@@ -341,7 +339,7 @@ violations across all 5 touched components in light and dark.
 
 **Batch 2 — the Forms/Navigation cluster:**
 
-- **Governed File Upload** gained `MaxAttachmentsText` (matching the
+- **File Upload** gained `MaxAttachmentsText` (matching the
   real canvas Attachments control's own property of the same name) and
   `AllowedExtensions`, giving the type-restriction hint already in this
   component's own Limitations text a real property to bind to. The
@@ -349,14 +347,14 @@ violations across all 5 touched components in light and dark.
   meaningfully different illustration than "still room for more,"
   swapped for by a `maxFiles`/`files.length` comparison in the mockup
   rather than a permanently empty-looking dropzone.
-- **Governed Email Composer** gained `ShowBcc` (matching the Office 365
+- **Email Composer** gained `ShowBcc` (matching the Office 365
   Outlook connector's own Bcc field, distinct from Cc) and
-  `Attachments` — the same `Id`/`Name`/`SizeBytes` shape Governed File
-  Upload's own staged files already use, closing a real gap *between*
-  two components in this same catalog that previously had no way to
+  `Attachments` — the same `Id`/`Name`/`SizeBytes` shape File Upload's
+  own staged files already use, closing a real gap *between* two
+  components in this same catalog that previously had no way to
   connect. The mockup now shows a real Bcc picker and an attachment
   chip.
-- **Enterprise Sidebar** gained `ItemBadgeCount` (a real precedent: the
+- **Sidebar** gained `ItemBadgeCount` (a real precedent: the
   Creator Kit Pivot control's own `ItemCount`, "show an item count on a
   Pivot item link"), `ItemIconColor` (the Creator Kit Nav control's own
   property of the same name), and `InputEvent` for `SetFocus` (the same
@@ -371,8 +369,8 @@ violations across all 5 touched components in light and dark.
   `AccessibilityLabel` (present on all three real reference controls
   checked in this pass). The mockup's own "Change Requests" crumb is
   now the non-clickable example.
-- **Enterprise Mega Menu** gained `Searchable`/`OnSearch` (the same
-  host-executed-filter pattern Enterprise Data Table's own `OnSearch`
+- **Mega Menu** gained `Searchable`/`OnSearch` (the same
+  host-executed-filter pattern Data Table's own `OnSearch`
   already uses), a `Badge` field on `DropdownItems` ("New"/"Beta" on a
   freshly added destination), and `CollapseWidth`/`OnMobileToggle` for
   the top-level bar's own hamburger collapse — a separate, wider
@@ -389,10 +387,9 @@ dark:text-slate-400`, the same fix applied last batch. Re-scanned
 clean: `npm run lint && npm run test:yaml && npm run build` clean, zero
 axe-core violations across all 5 touched components in light and dark.
 
-**Batch 3 — the remaining Data Display components, plus Enterprise
-Dialog's own size gap:**
+**Batch 3 — the remaining Data Display components, plus Dialog's own size gap:**
 
-- **Deadline Intelligence** gained `TimeZone` (an IANA/Windows zone
+- **Deadline Tracker** gained `TimeZone` (an IANA/Windows zone
   name StartDate is computed in, converted through Power Apps' own
   real `TimeZoneOffset`/`TimeZoneInformation` functions upstream) and
   `ReminderThreshold`/`OnApproachingDue` — the same reminder concept
@@ -407,20 +404,20 @@ Dialog's own size gap:**
   `OnLoadMoreError` — a real failed-fetch state, distinct from
   `IsLoading`'s normal in-flight one. The mockup now shows a pinned
   entry (rendered first, marked "Pinned") and a real sort toggle.
-- **Enterprise Calendar** gained `TimeZone` (same reasoning as Deadline
-  Intelligence), a `SeriesId` marker on `Events` for a recurring
-  occurrence, and `OnRequestChange` — the accessible, keyboard-reachable
-  alternative this read-only calendar offers in place of
-  drag-to-reschedule. The mockup now shows a recurring-series icon and
-  a real "Request a change" action on today's event.
-- **Accordion Record List** gained `SelectionMode`/`OnSelectionChange`
-  (matching Enterprise Data Table's own multi-select contract) and
-  `PageSize`/`OnPageChange` (the same paging contract Enterprise Data
-  Table and the real Creator Kit DetailsList both use), closing the
-  "past the low hundreds of groups" ceiling this component's own
-  Limitations already named with no fix. The mockup now shows real
+- **Calendar** gained `TimeZone` (same reasoning as Deadline Tracker),
+  a `SeriesId` marker on `Events` for a recurring occurrence, and
+  `OnRequestChange` — the accessible, keyboard-reachable alternative
+  this read-only calendar offers in place of drag-to-reschedule. The
+  mockup now shows a recurring-series icon and a real "Request a
+  change" action on today's event.
+- **Accordion List** gained `SelectionMode`/`OnSelectionChange`
+  (matching Data Table's own multi-select contract) and
+  `PageSize`/`OnPageChange` (the same paging contract Data Table and
+  the real Creator Kit DetailsList both use), closing the "past the
+  low hundreds of groups" ceiling this component's own Limitations
+  already named with no fix. The mockup now shows real
   checkboxes and a page indicator.
-- **Enterprise Dialog** gained `Size` (Small/Medium/Large) — the one
+- **Dialog** gained `Size` (Small/Medium/Large) — the one
   addition in this pass not grounded in a specific Microsoft control
   property, since `Confirm()` has no size concept at all; grounded
   instead in Fluent's own Dialog/Panel components, which do offer this
@@ -430,8 +427,8 @@ Dialog's own size gap:**
 
 Three real contrast issues turned up in this batch — all the same
 swapped-light/dark-combo class of bug as the previous two batches:
-Activity Timeline's "Pinned" label, Enterprise Calendar's "Request a
-change" action, and Enterprise Dialog's "Size: Small" chip (the last of
+Activity Timeline's "Pinned" label, Calendar's "Request a
+change" action, and Dialog's "Size: Small" chip (the last of
 these against a *different* tinted background than the usual white/near
 -black page background, so the fix there was swapping to a
 higher-contrast pair — `text-slate-600 dark:text-slate-300` — rather
@@ -450,14 +447,13 @@ of the 25 components' contracts mentioned it anywhere.
 Added a `Language` property (a BCP-47 tag, e.g. `"de-DE"`) to the 10
 components where a locale-sensitive number, date or currency value is
 actually central to what the component displays — not to all 25, since
-adding it to a pure-navigation or pure-text component like Enterprise
-Sidebar or Responsive Breadcrumbs would be padding, not a real gap
-closed: Executive KPI Card, Responsive Line Chart, Portfolio Command
-Card, Program Scorecard, Operational Status Banner, Project Health
-Summary, Milestone Tracker, Decision Log, Deadline Intelligence, and
-Enterprise Calendar (the last two already had a `TimeZone` property
-from an earlier batch, so this closes the localization half of the same
-underlying gap).
+adding it to a pure-navigation or pure-text component like Sidebar or
+Responsive Breadcrumbs would be padding, not a real gap closed: KPI
+Card, Responsive Line Chart, Command Card, Program Scorecard,
+Operational Status Banner, Project Health Summary, Milestone Tracker,
+Decision Log, Deadline Tracker, and Calendar (the last two already had
+a `TimeZone` property from an earlier batch, so this closes the
+localization half of the same underlying gap).
 
 Two different real mechanisms, both stated plainly per component:
 
@@ -467,15 +463,15 @@ Two different real mechanisms, both stated plainly per component:
   pattern Power Apps itself uses. The component only ever displays
   whatever string it's handed.
 - **Generated inside the component** (Operational Status Banner's
-  relative-time text, Enterprise Calendar's month/weekday names,
-  Deadline Intelligence's breakdown sentence): there's no single
+  relative-time text, Calendar's month/weekday names,
+  Deadline Tracker's breakdown sentence): there's no single
   formatted value to pass through, since the text is assembled from
   several computed values, so `Language` is used directly by the
   component itself.
 
 Since this is a React site, not a running Power Apps host, the actual
 Power Fx `Text()`/`Language()` mechanism can't run here — but its real
-JavaScript equivalent can, and does: Executive KPI Card's mockup now
+JavaScript equivalent can, and does: KPI Card's mockup now
 computes its Trend line through `Intl.NumberFormat("de-DE", { style:
 "percent" })` (rendering `"12,4 %"`, the real German decimal-comma
 convention, not a hand-typed string standing in for one), and
@@ -499,7 +495,7 @@ own global-apps guidance documents for translated strings.
 
 Verified: `npm run lint && npm run test:yaml && npm run build` clean.
 axe-core scanned clean on both components with an actual mockup change
-(Executive KPI Card, Operational Status Banner), light and dark, plus a
+(KPI Card, Operational Status Banner), light and dark, plus a
 final full sweep across all 25 components — zero violations anywhere,
 confirming this batch didn't regress anything from the three batches
 before it. Playwright screenshots confirm both `Intl`-driven demo lines
@@ -510,8 +506,8 @@ gap-research report's findings — the components that had never been
 touched by any of the previous four batches, rather than gaps within an
 already-updated one.
 
-- **Portfolio Risk Matrix** gained `Searchable`/`OnSearch` (the same
-  host-executed-filter pattern Enterprise Data Table's own `OnSearch`
+- **Risk Matrix** gained `Searchable`/`OnSearch` (the same
+  host-executed-filter pattern Data Table's own `OnSearch`
   uses) and `OnExport`, plus an optional per-risk `TrendDirection`
   field. Preview now shows a real search box and Export action above
   the grid.
@@ -524,12 +520,12 @@ already-updated one.
   (the same reminder concept Power Automate's own approval action
   offers near a deadline) and `DelegatedTo`/`OnDelegate`. Preview shows
   a due date on the pending stage and a delegate arrow on the locked one.
-- **Guided Process Stepper** gained `CanAdvance` (closing the gap where
+- **Process Stepper** gained `CanAdvance` (closing the gap where
   the component had no shared signal for "this step isn't done yet")
   and `ResumeKey`/`OnResume` for a wizard resumed after being abandoned
   mid-flow. Preview shows a real disabled Next button with the stated
   reason.
-- **Branded Loading Experience** gained `HasError`/`ErrorMessage`/
+- **Loading Screen** gained `HasError`/`ErrorMessage`/
   `OnRetry` (a real failed-load state, distinct from the success-path
   `Progress` value) and `EstimatedSecondsRemaining`. Preview shows both
   the in-flight state with an ETA and the error/retry state side by side.
@@ -559,7 +555,7 @@ to `[name, description]` tuples, and `ComponentDetail.jsx`'s Examples
 tab now renders each real description instead of the shared generic
 line. Wrote a genuine, specific description for all 75 examples across
 the 25 components — naming the actual property values, states, or
-variant that example scenario would set (e.g. Executive KPI Card's
+variant that example scenario would set (e.g. KPI Card's
 "At-risk projects" example: "Status set to a warning tone and Trend
 rising, so the color and the text say the same thing without a second
 glance") — plus the 8 unreachable `baseByCategory` fallback entries,
@@ -600,7 +596,7 @@ down (`scale-[0.42]`, `origin-top`, absolutely positioned inside a fixed,
 mockup — the KPI number and trend arrow, the line chart, the RAG scorecard
 grid, the status banner strips, the risk heatmap — instead of one shared
 placeholder. Fixed top-anchored scaling was a deliberate choice over
-centering: a tall mockup (Enterprise Calendar's full month grid, say) now
+centering: a tall mockup (Calendar's full month grid, say) now
 crops predictably from the bottom instead of being centered and clipped
 unpredictably depending on its unscaled height.
 
@@ -616,8 +612,8 @@ control left inside `aria-hidden` content, flagged by axe-core's
 `aria-hidden-focus` rule). `ComponentPreview` now takes an `interactive`
 prop, default `true`, that swaps every one of its 8 illustrative buttons
 for a plain `<span>` when `false`; the Detail page's own Preview tab
-never sets it and is unaffected. One of those eight — Enterprise Data
-Table's "Prev" pager — relied on a real `disabled` attribute for its
+never sets it and is unaffected. One of those eight — Data Table's
+"Prev" pager — relied on a real `disabled` attribute for its
 low-contrast text to pass WCAG 1.4.3's exemption for genuinely-disabled
 controls; a `<span disabled="">` doesn't carry that same semantic
 weight, so as a thumbnail it uses the same accessible tone already used
@@ -658,7 +654,7 @@ of engineering (hand-authoring nested Power Fx string formulas per
 component) than this project has done — a real option, but a separate
 decision from the one actually asked for here. Second, and the one this
 pass fixes: the Detail page's own **Variants** tab rendered each of a
-component's 4 (5 for Executive KPI Card) listed presentation modes as a
+component's 4 (5 for KPI Card) listed presentation modes as a
 numbered card with a name and a sentence — real, specific text from
 earlier in this project, but no actual visual, on a tab whose entire
 purpose is showing what each variant *looks like*.
@@ -667,13 +663,13 @@ purpose is showing what each variant *looks like*.
 component's mockup now reads to render that one named variant for real —
 Responsive Line Chart's "Sparkline" actually draws a smaller, axis-less
 line; "Dashed forecast" draws a solid actual segment continuing into a
-genuinely dashed, unfilled one; Enterprise Calendar's four variants are
+genuinely dashed, unfilled one; Calendar's four variants are
 four structurally different views (a month grid, a 7-day week strip, a
 flat chronological agenda, a tiny read-only mini-grid) instead of one
-view with a caption; Enterprise Dialog's four variants are four different
+view with a caption; Dialog's four variants are four different
 real dialogs (a neutral Confirm, a single-button Acknowledge-only, a
-red-styled Destructive delete, and a wider Custom-content form); Branded
-Loading Experience's four are an indeterminate spinner, the progress bar,
+red-styled Destructive delete, and a wider Custom-content form);
+Loading Screen's four are an indeterminate spinner, the progress bar,
 a full-bleed branded splash, and content-shaped skeleton blocks. All 25
 components' mockups were extended this way — every one of their variants
 (101 total across the catalog) now renders a genuine, distinct visual
@@ -691,11 +687,11 @@ mockup actually showed, independent of the new variant-rendering work,
 and fixed them in the same pass: Project Health Summary's trend arrows
 and narrative sentence were both always visible regardless of variant,
 when TrendDirection and NarrativeText are each one specific variant's own
-addition; Workflow Route Map's default mockup showed the swimlane-grouped
+addition; Route Map's default mockup showed the swimlane-grouped
 layout even though "Linear" (a flat sequence with no lanes) is the
 catalog's first-listed variant for it; Responsive Breadcrumbs' default
 showed a collapsed "…" trail when "Full trail" (every level, nothing
-collapsed) is listed first; Enterprise Dialog's Confirm button was always
+collapsed) is listed first; Dialog's Confirm button was always
 styled in the danger red that's actually Destructive's own defining
 difference from a neutral Confirm(). Each is now correct for its actual
 variant.
@@ -720,13 +716,13 @@ violations. Playwright screenshots across five components (light and
 dark) confirm each shows four genuinely distinct renders matching its
 own description.
 
-### Accordion Record List: closing gaps against a real reference component
+### Accordion List: closing gaps against a real reference component
 
 A second real, published Power Apps component — this one a genuinely
 self-rendering accordion list built from composed native controls
 (`GroupContainer`, `Gallery`, `ModernButton`, `ModernText` with ordinary
 property bindings) rather than an SVG-formula hack — surfaced concrete
-gaps in this project's own Accordion Record List, closed in this pass at
+gaps in this project's own Accordion List, closed in this pass at
 the documented-contract level (Properties/Events/Architecture/
 Accessibility/Limitations plus the mockup), not the generated-YAML
 architecture:
@@ -751,7 +747,7 @@ edge-disabled Move up on the first group, a Locked group with its action
 cluster replaced by a "🔒 Locked" chip instead of hidden buttons, an
 edge-disabled Move down on the last, and a header "Expand all" toggle
 for `Config.ShowExpandAll`. The two new Move buttons needed the same
-`interactive`-aware disabled-contrast treatment Enterprise Data Table's
+`interactive`-aware disabled-contrast treatment Data Table's
 Prev pager already established (a real `disabled` attribute rides WCAG
 1.4.3's exemption only while `Btn` is actually a `<button>`; as a card
 thumbnail's `<span disabled="">` it isn't, so the color falls back to
@@ -768,7 +764,7 @@ following this catalog's own existing precedent (`HighlightIndex`'s
 sentinel's meaning stated in the property's own description rather than
 in the default value itself.
 
-Deliberately not pursued in this pass: rewriting Accordion Record List's
+Deliberately not pursued in this pass: rewriting Accordion List's
 generated YAML into an actual self-rendering `Children` tree matching
 the reference's own architecture. Unlike the Line Chart comparison
 above, this one's reference proves that's a real, achievable target for
@@ -777,7 +773,7 @@ SVG) — a legitimate next step, but a separate decision from closing the
 documented contract gaps this pass addressed.
 
 Verified: `npm run lint && npm run build && npm run test:yaml` clean.
-axe-core scanned Accordion Record List's Preview, Variants and
+axe-core scanned Accordion List's Preview, Variants and
 Properties tabs, light and dark — clean — plus a full 25-component
 Variants-tab resweep confirming no regression elsewhere.
 
@@ -802,10 +798,10 @@ component-specific comparisons above:
    that also has AutoLayout enabled — a real, named Canvas Apps quirk,
    not user error, per that thread's own troubleshooting exchange. This
    project's own generated YAML has no `Children` tree yet (see the
-   Line Chart and Accordion Record List comparisons above), so it isn't
+   Line Chart and Accordion List comparisons above), so it isn't
    something today's output can hit — but it's exactly the kind of
    gotcha whoever eventually builds a real `Children` tree for one of
-   these components (Accordion Record List's own `GroupContainer`-based
+   these components (Accordion List's own `GroupContainer`-based
    reference, for instance) needs to know about, so it's recorded here
    rather than only in a private note.
 3. **Gallery cards must grow to fit content, never clip it.** The
@@ -822,7 +818,7 @@ one real edit, in `ComponentDetail.jsx`.
 
 Verified: `npm run lint && npm run build` clean.
 
-### Enterprise Calendar: recurring-event edit scope
+### Calendar: recurring-event edit scope
 
 The one concrete workflow gap the same research turned up: PowerAppsUI's
 own catalog lists an Event Form component under its own "Coming Soon"
@@ -836,7 +832,7 @@ edit dialog already offers today, for real. Outlook's own dialog, not
 Event Form's own unbuilt status, is what this project actually verified
 and built against — the same distinction `componentLibrary.js`'s own
 `RequestedScope` property and architecture notes already draw, citing
-only Outlook by name. This project's Enterprise Calendar already marks
+only Outlook by name. This project's Calendar already marks
 a recurring chip via `SeriesId` and offers `OnRequestChange` as its
 read-only calendar's accessible escape hatch for asking to change
 something — but the event never asked *which* occurrences a change
@@ -844,7 +840,7 @@ should apply to, so a host had no way to build that Outlook-familiar
 flow.
 
 Closed as a property and event addition to the existing component, not
-a new one, matching Enterprise Calendar's own established scope
+a new one, matching Calendar's own established scope
 (computes and reports, never mutates): a new `RequestedScope` output
 property (`"This event"`, `"This and following"`, `"All events in the
 series"`, or blank for a non-recurring occurrence, since there's
@@ -855,7 +851,7 @@ that occurrence's own "Request a change" action — before firing, while
 a non-recurring occurrence still fires straight through exactly as
 before. Architecture and Limitations both restate this catalog's
 existing component-computes-host-decides split explicitly for the new
-property: Enterprise Calendar's job stops at asking and reporting the
+property: Calendar's job stops at asking and reporting the
 scope choice; applying an edit across however many materialized rows
 that scope implies is entirely the host's own job, the same as
 `OnRequestChange` always was.
@@ -868,11 +864,11 @@ action with no scope buttons at all, so the contrast between the two
 is visible rather than only described.
 
 Verified: `npm run lint && npm run build && npm run test:yaml` clean.
-axe-core scanned Enterprise Calendar's Preview, Variants and Properties
+axe-core scanned Calendar's Preview, Variants and Properties
 tabs, light and dark — clean — plus a full 25-component Variants-tab
 resweep confirming no regression elsewhere.
 
-### Enterprise Calendar: three gaps against a real, self-rendering reference
+### Calendar: three gaps against a real, self-rendering reference
 
 A third real Power Apps component — a genuinely self-rendering
 "Calendar Pro" built from a full `Children` tree (AutoLayout
@@ -880,12 +876,12 @@ A third real Power Apps component — a genuinely self-rendering
 view, an agenda view, a day-overflow peek modal, and a computed 3-year
 US federal holiday table) rather than a contract-only description —
 surfaced three more concrete, closeable gaps in this catalog's own
-Enterprise Calendar. Everything else in that reference (the actual
+Calendar. Everything else in that reference (the actual
 `Children` tree itself, its `_`-prefixed internal Output workarounds,
 the peek-modal implementation) is architecture, not contract, and was
 deliberately not pursued here — the same "closes the documented
 contract, doesn't rewrite the architecture" call already made for
-Accordion Record List:
+Accordion List:
 
 - **`Config.ShowWeekNumbers`** — Month view now draws each row's own
   ISO-8601 week number down the left edge when this toggle is on,
@@ -919,11 +915,11 @@ existing month-header row's own proven-safe one, and the Week view's
 "today" column label colored its text directly with the component's
 own accent color rather than going through this catalog's established
 `darken()`/`lighten()` `CONTAINER_TEXT_CLASS` pairing (the same fix
-Threshold Range Slider's zone label needed earlier). Both fixed and
+Range Slider's zone label needed earlier). Both fixed and
 rescanned clean.
 
 Verified: `npm run lint && npm run build && npm run test:yaml` clean
-(28 components, unchanged). axe-core scanned Enterprise Calendar's
+(28 components, unchanged). axe-core scanned Calendar's
 Preview, Variants and Properties tabs, light and dark — clean after the
 contrast fix — plus a full 28-component Preview+Variants-tab resweep
 confirming no regression elsewhere.
@@ -939,8 +935,8 @@ key, including the ones left at their defaults — a Record-typed
 property's own authored Default does not reach a pasted instance.**
 Unlike a `Text` or `Number` property, whose Default really does carry
 onto a pasted instance, a `Record`-typed one (`Config`, on every
-component in this catalog that has one — Enterprise Calendar,
-Accordion Record List, Deadline Intelligence) only applies its Default
+component in this catalog that has one — Calendar,
+Accordion List, Deadline Tracker) only applies its Default
 inside this project's own live preview and the generated definition
 YAML; paste a screen instance of the real component and every `Config`
 key needs to be set by hand, or the instance renders with an empty
@@ -975,7 +971,7 @@ in a real, named Microsoft reference rather than invented from scratch,
 the same "Verified" bar every cross-checked component in this catalog
 already holds to:
 
-- **Threshold Range Slider** — the real modern Slider control's own
+- **Range Slider** — the real modern Slider control's own
   `Default`/`Min`/`Max`/`Value`/`OnChange` contract (including the
   control's own recent split of `Default`, the initial value, from
   `Value`, a dedicated read-only output — adopted here exactly), plus
@@ -983,7 +979,7 @@ already holds to:
   has no concept of at all) so a budget-utilization or risk-appetite
   slider reads its own "On track / Watch / Over" state without the
   visitor doing the math themselves.
-- **Contextual Detail Panel** — modeled directly on the real Microsoft
+- **Detail Panel** — modeled directly on the real Microsoft
   Creator Kit Panel control, which itself documents mimicking Fluent
   UI's own Panel: `Title`/`Subtitle`/`Position`/`DialogWidth`/`Buttons`
   (a table of `{Label, ButtonType}` rows, `Standard` or `Primary`) and
@@ -994,9 +990,9 @@ already holds to:
   explicitly in both Architecture and Limitations as grounded in the
   wider Fluent ecosystem's own real `isLightDismiss` pattern rather than
   the Creator Kit Panel's own specific documented properties — the same
-  honesty this catalog already applies to Enterprise Dialog's own `Size`
+  honesty this catalog already applies to Dialog's own `Size`
   property.
-- **Confirmation Toast** — reuses Power Fx's own real `Notify()`
+- **Toast** — reuses Power Fx's own real `Notify()`
   function's contract directly (`NotificationType`'s real four-value
   enum, the same 500-character message limit, the same real 10-second
   default timeout) and Dataverse's own real `appnotification` table's
@@ -1096,7 +1092,7 @@ scroll access once a long line genuinely overflowed its card (WCAG's
 elsewhere on this site had simply never hit a line long enough to
 trigger it before), and the Real Issues cards' source citation used the
 same too-pale `text-slate-400 dark:text-slate-500` contrast mistake
-already caught and fixed on Enterprise Calendar earlier in this pass —
+already caught and fixed on Calendar earlier in this pass —
 swapped to the proven-safe `text-slate-500 dark:text-slate-400` pairing
 used everywhere else on this site.
 
@@ -1169,7 +1165,7 @@ formatting rules the schema-conformance check enforces — a `Number` typed as
 
 This does **not** mean every component's mockup visually reacts to its own
 properties — `ComponentPreview.jsx` is a small, mostly generic illustration,
-and only Executive KPI Card's mockup is actually wired to read
+and only KPI Card's mockup is actually wired to read
 `Label`/`Value`/`Trend`/`Status` from the live values. Wiring every
 component's own bespoke rendering to its own properties would mean
 hand-authoring a real renderer per component rather than a documentation

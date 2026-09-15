@@ -5,7 +5,7 @@ import { darken, lighten, container, CONTAINER_TEXT_CLASS } from "../lib/color.j
    COMPONENT PREVIEW (the small mockup shown in the Detail page)
    `values` (name -> current value, from the detail page's live
    configurator) is honored only where a component's own mockup already
-   reads specific properties by name — Executive KPI Card's Label/Value/
+   reads specific properties by name — KPI Card's Label/Value/
    Trend/Status/ShowSparkline is the deepest example. Every other
    component's mockup is a fixed illustration regardless of what's
    edited in the configurator; the YAML output next to it always
@@ -48,7 +48,7 @@ import { darken, lighten, container, CONTAINER_TEXT_CLASS } from "../lib/color.j
    ============================================================ */
 function ComponentPreview({ item, values = {}, interactive = true, variant = null }) {
   const Btn = interactive ? "button" : "span";
-  if (item.title === "Portfolio Risk Matrix") {
+  if (item.title === "Risk Matrix") {
     // 5x5 needs its own row-tone lookup — 3 bands stretched over 5 rows
     // reads wrong (two whole rows would land on the same tone), so a
     // real 5-band severity scale backs the larger grid instead of just
@@ -127,7 +127,7 @@ function ComponentPreview({ item, values = {}, interactive = true, variant = nul
     );
   }
 
-  if (item.title === "Executive KPI Card") {
+  if (item.title === "KPI Card") {
     const label = values.Label ?? "Active projects";
     const value = values.Value ?? "156";
     const trend = values.Trend ?? "12.4";
@@ -284,7 +284,7 @@ function ComponentPreview({ item, values = {}, interactive = true, variant = nul
     );
   }
 
-  if (item.title === "Deadline Intelligence") {
+  if (item.title === "Deadline Tracker") {
     const daysLeft = 12;
     const totalDays = 30;
     const elapsedPct = Math.round(((totalDays - daysLeft) / totalDays) * 100);
@@ -445,7 +445,7 @@ function ComponentPreview({ item, values = {}, interactive = true, variant = nul
     );
   }
 
-  if (item.title === "Enterprise Calendar") {
+  if (item.title === "Calendar") {
     const monthDays = Array.from({ length: 30 }, (_, i) => i + 1);
     const leadingBlanks = 3;
     const today = 14;
@@ -615,7 +615,7 @@ function ComponentPreview({ item, values = {}, interactive = true, variant = nul
     );
   }
 
-  if (item.title === "Accordion Record List") {
+  if (item.title === "Accordion List") {
     // SelectionMode Multiple — checked demonstrates OnSelectionChange's
     // real checkbox column rather than only describing it in Properties.
     // Both non-locked groups expanded at once — Single-expand is the
@@ -738,7 +738,7 @@ function ComponentPreview({ item, values = {}, interactive = true, variant = nul
     );
   }
 
-  if (item.title === "Enterprise Data Table") {
+  if (item.title === "Data Table") {
     const rows = [
       { name: "Website redesign", status: "On track", statusColor: item.color, priority: "High", priorityColor: "#D83B01", checked: true },
       { name: "Data migration", status: "At risk", statusColor: "#D83B01", priority: "Medium", priorityColor: "#0F6CBD", checked: false },
@@ -836,7 +836,7 @@ function ComponentPreview({ item, values = {}, interactive = true, variant = nul
     );
   }
 
-  if (item.title === "Governed File Upload") {
+  if (item.title === "File Upload") {
     // maxFiles set to match files.length here specifically to illustrate
     // MaxAttachmentsText's real replace-the-dropzone state, rather than
     // always showing the same "still room for more" prompt.
@@ -921,7 +921,7 @@ function ComponentPreview({ item, values = {}, interactive = true, variant = nul
     );
   }
 
-  if (item.title === "Governed Email Composer") {
+  if (item.title === "Email Composer") {
     if (variant === "Compact") return (
       <div>
         <div className="flex flex-wrap items-center gap-1.5 border-b border-slate-100 pb-2 dark:border-white/10">
@@ -1001,7 +1001,7 @@ function ComponentPreview({ item, values = {}, interactive = true, variant = nul
     );
   }
 
-  if (item.title === "Enterprise Sidebar") {
+  if (item.title === "Sidebar") {
     // ItemBadgeCount and ItemIconColor are both optional per-item fields
     // (see componentLibrary.js) — Dashboard/Settings below carry neither,
     // demonstrating that an item with no badge or custom color renders
@@ -1098,7 +1098,7 @@ function ComponentPreview({ item, values = {}, interactive = true, variant = nul
     return sidebarBody;
   }
 
-  if (item.title === "Enterprise Mega Menu") {
+  if (item.title === "Mega Menu") {
     const navButtons = ["Products", "Solutions", "Resources", "Pricing"];
     const panel = {
       Platform: [{ label: "Power Apps" }, { label: "Power Automate" }, { label: "Dataverse" }],
@@ -1166,7 +1166,7 @@ function ComponentPreview({ item, values = {}, interactive = true, variant = nul
     );
   }
 
-  if (item.title === "Portfolio Command Card") {
+  if (item.title === "Command Card") {
     const metrics = [
       { label: "Health", value: "74%", color: item.color },
       { label: "Active", value: "32", color: item.color },
@@ -1489,7 +1489,7 @@ function ComponentPreview({ item, values = {}, interactive = true, variant = nul
     );
   }
 
-  if (item.title === "Enterprise Dialog") {
+  if (item.title === "Dialog") {
     // Confirm's own Confirm button uses the brand color, matching the
     // native Confirm() function's neutral, non-alarming default — the
     // danger-red treatment is Destructive's own real delta from it, not
@@ -1744,7 +1744,7 @@ function ComponentPreview({ item, values = {}, interactive = true, variant = nul
     );
   }
 
-  if (item.title === "Guided Process Stepper") {
+  if (item.title === "Process Stepper") {
     const steps = [
       { label: "Details", status: "done" },
       { label: "Documents", status: "done" },
@@ -1807,7 +1807,7 @@ function ComponentPreview({ item, values = {}, interactive = true, variant = nul
     );
   }
 
-  if (item.title === "Workflow Route Map") {
+  if (item.title === "Route Map") {
     // Lane is optional (see componentLibrary.js) — a Nodes table with no
     // Lane values renders the original single flat row unchanged; the
     // Swimlane variant sets Lane on every node specifically to demonstrate
@@ -1883,7 +1883,7 @@ function ComponentPreview({ item, values = {}, interactive = true, variant = nul
     );
   }
 
-  if (item.title === "Branded Loading Experience") {
+  if (item.title === "Loading Screen") {
     if (variant === "Spinner") return (
       <div className="grid place-items-center rounded-xl bg-slate-50 py-10 dark:bg-white/5">
         <span aria-hidden="true" className="h-8 w-8 animate-spin rounded-full border-4 border-slate-200 dark:border-white/10" style={{ borderTopColor: item.color }} />
@@ -1923,7 +1923,7 @@ function ComponentPreview({ item, values = {}, interactive = true, variant = nul
         </div>
         {/* HasError/OnRetry — a distinct state from the in-flight one
             above, shown side by side rather than only described, the
-            same reasoning Governed File Upload's own two dropzone
+            same reasoning File Upload's own two dropzone
             states use elsewhere in this file. */}
         <div className="grid place-items-center rounded-xl bg-red-50 py-6 dark:bg-red-900/20">
           <span aria-hidden="true" className="text-xl">&#9888;&#65039;</span>
@@ -1934,7 +1934,7 @@ function ComponentPreview({ item, values = {}, interactive = true, variant = nul
     );
   }
 
-  if (item.title === "Threshold Range Slider") {
+  if (item.title === "Range Slider") {
     const min = 0, max = 100, value = 62;
     // Zones sorted ascending by UpTo, matching the property's own stated
     // convention — On track/Watch/Over, the same three-band shape the
@@ -1995,7 +1995,7 @@ function ComponentPreview({ item, values = {}, interactive = true, variant = nul
     );
   }
 
-  if (item.title === "Contextual Detail Panel") {
+  if (item.title === "Detail Panel") {
     const left = variant === "Left-positioned";
     const viewOnly = variant === "View-only";
     const wide = variant === "Wide";
@@ -2039,7 +2039,7 @@ function ComponentPreview({ item, values = {}, interactive = true, variant = nul
     );
   }
 
-  if (item.title === "Confirmation Toast") {
+  if (item.title === "Toast") {
     const tones = {
       Success: { bg: "bg-green-50 dark:bg-green-900/20", text: "text-green-700 dark:text-green-300", icon: "✓" },
       Warning: { bg: "bg-amber-50 dark:bg-amber-900/20", text: "text-amber-700 dark:text-amber-300", icon: "⚠️" }

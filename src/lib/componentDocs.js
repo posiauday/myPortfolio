@@ -48,11 +48,19 @@ function needsMultiline(text) {
    literal, which is always valid Power Fx even when it's standing in
    for a longer description than that data type would ever really
    hold. */
+/* Power Fx escapes an embedded double-quote inside a text literal by
+   doubling it ("") — unlike JSON, which uses a backslash. JSON.stringify
+   would silently produce invalid Power Fx for any value containing a
+   literal quote character, so text literals are built by hand here. */
+function powerFxTextLiteral(value) {
+  return `"${value.replace(/"/g, '""')}"`;
+}
+
 function formatFormulaValue(rawValue, dataType) {
   const value = String(rawValue);
   const isNumericLiteral = dataType === "Number" && /^-?\d+(\.\d+)?$/.test(value.trim());
   const isBooleanLiteral = dataType === "Boolean" && (value === "true" || value === "false");
-  const expression = isNumericLiteral || isBooleanLiteral ? value : JSON.stringify(value);
+  const expression = isNumericLiteral || isBooleanLiteral ? value : powerFxTextLiteral(value);
   return { expression, multiline: needsMultiline(expression) };
 }
 
@@ -105,6 +113,8 @@ function buildComponentYaml(item, valueOverrides = {}) {
     lines.push(`      ${name}:`);
     lines.push(`        PropertyKind: Event`);
     lines.push(`        DisplayName: "${name}"`);
+    lines.push(`        ReturnType: None`);
+    lines.push(`        Default: =false`);
   });
   return lines.join("\n");
 }

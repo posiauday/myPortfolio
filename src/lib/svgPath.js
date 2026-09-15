@@ -3,7 +3,7 @@
    describes (one dependency-free inline SVG, a Catmull-Rom-smoothed
    curve, a gradient fill under it, no charting library). Shared here so
    the Detail page's own live preview mockups for ResponsiveLineChart and
-   Executive KPI Card's optional sparkline draw with the identical
+   KPI Card's optional sparkline draw with the identical
    technique, rather than two separate small chart implementations. */
 export function buildLinePath(values, { width = 300, height = 120, padding = 8 } = {}) {
   const max = Math.max(...values);
