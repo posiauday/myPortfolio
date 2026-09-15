@@ -421,30 +421,48 @@ function ComponentPreview({ item, values = {}, interactive = true, variant = nul
     // recurring flags SeriesId — Sprint review repeats weekly, so it
     // gets the "part of a series" marker; Release and Audit don't.
     const events = { 6: { label: "Sprint review", color: "#0F6CBD", recurring: true }, 14: { label: "Release", color: item.color }, 22: { label: "Audit", color: "#C239B3" } };
+    // Holidays -- host-materialized, same as Events/Channels; never a
+    // built-in regional calendar. Tinted with a real accessible name
+    // alongside it below, never a color-only signal on the cell itself.
+    const holidays = { 17: "Founders Day" };
     if (variant === "Week view") {
       const weekDays = [12, 13, 14, 15, 16, 17, 18];
+      // Rendered as an actual hour-by-hour grid, windowed by Config's own
+      // work-hours range -- not just Month view's day cells with more
+      // room, the real gap Calendar Pro's own week/hour-grid view surfaced.
+      const hours = ["9", "10", "11", "12", "1", "2", "3", "4", "5"];
+      const eventHour = "1";
       return (
         <div>
           <div className="flex items-center justify-between">
             <b className="text-sm">Mar 12&ndash;18, 2026</b>
             <span className="rounded-full bg-slate-100 px-2 py-1 text-[10px] font-bold text-slate-600 dark:bg-white/10 dark:text-slate-300">Week</span>
           </div>
-          <div className="mt-3 grid grid-cols-7 gap-1.5">
+          <div className="mt-3 grid grid-cols-8 gap-1 text-center text-[9px] font-black text-slate-500 dark:text-slate-400">
+            <span aria-hidden="true" />
             {weekDays.map(day => (
-              <div key={day} className={`rounded-lg p-1.5 text-center ${day === today ? "text-white" : "bg-slate-50 dark:bg-white/5"}`} style={day === today ? { background: item.color } : undefined}>
-                <span className="text-[9px] font-bold">{day}</span>
-                {/* Today's own chip needs a real opaque background, not a
-                    translucent white over an arbitrary event color — that
-                    combination's contrast depends on which event color it
-                    happens to be, and isn't guaranteed to pass. */}
-                {events[day] && (
-                  <span
-                    className={`mt-1 block truncate rounded px-1 py-0.5 text-[8px] font-bold ${day === today ? "" : CONTAINER_TEXT_CLASS}`}
-                    style={day === today ? { background: "#FFFFFF", color: item.color } : container(events[day].color, "26")}
-                  >
-                    {events[day].label}
-                  </span>
-                )}
+              <span
+                key={day}
+                className={day === today ? CONTAINER_TEXT_CLASS : undefined}
+                style={day === today ? { "--badge-light": darken(item.color), "--badge-dark": lighten(item.color) } : undefined}
+              >
+                {day}
+              </span>
+            ))}
+          </div>
+          <div className="mt-1 space-y-0.5">
+            {hours.map(hour => (
+              <div key={hour} className="grid grid-cols-8 gap-1">
+                <span className="self-center pr-1 text-right text-[8px] font-bold text-slate-500 dark:text-slate-400">{hour}</span>
+                {weekDays.map(day => (
+                  <div key={day} className={`h-4 rounded ${day === today ? "bg-slate-50 dark:bg-white/5" : ""}`}>
+                    {events[day] && hour === eventHour && (
+                      <span className={`block h-full truncate rounded px-1 text-[7px] font-bold leading-4 ${CONTAINER_TEXT_CLASS}`} style={container(events[day].color, "26")}>
+                        {events[day].label}
+                      </span>
+                    )}
+                  </div>
+                ))}
               </div>
             ))}
           </div>
@@ -480,29 +498,48 @@ function ComponentPreview({ item, values = {}, interactive = true, variant = nul
         </div>
       </div>
     );
+    // Config.ShowWeekNumbers -- each row's own ISO-8601 week number down
+    // the left edge, computed inside the component the same way month/
+    // weekday names already are, rather than something the host formats.
+    const weekNumbers = [10, 11, 12, 13, 14];
+    const monthCells = [...Array.from({ length: leadingBlanks }, () => null), ...monthDays];
+    while (monthCells.length % 7 !== 0) monthCells.push(null);
+    const monthRows = [];
+    for (let i = 0; i < monthCells.length; i += 7) monthRows.push(monthCells.slice(i, i + 7));
     return (
       <div>
         <div className="flex items-center justify-between">
           <b className="text-sm">March 2026</b>
           <span className="rounded-full bg-slate-100 px-2 py-1 text-[10px] font-bold text-slate-600 dark:bg-white/10 dark:text-slate-300">Month</span>
         </div>
-        <div className="mt-3 grid grid-cols-7 gap-1 text-center text-[9px] font-black uppercase text-slate-500 dark:text-slate-400">
+        <div className="mt-3 grid grid-cols-8 gap-1 text-center text-[9px] font-black uppercase text-slate-500 dark:text-slate-400">
+          <span aria-hidden="true" />
           {["S", "M", "T", "W", "T", "F", "S"].map((d, i) => <span key={i}>{d}</span>)}
         </div>
-        <div className="mt-1 grid grid-cols-7 gap-1">
-          {Array.from({ length: leadingBlanks }).map((_, i) => <span key={`b${i}`} />)}
-          {monthDays.map(day => (
-            <div
-              key={day}
-              className={`relative grid aspect-square place-items-center rounded-lg text-[10px] font-bold ${day === today ? "text-white" : "text-slate-700 dark:text-slate-200"}`}
-              style={day === today ? { background: item.color } : undefined}
-            >
-              {day}
-              {events[day] && day !== today && <span aria-hidden="true" className="absolute bottom-0.5 h-1 w-1 rounded-full" style={{ background: events[day].color }} />}
+        <div className="mt-1 space-y-1">
+          {monthRows.map((row, ri) => (
+            <div key={ri} className="grid grid-cols-8 gap-1">
+              <span className="grid place-items-center text-[8px] font-bold text-slate-500 dark:text-slate-400">Wk {weekNumbers[ri]}</span>
+              {row.map((day, ci) => day == null ? <span key={ci} /> : (
+                <div
+                  key={ci}
+                  className={`relative grid aspect-square place-items-center rounded-lg text-[10px] font-bold ${day === today ? "text-white" : "text-slate-700 dark:text-slate-200"} ${holidays[day] ? "ring-2 ring-inset ring-amber-400/70 dark:ring-amber-300/50" : ""}`}
+                  style={day === today ? { background: item.color } : undefined}
+                >
+                  {day}
+                  {events[day] && day !== today && <span aria-hidden="true" className="absolute bottom-0.5 h-1 w-1 rounded-full" style={{ background: events[day].color }} />}
+                </div>
+              ))}
             </div>
           ))}
         </div>
         <div className="mt-3 space-y-2">
+          {Object.entries(holidays).map(([day, name]) => (
+            <div key={`h${day}`} className="flex items-center gap-2 text-[10px] font-bold text-amber-700 dark:text-amber-300">
+              <span aria-hidden="true" className="h-2 w-2 shrink-0 rounded-full bg-amber-400" />
+              <span>{name}</span>
+            </div>
+          ))}
           {Object.entries(events).map(([day, e]) => (
             <div key={day}>
               <div className="flex items-center justify-between gap-2 text-[10px] font-bold">

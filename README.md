@@ -862,6 +862,62 @@ axe-core scanned Enterprise Calendar's Preview, Variants and Properties
 tabs, light and dark — clean — plus a full 25-component Variants-tab
 resweep confirming no regression elsewhere.
 
+### Enterprise Calendar: three gaps against a real, self-rendering reference
+
+A third real Power Apps component — a genuinely self-rendering
+"Calendar Pro" built from a full `Children` tree (AutoLayout
+`GroupContainer`s, a 6-row-always month `Gallery`, a week/hour-grid
+view, an agenda view, a day-overflow peek modal, and a computed 3-year
+US federal holiday table) rather than a contract-only description —
+surfaced three more concrete, closeable gaps in this catalog's own
+Enterprise Calendar. Everything else in that reference (the actual
+`Children` tree itself, its `_`-prefixed internal Output workarounds,
+the peek-modal implementation) is architecture, not contract, and was
+deliberately not pursued here — the same "closes the documented
+contract, doesn't rewrite the architecture" call already made for
+Accordion Record List:
+
+- **`Config.ShowWeekNumbers`** — Month view now draws each row's own
+  ISO-8601 week number down the left edge when this toggle is on,
+  computed inside the component from `FocusDate` the same way month
+  and weekday names already are, matching Calendar Pro's own
+  always-6-row month grid exactly.
+- **Week view documented as what it actually needs to be** — the
+  contract previously just said "more per-day room for chips"; it now
+  says what `Config`'s own work-hours values were always for: Week view
+  renders as a real hour-by-hour grid across its seven columns,
+  windowed by that range, the same real gap Calendar Pro's own
+  week/hour-grid view surfaced.
+- **A new `Holidays` property** — `Config` already promised "holiday
+  tinting" with no data source behind it. Rather than compute a US
+  federal holiday table internally the way Calendar Pro does (which
+  would silently assume one specific country's calendar for every
+  host), `Holidays` follows the exact same materialize-upstream pattern
+  `Events` and `Channels` already use: the host supplies `Date`/`Name`
+  rows, blank shows no tinting at all, and a holiday is always paired
+  with its own `Name` as visible text on the cell, never color alone.
+
+The mockup shows all three together: the month grid's own week-number
+column, Founders Day tinted and named in the legend below the grid
+(a stand-in `Holidays` row), and the Week view thumbnail rebuilt as an
+actual hour grid with the Release event placed in its real hour slot
+instead of a plain per-day chip list.
+
+Two of the three additions initially failed axe-core's color-contrast
+check — the week-number/hour labels used a paler slate shade than the
+existing month-header row's own proven-safe one, and the Week view's
+"today" column label colored its text directly with the component's
+own accent color rather than going through this catalog's established
+`darken()`/`lighten()` `CONTAINER_TEXT_CLASS` pairing (the same fix
+Threshold Range Slider's zone label needed earlier). Both fixed and
+rescanned clean.
+
+Verified: `npm run lint && npm run build && npm run test:yaml` clean
+(28 components, unchanged). axe-core scanned Enterprise Calendar's
+Preview, Variants and Properties tabs, light and dark — clean after the
+contrast fix — plus a full 28-component Preview+Variants-tab resweep
+confirming no regression elsewhere.
+
 ### New components: closing a real category gap (25 → 28)
 
 The same PowerAppsUI research that produced the two gap-closing passes
