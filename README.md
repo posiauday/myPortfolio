@@ -1,7 +1,8 @@
 # Uday Posia — Portfolio & Enterprise Component Design System
 
 A single-page portfolio for Power Platform / Microsoft 365 delivery work, plus a
-browsable design-system reference for 25 reusable enterprise components.
+browsable design-system reference for dozens of reusable enterprise components
+and a verified Power Fx cheat sheet.
 
 Built with **Vite + React 18 + Tailwind CSS**. No animation library, no charting
 library — the interface recreations, charts and transitions are plain JSX, inline
@@ -19,6 +20,7 @@ SVG and CSS.
 | **Components** (`#components`) | The homepage shows 6 curated flagship picks (`FEATURED_IDS`), always — "Browse all {n} components" (both the button text and the count itself computed live from the catalog, not hand-typed) opens the separate Catalog page (`Catalog.jsx`, its own full page, own `#catalog` route) rather than expanding this section in place. A "Copy brand theme YAML" button generates a real Power Apps Studio theme (Themes panel > Add a theme > Paste theme) seeded from the site's own brand green. |
 | **Catalog** (`#catalog`) | The full, searchable, category-filtered component grid (28 components as of this writing — see "New components" below), as its own page — search/category state lives here and resets each time it's opened, deliberately not shared with the homepage's fixed featured set. |
 | **Component detail** | Per-component page with Preview, Variants, Properties, Events, Architecture, Examples, Accessibility and Limitations tabs, a live property configurator that regenerates the generated YAML (in two schema-conformant forms — see below) as you edit values, copyable docs, and an optional live Power Apps embed. Lives at `#components/<id>` (`useComponentRoute`), so the browser back button closes it and a direct link opens straight to that component — and closing it returns to wherever it was actually opened from, home or Catalog, not always home. |
+| **Cheat Sheet** (`#cheatsheet`) | A separate full page (`CheatSheet.jsx`) reached from the same nav row as "All Components": a searchable, category-filtered grid of 93 verified Power Fx formulas (Formulas tab) plus a curated, verified split of real Power Apps problems — ones with a documented fix and ones that are permanent platform constraints with none (Real Issues tab). See "Power Fx Cheat Sheet" below for how it was sourced and verified. |
 | **Recognition** (`#recognition`) | Awards, delivery-scale highlights, and certifications — a status pill reads "Certified" (green) or whatever else is in progress (amber). |
 | **Skills** | LinkedIn's real skill list with a checkmark on the ones actually endorsed — not composed testimonials, since no written quotes exist to use. |
 
@@ -1017,6 +1019,84 @@ described current UI state (not past-tense project history) were
 updated to reflect the real count — `Catalog.jsx`'s own header text and
 count were already computed live from the catalog and needed no change,
 only a stale doc comment and two README lines describing them did.
+
+### Power Fx Cheat Sheet
+
+A fourth PowerAppsUI reference, submitted as a print-to-PDF export of its
+own real "Power Fx Cheat Sheet" quick-reference page, became a separate
+full page on this site (`CheatSheet.jsx`, `#cheatsheet`) rather than
+another catalog entry — a formula reference isn't a component.
+
+The PDF itself was a genuine extraction challenge before it was a content
+one: `pdfinfo` showed a single 440×14,400pt page (an iOS Safari
+print-to-PDF of a long scrolling mobile-width capture), and its own code
+blocks had hard-wrapped mid-token as a result — `DateAdd(Today(), -30,
+TimeUn` and dozens like it. Every one of the 93 formulas that made it
+into this site's own cheat sheet was reconstructed from that wrapped
+text and then independently checked against Microsoft's own Power Fx
+reference docs, not re-typed from a guess at what the wrap probably
+meant:
+
+- **Delegation badges verified, not assumed.** `GroupBy`/`Distinct` are
+  confirmed permanently non-delegable on every data source (named
+  explicitly in Microsoft's own delegation overview); `AddColumns`'
+  own output stays capped at the non-delegation row limit even when the
+  `Filter` passed into it as an argument would otherwise delegate —
+  the source's own "NOT DELEGABLE" badges on all three held up.
+- **A real, load-bearing correction: `SaveData`/`LoadData` don't run in
+  a browser at all.** Not a 1MB cap being hit — Microsoft's own function
+  reference states outright that these two functions can't be used
+  inside Power Apps Studio or a web browser, full stop. An app authored
+  and only ever tested in the browser can ship with an offline feature
+  that has literally never once executed. This became the standout
+  entry in the new Real Issues tab's "no real fix" half.
+- **One planned issue turned out to be wrong, and was dropped.** Before
+  checking, `App.Formulas` named formulas were assumed to be unable to
+  depend on control properties. Microsoft's own docs say the opposite
+  — they can, and stay reactive as those properties change; the two
+  real constraints are no behavior functions/side effects and no
+  circular reference. Verifying before publishing caught this before
+  it became a wrong "no fix" entry on the page.
+- **The "Users & Profiles" category was cut short in the source
+  capture** at its very first card. Rather than leave the category at
+  one entry or invent the rest, it was rounded out to a real six using
+  additional verified Office 365 Users connector patterns
+  (`MyProfile()`, `Manager()`, `DirectReports()`, `SearchUserV2()`) —
+  labeled in the data file's own header comment as an addition beyond
+  what the source itself contained, the same honesty this catalog
+  already applies whenever a component's own contract goes beyond its
+  cited reference.
+
+A second, brainstormed pass (not from the PDF) produced the Real Issues
+tab itself: six genuinely common Power Apps problems with a documented
+fix (a non-delegable query's silent 500/2,000-row truncation, `ParseJSON`
+needing explicit `Text()`/`Value()`/`Boolean()` coercion, `Patch` to a
+SharePoint Choice/Person column needing the right record shape, a
+circular named formula, and this project's own already-verified
+component-`Record`-property-Default-doesn't-survive-a-paste finding
+from the Calendar Pro work above) and three that are permanent platform
+constraints with none (`SaveData`/`LoadData` in a browser; SharePoint's
+own 5,000-item list view threshold, enforced by SharePoint itself and
+not raisable by a tenant admin; and non-delegable functions' fundamental
+inability to see past whatever was actually cached locally). Every
+entry cites its real source.
+
+axe-core caught two real issues on first pass, both fixed and rescanned
+clean: every formula's code block needed `tabIndex={0}` for keyboard
+scroll access once a long line genuinely overflowed its card (WCAG's
+`scrollable-region-focusable` rule — the existing `.code-panel` class
+elsewhere on this site had simply never hit a line long enough to
+trigger it before), and the Real Issues cards' source citation used the
+same too-pale `text-slate-400 dark:text-slate-500` contrast mistake
+already caught and fixed on Enterprise Calendar earlier in this pass —
+swapped to the proven-safe `text-slate-500 dark:text-slate-400` pairing
+used everywhere else on this site.
+
+Verified: `npm run lint && npm run build && npm run test:yaml` clean.
+axe-core scanned the Cheat Sheet page in both Formulas and Real Issues
+modes, with an active search and an active category filter, light and
+dark — clean after the two fixes — plus a full 28-component
+Preview+Variants-tab resweep confirming no regression elsewhere.
 
 ### YAML schema conformance
 
