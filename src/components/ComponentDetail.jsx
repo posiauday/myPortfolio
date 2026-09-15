@@ -151,7 +151,7 @@ function Detail({ item, items, dark, onBack, onSwitch }) {
                   <span className="text-xs font-bold text-slate-600 dark:text-slate-300">cmp{pascal}.yaml &mdash; generated from this page&rsquo;s property and event contract, live-updated from the Configure panel on the Preview tab</span>
                   <button className="copy-btn light" onClick={() => copy(yamlText, "yaml")}>{copied === "yaml" ? <Check size={14} /> : <Copy size={14} />} {copied === "yaml" ? "Copied" : "Copy YAML"}</button>
                 </div>
-                <pre className="code-panel mt-3"><code>{yamlText}</code></pre>
+                <pre tabIndex={0} aria-label={`YAML for ${item.title}`} className="code-panel mt-3"><code>{yamlText}</code></pre>
               </div>
             )}
 

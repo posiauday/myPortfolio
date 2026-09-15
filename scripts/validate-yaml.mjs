@@ -29,6 +29,7 @@ import { load as parseYaml } from "js-yaml";
 import { components } from "../src/data/componentLibrary.js";
 import { pascalCase, buildComponentYaml, buildScreenControlYaml } from "../src/lib/componentDocs.js";
 import { buildBrandThemeYaml } from "../src/lib/themeYaml.js";
+import { CHILDREN_BUILDERS } from "../src/lib/componentChildren.js";
 
 const VALID_DEFINITION_TYPES = ["CanvasComponent", "CommandComponent"];
 const VALID_PROPERTY_KINDS = ["Input", "Output", "InputFunction", "OutputFunction", "Event", "Action"];
@@ -48,16 +49,26 @@ function assertFormula(value, context) {
 
 /* Independent of how componentDocs.js actually decides to quote a
    value — this only checks the outcome: a Number/Boolean default must
-   be a bare literal (Studio would type-error on a quoted one), and
-   everything else must be a quoted text literal (a bare multi-word
-   phrase isn't valid Power Fx and Studio's parser would reject it as
-   an unresolved identifier). */
+   be a bare literal (Studio would type-error on a quoted one), Text
+   must be a quoted text literal (a bare multi-word phrase isn't valid
+   Power Fx and Studio's parser would reject it as an unresolved
+   identifier), and Table/Record/Color must be a real structural
+   literal — a quoted-text stand-in for one of these (componentLibrary.js's
+   own prose "def", e.g. "12-point sample") is exactly the type-mismatch
+   bug sampleFormulas.js exists to prevent, so it's flagged here too in
+   case a future property is added without a matching real-formula entry. */
 function assertLiteralMatchesDataType(expr, dataType, context) {
   const isQuoted = expr.startsWith('"') && expr.endsWith('"');
   if (dataType === "Number") {
     if (isQuoted || !/^-?\d+(\.\d+)?$/.test(expr)) fail(context, `DataType Number but Default "${expr}" isn't a bare numeric literal`);
   } else if (dataType === "Boolean") {
     if (isQuoted || (expr !== "true" && expr !== "false")) fail(context, `DataType Boolean but Default "${expr}" isn't a bare true/false literal`);
+  } else if (dataType === "Table") {
+    if (!/^(Table|Filter)\(/.test(expr)) fail(context, `DataType Table but Default "${expr}" isn't a real Table(...)/Filter(...) literal`);
+  } else if (dataType === "Record") {
+    if (!expr.startsWith("{")) fail(context, `DataType Record but Default "${expr}" isn't a real {...} record literal`);
+  } else if (dataType === "Color") {
+    if (!/^RGBA\(/.test(expr)) fail(context, `DataType Color but Default "${expr}" isn't a real RGBA(...) literal`);
   } else if (!isQuoted) {
     fail(context, `DataType ${dataType} but Default "${expr}" isn't a quoted text literal`);
   }
@@ -105,6 +116,42 @@ function validateComponentDefinition(item) {
     // confirmed against real shipped component YAML on GitHub.
     if (!VALID_RETURN_TYPES.includes(entry.ReturnType)) fail(eventContext, `ReturnType "${entry.ReturnType}" not in ${JSON.stringify(VALID_RETURN_TYPES)}`);
     assertFormula(entry.Default, eventContext);
+  });
+
+  if (CHILDREN_BUILDERS[item.title]) validateChildrenTree(definition, context);
+}
+
+const CONTROL_REF_PATTERN = /^[\w/]+@\d+\.\d+\.\d+$/;
+
+/* A component listed in CHILDREN_BUILDERS claims a real, pasteable
+   visual layer, not just the property contract — so its Properties:/
+   Children: block gets checked as strictly as CustomProperties does:
+   real Height/Width, at least one real child control, each with a
+   real "Type@version" Control reference and every one of its own
+   Properties values a real Power Fx formula (parses to a string
+   starting with "="), not a leftover placeholder. */
+function validateChildrenTree(definition, context) {
+  const rootContext = `${context} (visual tree)`;
+  const rootProps = definition.Properties;
+  if (typeof rootProps !== "object" || rootProps === null) return fail(rootContext, "missing component-level Properties: (Height/Width/Fill)");
+  if (assertFormula(rootProps.Height, `${rootContext} > Properties.Height`) === null) return;
+  if (assertFormula(rootProps.Width, `${rootContext} > Properties.Width`) === null) return;
+
+  const children = definition.Children;
+  if (!Array.isArray(children) || children.length === 0) return fail(rootContext, "missing or empty Children: (no visual controls)");
+  children.forEach((child, i) => {
+    const keys = Object.keys(child || {});
+    const childContext = `${rootContext} > Children[${i}]`;
+    if (keys.length !== 1) return fail(childContext, `expected exactly one control name key, got ${JSON.stringify(keys)}`);
+    const [name] = keys;
+    const entry = child[name];
+    const entryContext = `${rootContext} > ${name}`;
+    if (typeof entry?.Control !== "string" || !CONTROL_REF_PATTERN.test(entry.Control)) {
+      fail(entryContext, `Control "${entry?.Control}" isn't a real "Type@x.y.z" reference`);
+    }
+    const props = entry?.Properties;
+    if (typeof props !== "object" || props === null) return fail(entryContext, "missing Properties:");
+    Object.entries(props).forEach(([propName, value]) => assertFormula(value, `${entryContext} > ${propName}`));
   });
 }
 

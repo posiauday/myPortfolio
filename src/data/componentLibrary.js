@@ -1,6 +1,7 @@
 import {
   Award, BarChart3, Database, FileText, Layers3, ShieldCheck, Sparkles, Workflow
 } from "lucide-react";
+import { CHILDREN_BUILDERS } from "../lib/componentChildren.js";
 
 /* ============================================================
    DATA — component library catalog
@@ -156,7 +157,7 @@ const overrides = {
     architecture: ["Host provides governed DAX measure", "Card formats value, trend and status", "OnSelect routes to a drill-through page", "ShowSparkline reuses the exact SVG-path approach ResponsiveLineChart uses at a smaller scale, rather than a second charting implementation", "Language is a pass-through, not a re-implementation — the host's own Text(Value, \"#,##0\", Language) already produces a correctly-formatted Value/Trend string before either ever reaches this component; Language only exists here so a host building a multi-region app has one place to see this card participates in that pattern. This Preview demonstrates the same underlying mechanism using the browser's own Intl.NumberFormat, the real JavaScript equivalent of what Power Apps' Language()-aware Text() does natively"],
     examples: [["Active projects", "Value bound to a live project count, Trend to the change since last week — the KPI a portfolio dashboard leads with."], ["At-risk projects", "Status set to a warning tone and Trend rising, so the color and the text say the same thing without a second glance."], ["Submitted this month", "Target set to a monthly goal, so Trend reads as progress toward it rather than change for its own sake."]],
     accessibility: ["Status is its own text property, not inferred from color, so a screen reader announces \"On track\" even where the trend arrow's color can't be perceived", "TooltipText carries the calculation explanation as text, not only as a hover-only visual", "Trend direction reads as a word alongside the arrow glyph, not the glyph alone", "The sparkline is decorative when ShowSparkline is on — Trend and Status already state the same direction as text, so nothing is lost if the sparkline itself can't be perceived", "A screen reader announces whatever locale-formatted string Language produced, so a Trend of \"12,4 %\" (de-DE) reads correctly in that locale rather than being misread as a decimal in the wrong place"],
-    limitations: ["Formatting must match the measure", "Tooltip definitions must be maintained with KPI logic", "Language affects Value/Trend's own formatting only; Label, Status and TooltipText remain whatever plain text the host supplies — translating those is a separate, host-owned localization table, the same pattern Power Apps' own global-apps guidance documents for translated strings"],
+    limitations: ["Formatting must match the measure", "Tooltip definitions must be maintained with KPI logic", "Language affects Value/Trend's own formatting only; Label, Status and TooltipText remain whatever plain text the host supplies — translating those is a separate, host-owned localization table, the same pattern Power Apps' own global-apps guidance documents for translated strings", "The pasteable component's own ShowSparkline renders as five Rectangle bars bound to SparklineData via Index(), not this page's own smoothed SVG curve — a real, Index()-bound mini bar-chart, deliberately simpler than trying to reproduce Catmull-Rom curve math as untested Power Fx formula text"],
     // Real variant names from researching published Power Apps KPI card
     // components (powerappsui.com's own KPI Cards catalog ships Standard/
     // Compact/Minimal/Filled/Chart) rather than this project's previous
@@ -654,7 +655,17 @@ const components = raw.map(([title, category, maturity], i) => {
     accessibility: spec.accessibility || base.accessibility,
     limitations: spec.limitations || base.limitations,
     variants: spec.variants || GENERIC_VARIANTS,
-    yamlStatus: maturity === "Verified"
+    // Most of the catalog's "Copy YAML" only ever exports the property/
+    // event contract — real, schema-valid, but no Children:, so a
+    // Studio paste creates an empty canvas with that contract wired up
+    // and nothing visible. CHILDREN_BUILDERS lists the components that
+    // now also export a real Rectangle/Label/Button control tree
+    // (componentChildren.js) matching this page's own live preview, so
+    // yamlStatus says exactly that instead of the same disclaimer every
+    // other still-contract-only component carries.
+    yamlStatus: CHILDREN_BUILDERS[title]
+      ? "Property/event contract plus a real visual control tree (Rectangle/Label/Button) — pastes as an actual visible component, not just the property scaffold"
+      : maturity === "Verified"
       ? "Property and event contract cross-checked against a published reference component; this project's own YAML source is drafted but not yet Studio-tested"
       : "Design specification only; executable YAML not yet built or verified"
   };

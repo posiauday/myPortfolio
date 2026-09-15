@@ -20,7 +20,11 @@
    Boolean properties, which would fail Studio's own type checking on
    paste.
    ============================================================ */
+import { SAMPLE_FORMULAS } from "./sampleFormulas.js";
+import { CHILDREN_BUILDERS } from "./componentChildren.js";
+
 const TYPE_TO_DATATYPE = { Table: "Table", Text: "Text", Number: "Number", Boolean: "Boolean", DateTime: "DateAndTime", Record: "Record", Color: "Color" };
+const STRUCTURED_TYPES = new Set(["Table", "Record", "Color"]);
 
 function pascalCase(title) {
   return title.replace(/[^a-zA-Z0-9]+/g, " ").trim().split(" ").map(w => w.charAt(0).toUpperCase() + w.slice(1)).join("");
@@ -56,7 +60,19 @@ function powerFxTextLiteral(value) {
   return `"${value.replace(/"/g, '""')}"`;
 }
 
-function formatFormulaValue(rawValue, dataType) {
+/* Table/Record/Color properties skip all of the above: their
+   catalog `def` is prose ("12-point sample", "Sample orders"), never
+   a literal, and wrapping prose as quoted Text for a Table/Record/
+   Color-typed property is a type mismatch Studio's compiler would
+   reject outright — the same family of bug the Event ReturnType/
+   Default fix caught. `realFormula` (from sampleFormulas.js, keyed by
+   "ComponentTitle::PropertyName") is the actual, correctly-shaped
+   Power Fx literal to emit instead; it's required, not optional, so a
+   catalog property added without a matching entry there fails loudly
+   (via the `components.forEach` assertion in buildComponentYaml/
+   buildScreenControlYaml below) instead of shipping quietly broken. */
+function formatFormulaValue(rawValue, dataType, realFormula) {
+  if (realFormula !== undefined) return { expression: realFormula, multiline: needsMultiline(realFormula) };
   const value = String(rawValue);
   const isNumericLiteral = dataType === "Number" && /^-?\d+(\.\d+)?$/.test(value.trim());
   const isBooleanLiteral = dataType === "Boolean" && (value === "true" || value === "false");
@@ -64,9 +80,22 @@ function formatFormulaValue(rawValue, dataType) {
   return { expression, multiline: needsMultiline(expression) };
 }
 
-function pushFormulaProperty(lines, indent, name, rawValue, dataType) {
+/* Same "=" + multiline rules as pushFormulaProperty, for a formula
+   that's already real Power Fx text (componentChildren.js's own
+   control properties) rather than a catalog `def` that still needs
+   type-aware literal-building. */
+function pushRawFormula(lines, indent, name, expression) {
+  if (needsMultiline(expression)) {
+    lines.push(`${indent}${name}: |-`);
+    lines.push(`${indent}  =${expression}`);
+  } else {
+    lines.push(`${indent}${name}: =${expression}`);
+  }
+}
+
+function pushFormulaProperty(lines, indent, name, rawValue, dataType, realFormula) {
   if (!rawValue) return;
-  const { expression, multiline } = formatFormulaValue(rawValue, dataType);
+  const { expression, multiline } = formatFormulaValue(rawValue, dataType, realFormula);
   if (multiline) {
     // "|-" (strip chomping), not bare "|": plain "|" keeps one trailing
     // newline in the parsed value, which would leave a stray "\n" stuck
@@ -103,11 +132,17 @@ function buildComponentYaml(item, valueOverrides = {}) {
   item.properties.forEach(([name, type, def]) => {
     const dataType = TYPE_TO_DATATYPE[type] || "Text";
     const value = valueOverrides[name] ?? def;
+    let realFormula;
+    if (STRUCTURED_TYPES.has(dataType)) {
+      const key = `${item.title}::${name}`;
+      realFormula = SAMPLE_FORMULAS[key];
+      if (realFormula === undefined) throw new Error(`sampleFormulas.js is missing a real Power Fx literal for "${key}" (DataType: ${dataType})`);
+    }
     lines.push(`      ${name}:`);
     lines.push(`        PropertyKind: Input`);
     lines.push(`        DisplayName: "${name}"`);
     lines.push(`        DataType: ${dataType}`);
-    pushFormulaProperty(lines, "        ", "Default", value, dataType);
+    pushFormulaProperty(lines, "        ", "Default", value, dataType, realFormula);
   });
   item.events.forEach(([name]) => {
     lines.push(`      ${name}:`);
@@ -116,6 +151,19 @@ function buildComponentYaml(item, valueOverrides = {}) {
     lines.push(`        ReturnType: None`);
     lines.push(`        Default: =false`);
   });
+  const childrenBuilder = CHILDREN_BUILDERS[item.title];
+  if (childrenBuilder) {
+    const { properties, children } = childrenBuilder(pascal);
+    lines.push(`    Properties:`);
+    Object.entries(properties).forEach(([name, value]) => pushRawFormula(lines, "      ", name, String(value)));
+    lines.push(`    Children:`);
+    children.forEach(child => {
+      lines.push(`      - ${child.name}:`);
+      lines.push(`          Control: ${child.control}`);
+      lines.push(`          Properties:`);
+      Object.entries(child.properties).forEach(([name, value]) => pushRawFormula(lines, "            ", name, String(value)));
+    });
+  }
   return lines.join("\n");
 }
 
@@ -141,8 +189,15 @@ function buildScreenControlYaml(item, valueOverrides = {}) {
     `    Y: =40`
   ];
   item.properties.forEach(([name, type, def]) => {
+    const dataType = TYPE_TO_DATATYPE[type] || "Text";
     const value = valueOverrides[name] ?? def;
-    pushFormulaProperty(lines, "    ", name, value, TYPE_TO_DATATYPE[type] || "Text");
+    let realFormula;
+    if (STRUCTURED_TYPES.has(dataType)) {
+      const key = `${item.title}::${name}`;
+      realFormula = SAMPLE_FORMULAS[key];
+      if (realFormula === undefined) throw new Error(`sampleFormulas.js is missing a real Power Fx literal for "${key}" (DataType: ${dataType})`);
+    }
+    pushFormulaProperty(lines, "    ", name, value, dataType, realFormula);
   });
   return lines.join("\n");
 }
