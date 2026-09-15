@@ -113,7 +113,14 @@ export default function Portfolio() {
   return (
     <main className={dark ? "dark min-h-screen bg-[#0B1110] text-white" : "min-h-screen bg-[#FBFDFB] text-[#17201B]"}>
       <nav
-        className={`fixed inset-x-0 top-0 z-30 transition-[padding] duration-300 motion-reduce:transition-none ${scrolledPastHero ? "p-2" : "p-3"}`}
+        // The rounded pill below is inset from this wrapper by its own
+        // padding (p-3/p-2), and without a background here that inset
+        // margin is fully transparent — scrolled page content bleeds
+        // through it right at the top edge, briefly visible on top of
+        // (or peeking above) the pill during a scroll. Matching the
+        // page's own background here closes that gap; it's invisible
+        // at rest since it's the same color as what's behind it.
+        className={`fixed inset-x-0 top-0 z-30 bg-[#FBFDFB] transition-[padding] duration-300 motion-reduce:transition-none dark:bg-[#0B1110] ${scrolledPastHero ? "p-2" : "p-3"}`}
       >
         <div className="mx-auto max-w-7xl">
           <div
