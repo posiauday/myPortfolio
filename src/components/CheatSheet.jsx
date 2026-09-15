@@ -17,7 +17,7 @@ const BADGE_STYLE = {
    own Copy YAML/Copy Docs buttons already use. */
 function FormulaCard({ item, copied, copy }) {
   return (
-    <div className="flex flex-col rounded-2xl border border-slate-200 bg-white p-5 dark:border-white/10 dark:bg-white/5">
+    <div className="min-w-0 flex flex-col rounded-2xl border border-slate-200 bg-white p-5 dark:border-white/10 dark:bg-white/5">
       <div className="flex flex-wrap items-start justify-between gap-2">
         <h3 className="font-bold">{item.title}</h3>
         {item.badge && (
@@ -26,7 +26,15 @@ function FormulaCard({ item, copied, copy }) {
           </span>
         )}
       </div>
-      <pre tabIndex={0} aria-label={`Code for ${item.title}`} className="code-panel mt-3 text-[11px]"><code>{item.code}</code></pre>
+      {/* min-w-0 on both this card (a CSS grid item) and the <pre> itself
+          (a flex item of this card's own flex column) — without it, a
+          flex/grid item's default min-width is its content's min-content
+          size, so .code-panel's unwrapped long lines blew the card, the
+          grid track, and the whole page wider than the viewport instead
+          of scrolling horizontally inside .code-panel's own overflow:auto
+          the way they were meant to. A real phone-width bug, not a
+          device quirk — this is the actual fix, not a workaround. */}
+      <pre tabIndex={0} aria-label={`Code for ${item.title}`} className="code-panel mt-3 min-w-0 text-[11px]"><code>{item.code}</code></pre>
       <div className="mt-3 flex flex-1 items-end justify-between gap-3">
         {item.note ? <p className="text-xs leading-5 text-slate-600 dark:text-slate-300">{item.note}</p> : <span />}
         <button type="button" className="copy-btn light shrink-0" onClick={() => copy(item.code, item.id)}>
@@ -40,14 +48,14 @@ function FormulaCard({ item, copied, copy }) {
 function IssueCard({ item, tone }) {
   const isFix = tone === "fix";
   return (
-    <div className={`rounded-2xl border p-5 ${isFix ? "border-emerald-200 bg-emerald-50/60 dark:border-emerald-400/20 dark:bg-emerald-400/5" : "border-amber-200 bg-amber-50/60 dark:border-amber-400/20 dark:bg-amber-400/5"}`}>
+    <div className={`min-w-0 rounded-2xl border p-5 ${isFix ? "border-emerald-200 bg-emerald-50/60 dark:border-emerald-400/20 dark:bg-emerald-400/5" : "border-amber-200 bg-amber-50/60 dark:border-amber-400/20 dark:bg-amber-400/5"}`}>
       <span className={`rounded-full px-2 py-0.5 text-[10px] font-black uppercase tracking-wide ${isFix ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-400/15 dark:text-emerald-300" : "bg-amber-100 text-amber-700 dark:bg-amber-400/15 dark:text-amber-300"}`}>
         {isFix ? "Has a fix" : "No real fix — design around it"}
       </span>
       <h3 className="mt-2 font-black leading-6">{item.title}</h3>
       <p className="mt-2 text-sm leading-6 text-slate-600 dark:text-slate-300">{item.summary}</p>
       <p className="mt-2 text-sm leading-6 text-slate-700 dark:text-slate-200"><b className="font-bold">{isFix ? "Fix: " : "Why not: "}</b>{isFix ? item.fix : item.why}</p>
-      <p className="mt-3 text-xs font-bold text-slate-500 dark:text-slate-400">{item.source}</p>
+      <p className="mt-3 break-words text-xs font-bold text-slate-500 dark:text-slate-400">{item.source}</p>
     </div>
   );
 }
