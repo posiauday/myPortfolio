@@ -4,7 +4,7 @@ import { categories, components } from "../data/componentLibrary.js";
 import ComponentCard from "./ComponentCard.jsx";
 
 /* ============================================================
-   CATALOG — the full 25-component browsing page
+   CATALOG — the full component browsing page
    A separate full-page view (own header, replaces the whole page —
    same pattern as ComponentDetail.jsx) rather than an inline expansion
    of the homepage's featured grid, so browsing the entire design

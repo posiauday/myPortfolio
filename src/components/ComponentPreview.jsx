@@ -1866,6 +1866,142 @@ function ComponentPreview({ item, values = {}, interactive = true, variant = nul
     );
   }
 
+  if (item.title === "Threshold Range Slider") {
+    const min = 0, max = 100, value = 62;
+    // Zones sorted ascending by UpTo, matching the property's own stated
+    // convention — On track/Watch/Over, the same three-band shape the
+    // Examples tab's "Budget utilization" scenario names.
+    const zones = [
+      { label: "On track", from: 0, to: 70, color: item.color },
+      { label: "Watch", from: 70, to: 90, color: "#D83B01" },
+      { label: "Over", from: 90, to: 100, color: "#B91C1C" }
+    ];
+    const currentZone = zones.find(z => value <= z.to) ?? zones[zones.length - 1];
+    const pct = ((value - min) / (max - min)) * 100;
+    const readOnly = variant === "Read-only display";
+    const compact = variant === "Compact";
+    if (variant === "Vertical") return (
+      <div className="flex items-center gap-3">
+        <div className="relative h-32 w-2 shrink-0 overflow-hidden rounded-full bg-slate-100 dark:bg-white/10">
+          {zones.map(z => (
+            <div key={z.label} className="absolute w-full" style={{ bottom: `${(z.from / max) * 100}%`, height: `${((z.to - z.from) / max) * 100}%`, background: z.color }} />
+          ))}
+          <span aria-hidden="true" className="absolute left-1/2 h-3.5 w-3.5 -translate-x-1/2 translate-y-1/2 rounded-full border-2 bg-white shadow dark:bg-[#17201B]" style={{ bottom: `${pct}%`, borderColor: currentZone.color }} />
+        </div>
+        <div>
+          <span className="text-xs font-bold text-slate-600 dark:text-slate-300">Volume</span>
+          <b className="mt-1 block text-lg">{value}</b>
+        </div>
+      </div>
+    );
+    return (
+      <div>
+        <div className="flex items-center justify-between">
+          <span className="text-xs font-bold text-slate-600 dark:text-slate-300">Budget utilization</span>
+          {!compact && <b className="text-sm">{value}%</b>}
+        </div>
+        <div className={`relative mt-3 h-2 overflow-hidden rounded-full bg-slate-100 dark:bg-white/10 ${readOnly ? "opacity-70" : ""}`}>
+          {zones.map(z => (
+            <div key={z.label} className="absolute h-full" style={{ left: `${(z.from / max) * 100}%`, width: `${((z.to - z.from) / max) * 100}%`, background: z.color }} />
+          ))}
+          {/* ReadOnly swaps the draggable-looking circular handle for a
+              thin marker line — a real affordance difference, not just a
+              dimmed version of the same handle, since ReadOnly means
+              nothing here is actually draggable. */}
+          {readOnly ? (
+            <span aria-hidden="true" className="absolute top-0 h-full w-0.5 bg-white dark:bg-[#17201B]" style={{ left: `${pct}%` }} />
+          ) : (
+            <span aria-hidden="true" className="absolute top-1/2 h-4 w-4 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 bg-white shadow dark:bg-[#17201B]" style={{ left: `${pct}%`, borderColor: currentZone.color }} />
+          )}
+        </div>
+        {!compact && (
+          <div
+            className={`mt-2 flex items-center gap-1.5 text-[10px] font-bold ${CONTAINER_TEXT_CLASS}`}
+            style={{ "--badge-light": darken(currentZone.color), "--badge-dark": lighten(currentZone.color) }}
+          >
+            <span aria-hidden="true" className="h-2 w-2 shrink-0 rounded-full" style={{ background: currentZone.color }} />
+            {currentZone.label}
+          </div>
+        )}
+      </div>
+    );
+  }
+
+  if (item.title === "Contextual Detail Panel") {
+    const left = variant === "Left-positioned";
+    const viewOnly = variant === "View-only";
+    const wide = variant === "Wide";
+    const buttons = viewOnly ? [{ label: "Close", primary: false }] : [{ label: "Cancel", primary: false }, { label: "Save", primary: true }];
+    return (
+      <div className="relative overflow-hidden rounded-xl bg-slate-200 dark:bg-white/10" style={{ height: 210 }}>
+        {/* IsLightDismiss's own backdrop — the panel itself sits on top,
+            covering most but not all of it, so the "click outside to
+            close" affordance this property adds is visible as real
+            remaining backdrop, not implied. */}
+        <div aria-hidden="true" className="absolute inset-0 bg-black/15 dark:bg-black/40" />
+        <div
+          className={`absolute inset-y-0 flex flex-col bg-white shadow-2xl dark:bg-[#17201B] ${left ? "left-0 rounded-r-2xl" : "right-0 rounded-l-2xl"}`}
+          style={{ width: wide ? "88%" : "68%" }}
+        >
+          <div className="flex items-start justify-between border-b border-slate-100 p-3 dark:border-white/10">
+            <div className="min-w-0">
+              <b className="block truncate text-sm">Edit project</b>
+              <span className="mt-0.5 block truncate text-[10px] text-slate-500 dark:text-slate-400">ORD-4821 &mdash; Acme Corp</span>
+            </div>
+            <span aria-hidden="true" className="shrink-0 text-slate-400 dark:text-slate-500">&#10005;</span>
+          </div>
+          <div className="flex-1 space-y-2 overflow-hidden p-3">
+            <span aria-hidden="true" className="block h-3 w-2/3 rounded bg-slate-100 dark:bg-white/10" />
+            <span aria-hidden="true" className="block h-3 w-1/2 rounded bg-slate-100 dark:bg-white/10" />
+            {wide && <span aria-hidden="true" className="block h-16 w-full rounded bg-slate-100 dark:bg-white/10" />}
+          </div>
+          <div className="flex justify-end gap-2 border-t border-slate-100 p-3 dark:border-white/10">
+            {buttons.map(b => (
+              <span
+                key={b.label}
+                className={`rounded-full px-3 py-1.5 text-xs font-bold ${b.primary ? "text-white" : "bg-slate-100 text-slate-600 dark:bg-white/10 dark:text-slate-300"}`}
+                style={b.primary ? { background: item.color } : undefined}
+              >
+                {b.label}
+              </span>
+            ))}
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (item.title === "Confirmation Toast") {
+    const tones = {
+      Success: { bg: "bg-green-50 dark:bg-green-900/20", text: "text-green-700 dark:text-green-300", icon: "✓" },
+      Warning: { bg: "bg-amber-50 dark:bg-amber-900/20", text: "text-amber-700 dark:text-amber-300", icon: "⚠️" }
+    };
+    const persistent = variant === "Persistent warning";
+    const top = variant === "Top-positioned";
+    const undoable = variant === "Undoable action";
+    const t = persistent ? tones.Warning : tones.Success;
+    const message = persistent ? "Large upload in progress" : undoable ? "Task deleted" : "Changes saved";
+    return (
+      <div className="relative overflow-hidden rounded-xl bg-slate-50 dark:bg-white/5" style={{ height: 150 }}>
+        {/* Faux background content, aria-hidden, just to sell that this
+            component floats over a real screen rather than being the
+            whole screen itself. */}
+        <div aria-hidden="true" className="absolute inset-x-3 top-3 grid grid-cols-3 gap-1.5 opacity-40">
+          {Array.from({ length: 3 }).map((_, i) => <span key={i} className="h-10 rounded-lg bg-slate-200 dark:bg-white/10" />)}
+        </div>
+        <div className={`absolute inset-x-3 flex items-center gap-2 rounded-xl px-3 py-2.5 shadow-lg ${t.bg} ${top ? "top-3" : "bottom-3"}`}>
+          <span aria-hidden="true">{t.icon}</span>
+          <span className={`min-w-0 flex-1 truncate text-xs font-bold ${t.text}`}>{message}</span>
+          {/* OnAction (Undo) and the visitor's own manual dismiss are
+              two different real buttons with two different meanings —
+              never the same tap target standing in for both. */}
+          {undoable && <Btn type="button" className={`shrink-0 text-xs font-black underline ${t.text}`}>Undo</Btn>}
+          {persistent && <Btn type="button" aria-label="Dismiss" className={`shrink-0 text-xs font-bold ${t.text}`}>&#10005;</Btn>}
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-3">
       {["Submitted", "In review", "Approved", "Operational"].map((x, i) => (

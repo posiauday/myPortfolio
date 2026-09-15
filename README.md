@@ -16,8 +16,8 @@ SVG and CSS.
 | **Platform** | Microsoft's own official Power Platform product icons orbiting a central hub in two counter-rotating rings — pure CSS, no animation library (see `PlatformOrbit.jsx`). |
 | **Projects** (`#projects`) | Seven project showcases in a rail-and-window layout: pick a project from the rail, page through its screens in a window-framed preview. Every project is presented under a generic name and every number shown is synthetic. |
 | **Experience** (`#experience`) | An animated career timeline: a gradient rail draws itself in as you scroll past it (`useScrollFill`) with a glowing beam riding the same progress down the rail, each entry fades up into view the first time it's reached (`useRevealEach`), the current role's card traces a rotating border-beam, and every card gets a cursor-tracked spotlight glow (`useSpotlight`). A number ticker counts up the years of experience on scroll-in, and "Show more" expands a card's remaining highlights via a smooth grid-row transition rather than popping open. Real employers, roles and dates, each with a collapsible highlight list. |
-| **Components** (`#components`) | The homepage shows 6 curated flagship picks (`FEATURED_IDS`), always — "Browse all 25 components" opens the separate Catalog page (`Catalog.jsx`, its own full page, own `#catalog` route) rather than expanding this section in place. A "Copy brand theme YAML" button generates a real Power Apps Studio theme (Themes panel > Add a theme > Paste theme) seeded from the site's own brand green. |
-| **Catalog** (`#catalog`) | The full, searchable, category-filtered 25-component grid, as its own page — search/category state lives here and resets each time it's opened, deliberately not shared with the homepage's fixed featured set. |
+| **Components** (`#components`) | The homepage shows 6 curated flagship picks (`FEATURED_IDS`), always — "Browse all {n} components" (both the button text and the count itself computed live from the catalog, not hand-typed) opens the separate Catalog page (`Catalog.jsx`, its own full page, own `#catalog` route) rather than expanding this section in place. A "Copy brand theme YAML" button generates a real Power Apps Studio theme (Themes panel > Add a theme > Paste theme) seeded from the site's own brand green. |
+| **Catalog** (`#catalog`) | The full, searchable, category-filtered component grid (28 components as of this writing — see "New components" below), as its own page — search/category state lives here and resets each time it's opened, deliberately not shared with the homepage's fixed featured set. |
 | **Component detail** | Per-component page with Preview, Variants, Properties, Events, Architecture, Examples, Accessibility and Limitations tabs, a live property configurator that regenerates the generated YAML (in two schema-conformant forms — see below) as you edit values, copyable docs, and an optional live Power Apps embed. Lives at `#components/<id>` (`useComponentRoute`), so the browser back button closes it and a direct link opens straight to that component — and closing it returns to wherever it was actually opened from, home or Catalog, not always home. |
 | **Recognition** (`#recognition`) | Awards, delivery-scale highlights, and certifications — a status pill reads "Certified" (green) or whatever else is in progress (amber). |
 | **Skills** | LinkedIn's real skill list with a checkmark on the ones actually endorsed — not composed testimonials, since no written quotes exist to use. |
@@ -861,6 +861,78 @@ Verified: `npm run lint && npm run build && npm run test:yaml` clean.
 axe-core scanned Enterprise Calendar's Preview, Variants and Properties
 tabs, light and dark — clean — plus a full 25-component Variants-tab
 resweep confirming no regression elsewhere.
+
+### New components: closing a real category gap (25 → 28)
+
+The same PowerAppsUI research that produced the two gap-closing passes
+and the three platform-gotcha notes above also turned up a category
+this catalog had no coverage of at all: no range input beyond a single
+Number field, no side-panel/overlay pattern besides one fixed-size
+dialog, and no transient-feedback component — the exact shape of
+several items on PowerAppsUI's own "Coming Soon" list (a Slider, a
+Bottom/Side Sheet, a Snackbar), meaning they haven't built these
+either.
+
+Rather than copy their coming-soon list directly (most of it —
+Bottom Nav, FAB, Top App Bar — is Material Design mobile-app-shell
+chrome, a real pattern family but not this catalog's own PMO/governance
+desktop-dashboard shape), three components were chosen and each grounded
+in a real, named Microsoft reference rather than invented from scratch,
+the same "Verified" bar every cross-checked component in this catalog
+already holds to:
+
+- **Threshold Range Slider** — the real modern Slider control's own
+  `Default`/`Min`/`Max`/`Value`/`OnChange` contract (including the
+  control's own recent split of `Default`, the initial value, from
+  `Value`, a dedicated read-only output — adopted here exactly), plus
+  named, colored `Zones` (a governance addition the bare native control
+  has no concept of at all) so a budget-utilization or risk-appetite
+  slider reads its own "On track / Watch / Over" state without the
+  visitor doing the math themselves.
+- **Contextual Detail Panel** — modeled directly on the real Microsoft
+  Creator Kit Panel control, which itself documents mimicking Fluent
+  UI's own Panel: `Title`/`Subtitle`/`Position`/`DialogWidth`/`Buttons`
+  (a table of `{Label, ButtonType}` rows, `Standard` or `Primary`) and
+  the four `ContentX`/`ContentY`/`ContentWidth`/`ContentHeight`
+  properties a host's own container binds to for placing arbitrary
+  content inside the panel — all real, matched property-for-property.
+  One addition beyond that reference, `IsLightDismiss`, is called out
+  explicitly in both Architecture and Limitations as grounded in the
+  wider Fluent ecosystem's own real `isLightDismiss` pattern rather than
+  the Creator Kit Panel's own specific documented properties — the same
+  honesty this catalog already applies to Enterprise Dialog's own `Size`
+  property.
+- **Confirmation Toast** — reuses Power Fx's own real `Notify()`
+  function's contract directly (`NotificationType`'s real four-value
+  enum, the same 500-character message limit, the same real 10-second
+  default timeout) and Dataverse's own real `appnotification` table's
+  `Priority` column, as a real, themeable, positionable, actionable
+  component — the Material Design "Undo" snackbar pattern `Notify()`
+  itself has no equivalent for, never a replacement for `Notify()`
+  inside the same app.
+
+Each ships with the full contract this catalog holds every component
+to — Properties, Events, Architecture, Examples, Accessibility,
+Limitations, and four real rendered Variants apiece (not text-only
+description cards, per the Variants-tab rework earlier in this
+document) — plus a bespoke `ComponentPreview.jsx` mockup for the base
+render and every variant, the same as all 25 components before them.
+
+Verified: `npm run lint && npm run build && npm run test:yaml` clean —
+28 components now pass schema conformance. axe-core scanned all three
+new components' Preview, Variants and Properties tabs, light and dark;
+caught one real contrast bug on first pass (the Zone label's text used
+the raw zone color directly instead of this catalog's own established
+`darken()`/`lighten()` `CONTAINER_TEXT_CLASS` pairing, failing in dark
+mode), fixed and rescanned clean. Then re-ran the full sweep across all
+28 components' Variants tabs and all 28 components' Preview tabs plus
+the Catalog/homepage card grid — zero violations anywhere, confirming
+the three new components integrate cleanly with the existing 25 and
+nothing regressed. The two hardcoded "25 component[s]" mentions that
+described current UI state (not past-tense project history) were
+updated to reflect the real count — `Catalog.jsx`'s own header text and
+count were already computed live from the catalog and needed no change,
+only a stale doc comment and two README lines describing them did.
 
 ### YAML schema conformance
 
