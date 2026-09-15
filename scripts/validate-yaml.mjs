@@ -116,6 +116,23 @@ function validateComponentDefinition(item) {
     // confirmed against real shipped component YAML on GitHub.
     if (!VALID_RETURN_TYPES.includes(entry.ReturnType)) fail(eventContext, `ReturnType "${entry.ReturnType}" not in ${JSON.stringify(VALID_RETURN_TYPES)}`);
     assertFormula(entry.Default, eventContext);
+    if (entry.Parameters !== undefined) {
+      if (!Array.isArray(entry.Parameters) || entry.Parameters.length === 0) {
+        fail(eventContext, `Parameters present but not a non-empty list`);
+      } else {
+        entry.Parameters.forEach((param, i) => {
+          const keys = Object.keys(param || {});
+          const paramContext = `${eventContext} > Parameters[${i}]`;
+          if (keys.length !== 1) return fail(paramContext, `expected exactly one parameter name key, got ${JSON.stringify(keys)}`);
+          const [pname] = keys;
+          const pentry = param[pname];
+          const pContext = `${eventContext} > ${pname}`;
+          if (!VALID_DATA_TYPES.includes(pentry?.DataType)) fail(pContext, `DataType "${pentry?.DataType}" not in ${JSON.stringify(VALID_DATA_TYPES)}`);
+          const expr = assertFormula(pentry?.Default, pContext);
+          if (expr !== null) assertLiteralMatchesDataType(expr, pentry.DataType, pContext);
+        });
+      }
+    }
   });
 
   if (CHILDREN_BUILDERS[item.title]) validateChildrenTree(definition, context);
@@ -149,15 +166,22 @@ function validateChildrenTree(definition, context) {
   if (assertFormula(rootProps.Height, `${rootContext} > Properties.Height`) === null) return;
   if (assertFormula(rootProps.Width, `${rootContext} > Properties.Width`) === null) return;
 
-  const children = definition.Children;
-  if (!Array.isArray(children) || children.length === 0) return fail(rootContext, "missing or empty Children: (no visual controls)");
+  validateChildrenList(definition.Children, rootContext);
+}
+
+/* Recursive — a real component's Children: nests arbitrarily deep (a
+   Gallery's template child is itself a GroupContainer with its own
+   Children:), so this walks every level the same way, not just the
+   top one. */
+function validateChildrenList(children, parentContext) {
+  if (!Array.isArray(children) || children.length === 0) return fail(parentContext, "missing or empty Children: (no visual controls)");
   children.forEach((child, i) => {
     const keys = Object.keys(child || {});
-    const childContext = `${rootContext} > Children[${i}]`;
+    const childContext = `${parentContext} > Children[${i}]`;
     if (keys.length !== 1) return fail(childContext, `expected exactly one control name key, got ${JSON.stringify(keys)}`);
     const [name] = keys;
     const entry = child[name];
-    const entryContext = `${rootContext} > ${name}`;
+    const entryContext = `${parentContext} > ${name}`;
     if (typeof entry?.Control !== "string" || !CONTROL_REF_PATTERN.test(entry.Control)) {
       fail(entryContext, `Control "${entry?.Control}" isn't a real "Type@x.y.z" reference`);
     }
@@ -169,6 +193,7 @@ function validateChildrenTree(definition, context) {
       if (invalidForType.includes(propName)) fail(`${entryContext} > ${propName}`, `${controlType} does not support this property (confirmed via a real Studio PA2108 paste error) — remove it, don't rename it`);
       assertFormula(value, `${entryContext} > ${propName}`);
     });
+    if (entry?.Children !== undefined) validateChildrenList(entry.Children, entryContext);
   });
 }
 

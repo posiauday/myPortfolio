@@ -93,6 +93,25 @@ function pushRawFormula(lines, indent, name, expression) {
   }
 }
 
+/* Recursive: a real component's Children: tree nests arbitrarily deep
+   (a Gallery's template child is itself a GroupContainer with its own
+   Children:, etc.) — this walks componentChildren.js's own {name,
+   control, variant?, properties, children?} node shape and emits each
+   level at the right indent, rather than assuming one flat level. */
+function emitChildren(lines, indent, children) {
+  children.forEach(child => {
+    lines.push(`${indent}- ${child.name}:`);
+    lines.push(`${indent}    Control: ${child.control}`);
+    if (child.variant) lines.push(`${indent}    Variant: ${child.variant}`);
+    lines.push(`${indent}    Properties:`);
+    Object.entries(child.properties).forEach(([name, value]) => pushRawFormula(lines, `${indent}      `, name, String(value)));
+    if (child.children?.length) {
+      lines.push(`${indent}    Children:`);
+      emitChildren(lines, `${indent}      `, child.children);
+    }
+  });
+}
+
 function pushFormulaProperty(lines, indent, name, rawValue, dataType, realFormula) {
   if (!rawValue) return;
   const { expression, multiline } = formatFormulaValue(rawValue, dataType, realFormula);
@@ -144,25 +163,31 @@ function buildComponentYaml(item, valueOverrides = {}) {
     lines.push(`        DataType: ${dataType}`);
     pushFormulaProperty(lines, "        ", "Default", value, dataType, realFormula);
   });
+  const childrenBuilder = CHILDREN_BUILDERS[item.title];
+  const built = childrenBuilder?.(pascal);
+  const eventParameters = built?.eventParameters || {};
   item.events.forEach(([name]) => {
     lines.push(`      ${name}:`);
     lines.push(`        PropertyKind: Event`);
     lines.push(`        DisplayName: "${name}"`);
     lines.push(`        ReturnType: None`);
     lines.push(`        Default: =false`);
+    const params = eventParameters[name];
+    if (params?.length) {
+      lines.push(`        Parameters:`);
+      params.forEach(p => {
+        lines.push(`          - ${p.name}:`);
+        lines.push(`              DataType: ${p.dataType}`);
+        pushRawFormula(lines, "              ", "Default", p.defaultFormula);
+      });
+    }
   });
-  const childrenBuilder = CHILDREN_BUILDERS[item.title];
-  if (childrenBuilder) {
-    const { properties, children } = childrenBuilder(pascal);
+  if (built) {
+    const { properties, children } = built;
     lines.push(`    Properties:`);
     Object.entries(properties).forEach(([name, value]) => pushRawFormula(lines, "      ", name, String(value)));
     lines.push(`    Children:`);
-    children.forEach(child => {
-      lines.push(`      - ${child.name}:`);
-      lines.push(`          Control: ${child.control}`);
-      lines.push(`          Properties:`);
-      Object.entries(child.properties).forEach(([name, value]) => pushRawFormula(lines, "            ", name, String(value)));
-    });
+    emitChildren(lines, "      ", children);
   }
   return lines.join("\n");
 }
