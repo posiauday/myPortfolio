@@ -526,22 +526,38 @@ function ComponentPreview({ item, values = {}, interactive = true, variant = nul
   if (item.title === "Accordion Record List") {
     // SelectionMode Multiple — checked demonstrates OnSelectionChange's
     // real checkbox column rather than only describing it in Properties.
-    // Both groups expanded at once — Single-expand is the variant that
-    // enforces only one open at a time; Standard itself makes no such
-    // restriction, so its own mockup should actually show two.
+    // Both non-locked groups expanded at once — Single-expand is the
+    // variant that enforces only one open at a time; Standard itself
+    // makes no such restriction, so its own mockup should actually show
+    // two.
     const singleExpand = variant === "Single-expand";
+    // Three groups, not two, specifically to show every Move up/down
+    // state at once: the first group's own Move up and the last group's
+    // own Move down are each genuinely disabled (CanMoveUp/CanMoveDown
+    // — no sibling exists on that side, in that group's own scope), and
+    // the middle group is Locked, hiding its action cluster entirely
+    // rather than showing it disabled — a different signal for a
+    // different reason (the record itself can't be changed, not that
+    // there's nowhere left to move it).
     const groups = [
       {
         name: "Order #4821 — Acme Corp",
         expanded: true,
+        locked: false,
+        canMoveUp: false,
+        canMoveDown: true,
         children: [
           { name: "Line 1 — Widget A x200", tag: "Shipped", color: item.color, checked: true },
           { name: "Line 2 — Widget B x50", tag: "Processing", color: "#0F6CBD", checked: false }
         ]
       },
+      { name: "Order #4819 — Fabrikam Supply", expanded: false, locked: true, children: [] },
       {
         name: "Order #4820 — Globex Inc",
         expanded: !singleExpand,
+        locked: false,
+        canMoveUp: true,
+        canMoveDown: false,
         children: [{ name: "Line 1 — Widget C x80", tag: "Complete", color: "#5B5BD6", checked: false }]
       }
     ];
@@ -551,14 +567,53 @@ function ComponentPreview({ item, values = {}, interactive = true, variant = nul
       <div>
         <div className="mb-2 flex items-center justify-between text-[10px] font-bold text-slate-500 dark:text-slate-400">
           <span>1 selected</span>
-          <span>Page 1 of 3</span>
+          {/* Config.ShowExpandAll's own header affordance — same
+              reasoning as every other opt-in property shown doing
+              something rather than only described. */}
+          <Btn type="button" className="flex items-center gap-1">
+            <span aria-hidden="true">&#8963;</span> Expand all
+          </Btn>
         </div>
         <div className={compact ? "space-y-1" : "space-y-2"}>
           {groups.map(g => (
             <div key={g.name} className="rounded-xl border border-slate-200 dark:border-white/10">
-              <div className={`flex items-center justify-between ${compact ? "px-3 py-2" : "p-3"}`}>
-                <b className="text-xs">{g.name}</b>
-                <span aria-hidden="true" className={`text-slate-500 transition-transform dark:text-slate-400 ${g.expanded ? "rotate-180" : ""}`}>&#9660;</span>
+              <div className={`flex items-center justify-between gap-2 ${compact ? "px-3 py-2" : "p-3"}`}>
+                <b className="min-w-0 flex-1 truncate text-xs">{g.name}</b>
+                {/* Locked hides Move/Edit/Delete outright — a distinct
+                    signal from a disabled Move button, which still shows
+                    the action exists but not right now. */}
+                {g.locked ? (
+                  <span className="flex shrink-0 items-center gap-1 text-[9px] font-bold text-slate-500 dark:text-slate-400">
+                    <span aria-hidden="true">&#128274;</span> Locked
+                  </span>
+                ) : (
+                  // Real disabled buttons ride WCAG 1.4.3's own exemption
+                  // for genuinely-disabled controls (matching Enterprise
+                  // Data Table's own Prev pager, elsewhere in this file)
+                  // — but only while Btn is actually a <button>. As a
+                  // card thumbnail's plain <span disabled="">, that
+                  // exemption doesn't apply, so the disabled color needs
+                  // to be the same accessible tone as the enabled one.
+                  <span className="flex shrink-0 items-center gap-1">
+                    <Btn
+                      type="button"
+                      disabled={interactive && !g.canMoveUp ? true : undefined}
+                      aria-label={`Move up ${g.name}`}
+                      className={`text-[10px] font-bold ${!g.canMoveUp && interactive ? "text-slate-300 dark:text-white/20" : "text-slate-500 dark:text-slate-400"}`}
+                    >
+                      &#9650;
+                    </Btn>
+                    <Btn
+                      type="button"
+                      disabled={interactive && !g.canMoveDown ? true : undefined}
+                      aria-label={`Move down ${g.name}`}
+                      className={`text-[10px] font-bold ${!g.canMoveDown && interactive ? "text-slate-300 dark:text-white/20" : "text-slate-500 dark:text-slate-400"}`}
+                    >
+                      &#9660;
+                    </Btn>
+                  </span>
+                )}
+                <span aria-hidden="true" className={`shrink-0 text-slate-500 transition-transform dark:text-slate-400 ${g.expanded ? "rotate-180" : ""}`}>&#9660;</span>
               </div>
               {g.expanded && g.children.length > 0 && (
                 <div className={`space-y-1.5 border-t border-slate-100 dark:border-white/10 ${compact ? "p-2" : "p-3"}`}>

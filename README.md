@@ -718,6 +718,67 @@ violations. Playwright screenshots across five components (light and
 dark) confirm each shows four genuinely distinct renders matching its
 own description.
 
+### Accordion Record List: closing gaps against a real reference component
+
+A second real, published Power Apps component — this one a genuinely
+self-rendering accordion list built from composed native controls
+(`GroupContainer`, `Gallery`, `ModernButton`, `ModernText` with ordinary
+property bindings) rather than an SVG-formula hack — surfaced concrete
+gaps in this project's own Accordion Record List, closed in this pass at
+the documented-contract level (Properties/Events/Architecture/
+Accessibility/Limitations plus the mockup), not the generated-YAML
+architecture:
+
+- **`ActionKey`/`ActionRowType`** as real, named output properties — the
+  Properties tab previously only *described* "OnMoveUp returns the row's
+  key" in prose, with no actual property backing that claim. Now one
+  shared pair, read inside any of the four action events.
+- **`ExpandedGroupKey`/`IsExpandAll`/`GroupCount`/`ItemCount`/
+  `SelectedItemKey`** as read-only outputs a host can actually bind to,
+  where none existed before.
+- **Per-row `Locked`** on `Groups`/`Items` — hides that one row's own
+  action cluster entirely, a distinct signal from a disabled button
+  (which still shows the action exists, just not right now).
+- **Move up/down self-disabling at each row's own scope boundary** — the
+  first group can't move up, the last can't move down, computed once
+  rather than left for each button instance to guess and risk
+  disagreeing with its neighbor.
+
+The mockup now shows all three states in one small illustration: an
+edge-disabled Move up on the first group, a Locked group with its action
+cluster replaced by a "🔒 Locked" chip instead of hidden buttons, an
+edge-disabled Move down on the last, and a header "Expand all" toggle
+for `Config.ShowExpandAll`. The two new Move buttons needed the same
+`interactive`-aware disabled-contrast treatment Enterprise Data Table's
+Prev pager already established (a real `disabled` attribute rides WCAG
+1.4.3's exemption only while `Btn` is actually a `<button>`; as a card
+thumbnail's `<span disabled="">` it isn't, so the color falls back to
+the same accessible tone used when the button is enabled).
+
+Five of the new output properties are `Number`-typed; the schema
+validator (`npm run test:yaml`) correctly rejected an initial attempt to
+default them to the text placeholders `"Blank"`/`"Computed"` — a
+`DataType: Number` property's `Default` has to be a bare numeric
+literal or Studio's own parser would reject it on paste. Fixed by
+following this catalog's own existing precedent (`HighlightIndex`'s
+`-1`): a real numeric sentinel (`0`, the same "nothing yet" value
+`ExpandedGroupKey` already uses for "nothing expanded"), with the
+sentinel's meaning stated in the property's own description rather than
+in the default value itself.
+
+Deliberately not pursued in this pass: rewriting Accordion Record List's
+generated YAML into an actual self-rendering `Children` tree matching
+the reference's own architecture. Unlike the Line Chart comparison
+above, this one's reference proves that's a real, achievable target for
+a list/table-shaped component (composed controls, not a string-built
+SVG) — a legitimate next step, but a separate decision from closing the
+documented contract gaps this pass addressed.
+
+Verified: `npm run lint && npm run build && npm run test:yaml` clean.
+axe-core scanned Accordion Record List's Preview, Variants and
+Properties tabs, light and dark — clean — plus a full 25-component
+Variants-tab resweep confirming no regression elsewhere.
+
 ### YAML schema conformance
 
 Every component gets two generated YAML outputs (`src/lib/componentDocs.js`):
