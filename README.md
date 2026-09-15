@@ -337,6 +337,56 @@ communicate "unavailable"). Re-scanned clean after both fixes: `npm run
 lint && npm run test:yaml && npm run build` clean, zero axe-core
 violations across all 5 touched components in light and dark.
 
+**Batch 2 — the Forms/Navigation cluster:**
+
+- **Governed File Upload** gained `MaxAttachmentsText` (matching the
+  real canvas Attachments control's own property of the same name) and
+  `AllowedExtensions`, giving the type-restriction hint already in this
+  component's own Limitations text a real property to bind to. The
+  mockup now shows the actual "Maximum files reached" state — a
+  meaningfully different illustration than "still room for more,"
+  swapped for by a `maxFiles`/`files.length` comparison in the mockup
+  rather than a permanently empty-looking dropzone.
+- **Governed Email Composer** gained `ShowBcc` (matching the Office 365
+  Outlook connector's own Bcc field, distinct from Cc) and
+  `Attachments` — the same `Id`/`Name`/`SizeBytes` shape Governed File
+  Upload's own staged files already use, closing a real gap *between*
+  two components in this same catalog that previously had no way to
+  connect. The mockup now shows a real Bcc picker and an attachment
+  chip.
+- **Enterprise Sidebar** gained `ItemBadgeCount` (a real precedent: the
+  Creator Kit Pivot control's own `ItemCount`, "show an item count on a
+  Pivot item link"), `ItemIconColor` (the Creator Kit Nav control's own
+  property of the same name), and `InputEvent` for `SetFocus` (the same
+  contract the real Nav control documents for restoring keyboard focus
+  after a dialog closes). The mockup now shows an "Approvals" item with
+  both a custom icon color and a pending-count badge, while Dashboard/
+  Reports/Settings carry neither — demonstrating both fields are
+  optional and backward-compatible.
+- **Responsive Breadcrumbs** gained `ItemClickable` (the real Creator
+  Kit Breadcrumb control's own property, for a crumb that shouldn't be
+  a link — a parent list this visitor can't open directly, say) and
+  `AccessibilityLabel` (present on all three real reference controls
+  checked in this pass). The mockup's own "Change Requests" crumb is
+  now the non-clickable example.
+- **Enterprise Mega Menu** gained `Searchable`/`OnSearch` (the same
+  host-executed-filter pattern Enterprise Data Table's own `OnSearch`
+  already uses), a `Badge` field on `DropdownItems` ("New"/"Beta" on a
+  freshly added destination), and `CollapseWidth`/`OnMobileToggle` for
+  the top-level bar's own hamburger collapse — a separate, wider
+  breakpoint than the dropdown panel's existing ~500px single-column
+  collapse. The mockup now shows a real search box and a "New" badge on
+  Copilot Studio.
+
+One real contrast issue turned up again in this batch — the same class
+of bug as batch 1's trend arrow: Responsive Breadcrumbs' new
+non-clickable crumb used `text-slate-400 dark:text-slate-500` (2.56:1/
+3.5:1), the light/dark values swapped from this project's own
+established safe combo. Fixed by swapping to `text-slate-500
+dark:text-slate-400`, the same fix applied last batch. Re-scanned
+clean: `npm run lint && npm run test:yaml && npm run build` clean, zero
+axe-core violations across all 5 touched components in light and dark.
+
 ### YAML schema conformance
 
 Every component gets two generated YAML outputs (`src/lib/componentDocs.js`):

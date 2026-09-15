@@ -310,17 +310,29 @@ function ComponentPreview({ item, values = {} }) {
   }
 
   if (item.title === "Governed File Upload") {
+    // maxFiles set to match files.length here specifically to illustrate
+    // MaxAttachmentsText's real replace-the-dropzone state, rather than
+    // always showing the same "still room for more" prompt.
+    const maxFiles = 2;
     const files = [
       { name: "Statement-of-work.pdf", size: "2.4 MB", ext: "PDF" },
       { name: "Site-photos.zip", size: "18.1 MB", ext: "ZIP" }
     ];
     return (
       <div>
-        <div className="grid place-items-center rounded-xl border-2 border-dashed border-slate-300 bg-slate-50 py-6 text-center dark:border-white/20 dark:bg-white/5">
-          <span aria-hidden="true" className="text-2xl">&#8679;</span>
-          <span className="mt-1 text-xs font-bold text-slate-600 dark:text-slate-300">Drag files here or browse</span>
-          <span className="text-[10px] text-slate-500 dark:text-slate-400">Up to 25 MB, 5 files</span>
-        </div>
+        {files.length >= maxFiles ? (
+          <div className="grid place-items-center rounded-xl border-2 border-dashed border-slate-300 bg-slate-50 py-6 text-center dark:border-white/20 dark:bg-white/5">
+            <span aria-hidden="true" className="text-2xl">&#9888;&#65039;</span>
+            <span className="mt-1 text-xs font-bold text-slate-600 dark:text-slate-300">Maximum files reached</span>
+            <span className="text-[10px] text-slate-500 dark:text-slate-400">PDF, DOCX, PNG only</span>
+          </div>
+        ) : (
+          <div className="grid place-items-center rounded-xl border-2 border-dashed border-slate-300 bg-slate-50 py-6 text-center dark:border-white/20 dark:bg-white/5">
+            <span aria-hidden="true" className="text-2xl">&#8679;</span>
+            <span className="mt-1 text-xs font-bold text-slate-600 dark:text-slate-300">Drag files here or browse</span>
+            <span className="text-[10px] text-slate-500 dark:text-slate-400">PDF, DOCX, PNG &middot; Up to 25 MB, {maxFiles} files</span>
+          </div>
+        )}
         <div className="mt-3 space-y-1.5">
           {files.map(f => (
             <div key={f.name} className="flex items-center justify-between rounded-lg bg-slate-50 px-3 py-2 shadow-sm dark:bg-white/10">
@@ -347,11 +359,26 @@ function ComponentPreview({ item, values = {} }) {
           <span className="rounded-full bg-slate-100 px-2 py-1 text-[10px] font-bold dark:bg-white/10">Priya Shah</span>
           <span className="rounded-full bg-slate-100 px-2 py-1 text-[10px] font-bold dark:bg-white/10">J. Okafor</span>
         </div>
+        {/* ShowBcc adds this third picker beside To/CC — shown here since
+            the property exists and should be demonstrated doing
+            something, the same reasoning as every other opt-in property
+            illustrated elsewhere in this file. */}
+        <div className="flex flex-wrap items-center gap-1.5 border-b border-slate-100 py-2 dark:border-white/10">
+          <span className="text-[10px] font-black uppercase text-slate-500 dark:text-slate-400">Bcc</span>
+          <span className="rounded-full bg-slate-100 px-2 py-1 text-[10px] font-bold dark:bg-white/10">M. Chen</span>
+        </div>
         <div className="mt-2 border-b border-slate-100 pb-2 text-xs font-bold dark:border-white/10">Re: Case #4821 status update</div>
         <div className="mt-3 rounded-lg bg-slate-50 p-2.5 text-[10px] leading-5 text-slate-500 dark:bg-white/10 dark:text-slate-400">
           &gt; Original request: please confirm the vendor timeline for next week.
         </div>
         <p className="mt-3 text-xs leading-5 text-slate-700 dark:text-slate-200">Hi team, sharing the latest update below &mdash; let me know if anything&rsquo;s missing.</p>
+        {/* Attachments — the same Id/Name/SizeBytes shape Governed File
+            Upload's own staged files already use. */}
+        <div className="mt-3 flex items-center gap-2 rounded-lg bg-slate-50 px-2.5 py-2 dark:bg-white/10">
+          <span className="grid h-6 w-6 shrink-0 place-items-center rounded-md text-[8px] font-black text-white" style={{ background: item.color }}>PDF</span>
+          <span className="min-w-0 flex-1 truncate text-[10px] font-bold text-slate-600 dark:text-slate-300">Statement-of-work.pdf</span>
+          <span className="shrink-0 text-[10px] text-slate-500 dark:text-slate-400">2.4 MB</span>
+        </div>
         <div className="mt-4 flex gap-2">
           <span className="rounded-full px-3 py-1.5 text-xs font-bold text-white" style={{ background: item.color }}>Send</span>
           <span className="rounded-full bg-slate-100 px-3 py-1.5 text-xs font-bold dark:bg-white/10">Cancel</span>
@@ -361,15 +388,20 @@ function ComponentPreview({ item, values = {} }) {
   }
 
   if (item.title === "Enterprise Sidebar") {
+    // ItemBadgeCount and ItemIconColor are both optional per-item fields
+    // (see componentLibrary.js) — Dashboard/Settings below carry neither,
+    // demonstrating that an item with no badge or custom color renders
+    // exactly as it always did.
     const navItems = [
       { label: "Dashboard", icon: "▦" },
-      { label: "Projects", icon: "▤", active: true },
+      { label: "Projects", icon: "▤", active: true, iconColor: item.color },
+      { label: "Approvals", icon: "▧", badge: 3, iconColor: "#D83B01" },
       { label: "Reports", icon: "▥" },
       { label: "Settings", icon: "⚙" }
     ];
     return (
       <div className="flex gap-3">
-        <div className="w-32 shrink-0 rounded-xl border border-slate-200 p-2 dark:border-white/10">
+        <div className="w-36 shrink-0 rounded-xl border border-slate-200 p-2 dark:border-white/10">
           <div className="space-y-1">
             {navItems.map(nav => (
               <div
@@ -377,7 +409,16 @@ function ComponentPreview({ item, values = {} }) {
                 className={`flex items-center gap-2 rounded-full px-2 py-1.5 text-[11px] font-bold ${nav.active ? CONTAINER_TEXT_CLASS : "text-slate-600 dark:text-slate-300"}`}
                 style={nav.active ? container(item.color, "26") : undefined}
               >
-                <span aria-hidden="true">{nav.icon}</span>{nav.label}
+                <span aria-hidden="true" style={nav.iconColor && !nav.active ? { color: nav.iconColor } : undefined}>{nav.icon}</span>
+                <span className="flex-1 truncate">{nav.label}</span>
+                {nav.badge != null && (
+                  <span
+                    className="grid h-4 min-w-[16px] shrink-0 place-items-center rounded-full px-1 text-[9px] font-black text-white"
+                    style={{ background: nav.iconColor ?? item.color }}
+                  >
+                    {nav.badge}
+                  </span>
+                )}
               </div>
             ))}
           </div>
@@ -394,8 +435,8 @@ function ComponentPreview({ item, values = {} }) {
   if (item.title === "Enterprise Mega Menu") {
     const navButtons = ["Products", "Solutions", "Resources", "Pricing"];
     const panel = {
-      Platform: ["Power Apps", "Power Automate", "Dataverse"],
-      Extend: ["Copilot Studio", "AI Builder", "Power Pages"]
+      Platform: [{ label: "Power Apps" }, { label: "Power Automate" }, { label: "Dataverse" }],
+      Extend: [{ label: "Copilot Studio", badge: "New" }, { label: "AI Builder" }, { label: "Power Pages" }]
     };
     return (
       <div>
@@ -410,15 +451,35 @@ function ComponentPreview({ item, values = {} }) {
             </span>
           ))}
         </div>
-        <div className="mt-2 grid grid-cols-2 gap-4 rounded-xl border border-slate-200 bg-white p-4 shadow-lg dark:border-white/10 dark:bg-white/5">
-          {Object.entries(panel).map(([section, links]) => (
-            <div key={section}>
-              <span className="text-[10px] font-black uppercase text-slate-500 dark:text-slate-400">{section}</span>
-              <div className="mt-2 space-y-1.5">
-                {links.map(l => <div key={l} className="text-xs font-bold text-slate-700 dark:text-slate-200">{l}</div>)}
+        <div className="mt-2 rounded-xl border border-slate-200 bg-white p-4 shadow-lg dark:border-white/10 dark:bg-white/5">
+          {/* Searchable — same reasoning as every other opt-in property
+              shown doing something rather than only described. */}
+          <div className="mb-3 flex items-center gap-2 rounded-full border border-slate-200 px-3 py-1.5 text-xs text-slate-500 dark:border-white/10 dark:text-slate-400">
+            <span aria-hidden="true">&#128269;</span>
+            <span>Search this menu&hellip;</span>
+          </div>
+          <div className="grid grid-cols-2 gap-4">
+            {Object.entries(panel).map(([section, links]) => (
+              <div key={section}>
+                <span className="text-[10px] font-black uppercase text-slate-500 dark:text-slate-400">{section}</span>
+                <div className="mt-2 space-y-1.5">
+                  {links.map(l => (
+                    <div key={l.label} className="flex items-center gap-1.5 text-xs font-bold text-slate-700 dark:text-slate-200">
+                      {l.label}
+                      {l.badge && (
+                        <span
+                          className={`rounded-full px-1.5 py-0.5 text-[8px] font-black uppercase ${CONTAINER_TEXT_CLASS}`}
+                          style={container(item.color)}
+                        >
+                          {l.badge}
+                        </span>
+                      )}
+                    </div>
+                  ))}
+                </div>
               </div>
-            </div>
-          ))}
+            ))}
+          </div>
         </div>
       </div>
     );
@@ -668,7 +729,12 @@ function ComponentPreview({ item, values = {} }) {
         <span aria-hidden="true" className="text-slate-400 dark:text-slate-500">/</span>
         <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-black text-slate-500 dark:bg-white/10 dark:text-slate-400">&hellip;</span>
         <span aria-hidden="true" className="text-slate-400 dark:text-slate-500">/</span>
-        <span className="text-slate-600 dark:text-slate-300">Change Requests</span>
+        {/* ItemClickable false — same muted, separator-toned treatment
+            rather than the usual link-implying slate-600, so a sighted
+            visitor reads it as unavailable too, not just non-interactive
+            underneath. A real case: a parent list this visitor can't
+            open directly, only reach via a specific record. */}
+        <span className="text-slate-500 dark:text-slate-400">Change Requests</span>
         <span aria-hidden="true" className="text-slate-400 dark:text-slate-500">/</span>
         <span
           className="text-[color:var(--badge-light)] dark:text-[color:var(--badge-dark)]"
