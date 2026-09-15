@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { ArrowLeft, Search, X } from "lucide-react";
+import { ArrowLeft, Search } from "lucide-react";
 import { categories, components } from "../data/componentLibrary.js";
 import ComponentCard from "./ComponentCard.jsx";
 
@@ -25,10 +25,17 @@ function Catalog({ dark, onSelect, onBack }) {
   return (
     <main className={dark ? "dark min-h-screen bg-[#0B1110] text-white" : "min-h-screen bg-[#FBFDFB] text-[#17201B]"}>
       <header className="sticky top-0 z-20 border-b border-slate-200 bg-white/95 backdrop-blur dark:border-white/10 dark:bg-[#101816]/95">
+        {/* One exit action, not two — this page has no prev/next or
+            other cluster of controls the way ComponentDetail.jsx does,
+            where a right-side X reads as "close" alongside its own
+            separate prev/next buttons. Here it was just this same
+            onBack handler wired to both ends of an otherwise-empty bar,
+            which on a narrow screen (where "All components" itself was
+            already hidden) meant two identical, unlabeled-looking exits
+            and nothing recognizable between them. */}
         <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-5">
           <button onClick={onBack} className="flex items-center gap-2 font-bold"><ArrowLeft size={18} /> Home</button>
-          <b className="hidden sm:block">All components</b>
-          <button onClick={onBack} aria-label="Close, back to home" className="grid h-10 w-10 place-items-center rounded-full bg-slate-100 dark:bg-white/10"><X size={18} /></button>
+          <b>All components</b>
         </div>
       </header>
 

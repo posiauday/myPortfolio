@@ -577,6 +577,69 @@ components, light and dark — zero violations, confirming the tuple
 shape change didn't introduce any rendering issue. Playwright
 screenshots confirm the real per-example text renders correctly.
 
+### Card thumbnails are the real component preview, and one less exit button
+
+Two more findings from actually looking at the Catalog page (and the
+homepage's featured grid, which shares the same card) on a phone: every
+card's thumbnail was the same generic icon-and-progress-bar mockup,
+identical across all 25 components — none of the bespoke, research-grounded
+`ComponentPreview.jsx` mockups built during the gap-closing passes above
+ever reached the card itself, only the Detail page's own Preview tab did.
+Separately, the Catalog header carried two buttons that both called the
+same `onBack` handler — a left "← Home" and a right "✕" — which on a
+narrow screen crowded out the "All components" title between them (it was
+hidden below `sm:`) and, even where it fit, gave no reason for two
+identically-acting exits.
+
+**Card thumbnail.** `ComponentCard.jsx` now renders the same
+`ComponentPreview` component the Detail page's Preview tab uses, scaled
+down (`scale-[0.42]`, `origin-top`, absolutely positioned inside a fixed,
+`overflow-hidden` frame) so each card shows that exact component's own
+mockup — the KPI number and trend arrow, the line chart, the RAG scorecard
+grid, the status banner strips, the risk heatmap — instead of one shared
+placeholder. Fixed top-anchored scaling was a deliberate choice over
+centering: a tall mockup (Enterprise Calendar's full month grid, say) now
+crops predictably from the bottom instead of being centered and clipped
+unpredictably depending on its unscaled height.
+
+Reusing `ComponentPreview` here raised a real constraint: the card itself
+is one clickable `<button>`, and the thumbnail sits inside it purely as
+decoration (`aria-hidden="true"`, `pointer-events-none`). Several of
+`ComponentPreview`'s own mockups contain their own illustrative
+`<button>` elements (a sort toggle, a pager, a "Retry" action, none of
+them wired to anything in this context) — nested inside the card's real
+button, that's both invalid HTML (interactive content isn't allowed
+inside a `<button>`) and a real accessibility violation (a focusable
+control left inside `aria-hidden` content, flagged by axe-core's
+`aria-hidden-focus` rule). `ComponentPreview` now takes an `interactive`
+prop, default `true`, that swaps every one of its 8 illustrative buttons
+for a plain `<span>` when `false`; the Detail page's own Preview tab
+never sets it and is unaffected. One of those eight — Enterprise Data
+Table's "Prev" pager — relied on a real `disabled` attribute for its
+low-contrast text to pass WCAG 1.4.3's exemption for genuinely-disabled
+controls; a `<span disabled="">` doesn't carry that same semantic
+weight, so as a thumbnail it uses the same accessible tone already used
+for "Next" instead.
+
+**Redundant exit.** `Catalog.jsx`'s header now has a single "← Home"
+button; the right-side "✕" is gone, and "All components" is no longer
+hidden below `sm:` since nothing on the right competes with it anymore.
+This is unlike `ComponentDetail.jsx`, where a right-side "✕" legitimately
+coexists with a separate Prev/Next pair of component-navigation buttons —
+here it was two controls doing the exact same thing on an otherwise-empty
+bar.
+
+Verified: `npm run lint && npm run build && npm run test:yaml` clean.
+axe-core scanned the Catalog page and the homepage's featured grid, light
+and dark — the `interactive` prop swap surfaced the one contrast
+regression described above, fixed, then rescanned clean. Re-ran the full
+25-component sweep against the Detail page's own Preview tab (still
+`interactive`'s default `true`) — zero violations, confirming the prop
+didn't change that page's behavior. Playwright screenshots on a mobile
+viewport confirm a single "← Home" button with "All components" visible
+next to it, and a desktop grid confirms multiple cards are now visually
+distinct from one another.
+
 ### YAML schema conformance
 
 Every component gets two generated YAML outputs (`src/lib/componentDocs.js`):

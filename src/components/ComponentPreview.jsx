@@ -21,8 +21,22 @@ import { darken, lighten, container, CONTAINER_TEXT_CLASS } from "../lib/color.j
    every component falling through to one generic "status list" shape
    regardless of what it actually is. That fallback still exists at the
    bottom for the components not yet given their own mockup.
+
+   `interactive` (default true) governs the handful of illustrative
+   <button> elements scattered across these mockups (a pager, a Retry
+   action, a disabled Next). They carry no onClick of their own — they
+   exist to demonstrate a state, not to do anything — so when this
+   component is reused somewhere it must be non-interactive (the
+   Catalog card's own thumbnail, sitting inside that card's single
+   real <button>), pass interactive={false} and every one of them
+   renders as a plain <span> instead. Nesting a real <button> inside
+   another <button> is invalid HTML, and a focusable control left
+   inside an aria-hidden decorative thumbnail is its own real
+   accessibility violation (axe-core's aria-hidden-focus rule) — this
+   swap avoids both without duplicating any of the markup above it.
    ============================================================ */
-function ComponentPreview({ item, values = {} }) {
+function ComponentPreview({ item, values = {}, interactive = true }) {
+  const Btn = interactive ? "button" : "span";
   if (item.title === "Portfolio Risk Matrix") {
     return (
       <div>
@@ -183,9 +197,9 @@ function ComponentPreview({ item, values = {} }) {
           {/* SortDirection — a real toggle, matching the real Dynamics
               365 Timeline control's own explicit sort button, not an
               implied fixed order. */}
-          <button type="button" className="shrink-0 flex items-center gap-1 text-[10px] font-bold text-slate-500 dark:text-slate-400">
+          <Btn type="button" className="shrink-0 flex items-center gap-1 text-[10px] font-bold text-slate-500 dark:text-slate-400">
             <span aria-hidden="true">&#8645;</span> Newest first
-          </button>
+          </Btn>
         </div>
         <div className="relative mt-4 space-y-3 pl-5">
           <span aria-hidden="true" className="absolute inset-y-1 left-[3px] w-px bg-slate-200 dark:bg-white/10" />
@@ -211,7 +225,7 @@ function ComponentPreview({ item, values = {} }) {
             </div>
           ))}
         </div>
-        <button type="button" className="mt-4 w-full rounded-xl bg-slate-100 py-2 text-xs font-bold text-slate-600 dark:bg-white/10 dark:text-slate-300">Load more</button>
+        <Btn type="button" className="mt-4 w-full rounded-xl bg-slate-100 py-2 text-xs font-bold text-slate-600 dark:bg-white/10 dark:text-slate-300">Load more</Btn>
       </div>
     );
   }
@@ -257,7 +271,7 @@ function ComponentPreview({ item, values = {} }) {
                   stand-in for drag-to-reschedule this read-only calendar
                   offers, shown on today's own event. */}
               {day === String(today) && (
-                <button type="button" className="shrink-0 text-[9px] font-bold text-slate-500 underline dark:text-slate-400">Request a change</button>
+                <Btn type="button" className="shrink-0 text-[9px] font-bold text-slate-500 underline dark:text-slate-400">Request a change</Btn>
               )}
             </div>
           ))}
@@ -381,9 +395,14 @@ function ComponentPreview({ item, values = {} }) {
                 Prev unavailable on page 1 — WCAG 1.4.3 itself exempts
                 inactive controls from the contrast minimum, but only
                 when the disabled state is actually semantic like this,
-                not implied by low-contrast text alone. */}
-            <button type="button" disabled className="text-[10px] font-bold text-slate-300 dark:text-white/20">&#8249; Prev</button>
-            <button type="button" className="text-[10px] font-bold text-slate-500 dark:text-slate-400">Next &#8250;</button>
+                not implied by low-contrast text alone. That exemption
+                rides on Btn actually being a <button> — as a card
+                thumbnail's plain <span disabled="">, "disabled" is
+                inert markup, not a semantic state, so the low-contrast
+                color loses its exemption too and needs the same
+                accessible tone as Next. */}
+            <Btn type="button" disabled={interactive ? true : undefined} className={interactive ? "text-[10px] font-bold text-slate-300 dark:text-white/20" : "text-[10px] font-bold text-slate-500 dark:text-slate-400"}>&#8249; Prev</Btn>
+            <Btn type="button" className="text-[10px] font-bold text-slate-500 dark:text-slate-400">Next &#8250;</Btn>
           </div>
         </div>
       </div>
@@ -424,7 +443,7 @@ function ComponentPreview({ item, values = {} }) {
                   <span className="text-[10px] text-slate-500 dark:text-slate-400">{f.size}</span>
                 </div>
               </div>
-              <button type="button" className="shrink-0 text-xs font-bold text-slate-500 dark:text-slate-400" aria-label={`Remove ${f.name}`}>&#10005;</button>
+              <Btn type="button" className="shrink-0 text-xs font-bold text-slate-500 dark:text-slate-400" aria-label={`Remove ${f.name}`}>&#10005;</Btn>
             </div>
           ))}
         </div>
@@ -925,7 +944,7 @@ function ComponentPreview({ item, values = {} }) {
           <span className="text-[10px] font-bold text-slate-500 dark:text-slate-400">
             {canAdvance ? "" : "Complete the required fields to continue"}
           </span>
-          <button type="button" disabled={!canAdvance} className="shrink-0 rounded-full px-3 py-1.5 text-xs font-bold text-white disabled:opacity-40" style={{ background: item.color }}>Next</button>
+          <Btn type="button" disabled={interactive ? !canAdvance : undefined} className="shrink-0 rounded-full px-3 py-1.5 text-xs font-bold text-white disabled:opacity-40" style={{ background: item.color }}>Next</Btn>
         </div>
       </div>
     );
@@ -995,7 +1014,7 @@ function ComponentPreview({ item, values = {} }) {
         <div className="grid place-items-center rounded-xl bg-red-50 py-6 dark:bg-red-900/20">
           <span aria-hidden="true" className="text-xl">&#9888;&#65039;</span>
           <b className="mt-2 text-xs text-red-900 dark:text-red-100">Couldn&rsquo;t load your workspace</b>
-          <button type="button" className="mt-3 rounded-full bg-white px-3 py-1.5 text-[10px] font-bold text-red-900 shadow-sm dark:bg-white/10 dark:text-red-100">Retry</button>
+          <Btn type="button" className="mt-3 rounded-full bg-white px-3 py-1.5 text-[10px] font-bold text-red-900 shadow-sm dark:bg-white/10 dark:text-red-100">Retry</Btn>
         </div>
       </div>
     );
