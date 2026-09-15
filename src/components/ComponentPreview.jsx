@@ -175,7 +175,7 @@ function ComponentPreview({ item, values = {}, interactive = true, variant = nul
     };
 
     if (variant === "Skeleton") return (
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+      <div className="grid grid-cols-2 gap-3">
         {kpiData.map((_, i) => (
           <div key={i} className="relative h-[88px] rounded-xl border border-slate-200 p-3 dark:border-white/10">
             <div className="h-2.5 w-16 rounded bg-slate-200 dark:bg-white/10" />
@@ -187,7 +187,7 @@ function ComponentPreview({ item, values = {}, interactive = true, variant = nul
     );
 
     if (variant === "Compact") return (
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+      <div className="grid grid-cols-2 gap-3">
         {kpiData.map((d, i) => (
           <div key={i} className="flex items-center gap-3 rounded-xl border border-slate-200 p-3 dark:border-white/10">
             <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full" style={{ background: d.bg }}><KpiIcon name={d.icon} color={d.fg} size={18} /></span>
@@ -201,7 +201,7 @@ function ComponentPreview({ item, values = {}, interactive = true, variant = nul
     );
 
     if (variant === "Minimal") return (
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+      <div className="grid grid-cols-2 gap-3">
         {kpiData.map((d, i) => (
           <div key={i} className="rounded-xl border border-slate-200 p-3 dark:border-white/10">
             <p className="truncate text-[10px] font-black uppercase tracking-wide text-slate-500 dark:text-slate-400">{d.label}</p>
@@ -212,7 +212,7 @@ function ComponentPreview({ item, values = {}, interactive = true, variant = nul
     );
 
     if (variant === "Filled") return (
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+      <div className="grid grid-cols-2 gap-3">
         {kpiData.map((d, i) => (
           <div key={i} className="rounded-xl p-4" style={{ background: d.bg, color: d.fg }}>
             <p className="text-[10px] font-black uppercase tracking-wide" style={{ color: d.fg }}>{d.label}</p>
@@ -228,7 +228,7 @@ function ComponentPreview({ item, values = {}, interactive = true, variant = nul
     );
 
     if (variant === "Chart") return (
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+      <div className="grid grid-cols-2 gap-3">
         {kpiData.map((d, i) => (
           <div key={i} className="overflow-hidden rounded-xl border border-slate-200 dark:border-white/10">
             <div className="p-3 pb-2">
@@ -245,7 +245,7 @@ function ComponentPreview({ item, values = {}, interactive = true, variant = nul
 
     // Standard
     return (
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+      <div className="grid grid-cols-2 gap-3">
         {kpiData.map((d, i) => (
           <div key={i} className="relative rounded-xl border border-slate-200 p-4 pr-14 dark:border-white/10">
             <span className="absolute right-4 top-4 grid h-10 w-10 place-items-center rounded-full" style={{ background: d.bg }}><KpiIcon name={d.icon} color={d.fg} /></span>
