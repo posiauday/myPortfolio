@@ -1369,7 +1369,17 @@ function deadlineTracker(pascal) {
 
   const dueDate = `With({window: Sequence(Min(${self}.Days, 400) * 2 + 20)}, With({cand: AddColumns(window, "d", DateAdd(${self}.StartDate, Value, TimeUnit.Days))}, With({biz: Filter(cand, Weekday(d, StartOfWeek.Monday) <= 5 And IsBlank(LookUp(${self}.Holidays, HolidayDate = d)))}, If(CountRows(biz) = 0, ${self}.StartDate, Index(biz, Min(${self}.Days, CountRows(biz))).d))))`.replace(/\s*\n\s*/g, " ");
   const daysLeft = `DateDiff(Today(), ${dueDate}, TimeUnit.Days)`;
-  const status = `If(${isComplete}, "Complete", If(${daysLeft} < 0, "Overdue", If(${daysLeft} <= ${self}.ReminderThreshold, "DueSoon", "OnTrack")))`;
+  // Real Studio error: "The function 'AddColumns' has some invalid
+  // arguments." was actually a symptom of formula bloat, not a genuine
+  // AddColumns bug — status originally referenced ${daysLeft} twice,
+  // and daysLeft embeds dueDate's whole Sequence/AddColumns/Filter/Index
+  // chain as raw text, so every consumer of status carried two full
+  // copies of that chain (three, once lblCount/lblBadgeText's own direct
+  // ${daysLeft} reference is added on top) — deep enough nesting that
+  // Studio's own compiler choked on it. With({dl: ...}) computes
+  // daysLeft once and reuses the cheap local name instead.
+  const status = `If(${isComplete}, "Complete", With({dl: ${daysLeft}}, If(dl < 0, "Overdue", If(dl <= ${self}.ReminderThreshold, "DueSoon", "OnTrack"))))`;
+  const countText = `With({dl: ${daysLeft}}, Text(Abs(dl)) & If(${isComplete}, "d left", If(dl < 0, "d over", "d left")))`;
   const statusColor = `ColorValue(Switch(${status}, "Complete", "#2E7D32", "Overdue", "#C62828", "DueSoon", "#BF360C", "#1565C0"))`;
   const statusLabel = `Switch(${status}, "Complete", "Complete", "Overdue", "Overdue", "DueSoon", "Due soon", "On track")`;
   const holidayCount = `CountRows(${self}.Holidays)`;
@@ -1383,7 +1393,7 @@ function deadlineTracker(pascal) {
     children: [
       { name: "btnStatusDot", control: "Classic/Button@2.2.0", properties: { BorderStyle: "BorderStyle.None", Fill: statusColor, Height: "10", RadiusBottomLeft: "5", RadiusBottomRight: "5", RadiusTopLeft: "5", RadiusTopRight: "5", Text: '""', Width: "10", X: "20", Y: "20" } },
       { name: "lblStatusLabel", control: "ModernText@1.0.0", properties: { Color: statusColor, FontWeight: "FontWeight.Bold", Height: "16", Size: "10", Text: statusLabel, Width: "180", X: "38", Y: "16" } },
-      { name: "lblCount", control: "ModernText@1.0.0", properties: { FontWeight: "FontWeight.Bold", Height: "40", Size: "32", Text: `Text(Abs(${daysLeft})) & If(${status} = "Overdue", "d over", "d left")`, Width: "260", X: "20", Y: "38" } },
+      { name: "lblCount", control: "ModernText@1.0.0", properties: { FontWeight: "FontWeight.Bold", Height: "40", Size: "32", Text: countText, Width: "260", X: "20", Y: "38" } },
       { name: "lblBreakdown", control: "ModernText@1.0.0", properties: { AutoHeight: "false", Color: "RGBA(100, 116, 139, 1)", Height: "32", Size: "10", Text: breakdown, Visible: `!${isCompact}`, Width: "260", Wrap: "true", X: "20", Y: "82" } }
     ]
   };
@@ -1394,7 +1404,7 @@ function deadlineTracker(pascal) {
     variant: "ManualLayout",
     properties: { BorderStyle: "BorderStyle.None", Fill: statusColor, Height: "26", RadiusBottomLeft: "13", RadiusBottomRight: "13", RadiusTopLeft: "13", RadiusTopRight: "13", Visible: isBadge, Width: "Parent.Width" },
     children: [
-      { name: "lblBadgeText", control: "ModernText@1.0.0", properties: { Align: "Align.Center", Color: "Color.White", FontWeight: "FontWeight.Bold", Height: "Parent.Height", Size: "10", Text: `Text(Abs(${daysLeft})) & If(${status} = "Overdue", "d over", "d left")`, Width: "Parent.Width" } }
+      { name: "lblBadgeText", control: "ModernText@1.0.0", properties: { Align: "Align.Center", Color: "Color.White", FontWeight: "FontWeight.Bold", Height: "Parent.Height", Size: "10", Text: countText, Width: "Parent.Width" } }
     ]
   };
 
