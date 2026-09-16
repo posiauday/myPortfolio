@@ -419,6 +419,34 @@ with `MatchAll(raw, "-?\d+\.?\d*")` + `ForAll(..., {n: Value(FullMatch)})`, comp
 whatever business value already determines "good/bad" (e.g. `PercentChange`'s
 sign) rather than inventing a second color property.
 
+**Generating a table of computed rows: prefer `ForAll` returning `{col: ...}` records
+over `AddColumns` on a locally `With()`-bound `Sequence(...)` table.** `CONFIRMED`
+real Studio error on this catalog's own Deadline Tracker —
+`AddColumns(window, "d", DateAdd(StartDate, Value, TimeUnit.Days))`, where `window`
+was itself `Sequence(N)` bound one level up through a nested `With({window:
+Sequence(N)}, With({cand: AddColumns(window, ...)}, ...))` — failed outright with
+"The function 'AddColumns' has some invalid arguments," and re-pasting after
+removing an unrelated formula-bloat duplication (initially suspected as the cause)
+made no difference, proving `AddColumns` itself was the real problem, not formula
+size. `AddColumns`'s own real syntax (`AddColumns(Table, ColumnName, Formula)`) and
+`Sequence`'s own real output column (confirmed `Value`, per Microsoft's own
+Sequence reference page) were both individually correct — something about this
+*specific* combination (AddColumns over a Sequence-derived value threaded through
+nested `With()` bindings) is what Studio's compiler rejected, not confirmed exactly
+why. The fix: build the same table directly with
+`ForAll(Sequence(N), {d: DateAdd(StartDate, Value, TimeUnit.Days)})` instead —
+skips `AddColumns` entirely, needs no nested `With()` for the source table, and is
+a completely standard, well-established Power Fx technique (`ForAll` returning a
+record per row builds a real table). This file's only other `AddColumns` call
+(Activity Timeline's `AddColumns(cmp<Name>.Items As Entry, ...)`) runs directly
+against a component's own `Table` property, never a locally bound `Sequence`
+derivative — there was no working sibling pattern in this catalog to have cross-
+checked the Deadline Tracker version against before it shipped. Prefer `ForAll`
+for this shape of "generate N computed rows" table-building from now on; reach for
+`AddColumns` only when adding a column to a table that's already a real, directly-
+referenced `Table`-typed value (a component property, or another `ForAll` result),
+not one reached through an extra layer of local `With()` binding.
+
 **Reusable icon library via an SVG-with-placeholder table.** An `Icons: Table`
 property holds `{Name: Text, SVG: Text}` rows, each `SVG` string containing the
 literal placeholder text `COLOR` where a `stroke=` or `fill=` value would go. At

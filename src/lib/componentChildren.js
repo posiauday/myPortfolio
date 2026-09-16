@@ -1367,7 +1367,23 @@ function deadlineTracker(pascal) {
   const isCompact = `${self}.Config.Compact`;
   const isComplete = `!IsBlank(${self}.CompletedDate)`;
 
-  const dueDate = `With({window: Sequence(Min(${self}.Days, 400) * 2 + 20)}, With({cand: AddColumns(window, "d", DateAdd(${self}.StartDate, Value, TimeUnit.Days))}, With({biz: Filter(cand, Weekday(d, StartOfWeek.Monday) <= 5 And IsBlank(LookUp(${self}.Holidays, HolidayDate = d)))}, If(CountRows(biz) = 0, ${self}.StartDate, Index(biz, Min(${self}.Days, CountRows(biz))).d))))`.replace(/\s*\n\s*/g, " ");
+  // Real Studio error: "The function 'AddColumns' has some invalid
+  // arguments." persisted even after removing the earlier formula-bloat
+  // duplication (CONFIRMED via the user's own re-paste, still failing
+  // with a single, non-duplicated copy of this chain) — so AddColumns
+  // itself, applied to a Sequence(...)-sourced value bound one level up
+  // through a nested With(), was the real problem, not formula size.
+  // This exact AddColumns-over-a-With-scoped-Sequence-table pattern was
+  // also the only one of its kind in this whole file (every other real
+  // AddColumns call here runs directly against a component's own Table
+  // property, never a locally bound Sequence derivative), so there was
+  // no working sibling pattern to have cross-checked it against.
+  // Rewritten to build the candidate-dates table with ForAll returning
+  // a table of {d: ...} records directly instead — a real, standard
+  // Power Fx table-building technique that needs no AddColumns call at
+  // all, sidestepping whatever specific incompatibility Studio had with
+  // the AddColumns form.
+  const dueDate = `With({window: ForAll(Sequence(Min(${self}.Days, 400) * 2 + 20), {d: DateAdd(${self}.StartDate, Value, TimeUnit.Days)})}, With({biz: Filter(window, Weekday(d, StartOfWeek.Monday) <= 5 And IsBlank(LookUp(${self}.Holidays, HolidayDate = d)))}, If(CountRows(biz) = 0, ${self}.StartDate, Index(biz, Min(${self}.Days, CountRows(biz))).d)))`.replace(/\s*\n\s*/g, " ");
   const daysLeft = `DateDiff(Today(), ${dueDate}, TimeUnit.Days)`;
   // Real Studio error: "The function 'AddColumns' has some invalid
   // arguments." was actually a symptom of formula bloat, not a genuine
