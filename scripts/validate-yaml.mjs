@@ -149,7 +149,13 @@ const CONTROL_REF_PATTERN = /^[\w/]+@\d+\.\d+\.\d+$/;
    this list growing with whatever a real paste error reports next,
    rather than trusting an unverified property name a second time. */
 const KNOWN_INVALID_CONTROL_PROPERTIES = {
-  Rectangle: ["RadiusTopLeft", "RadiusTopRight", "RadiusBottomLeft", "RadiusBottomRight"]
+  Rectangle: ["RadiusTopLeft", "RadiusTopRight", "RadiusBottomLeft", "RadiusBottomRight"],
+  // A real Studio PA2108 paste error caught this one despite AccessibleLabel
+  // being documented as a common canvas-apps accessibility property —
+  // that reference describes the platform generally, not every specific
+  // versioned control. Classic/Button@2.2.0's own real accessible name is
+  // its Text property; it has no separate AccessibleLabel.
+  "Classic/Button": ["AccessibleLabel"]
 };
 
 /* A component listed in CHILDREN_BUILDERS claims a real, pasteable

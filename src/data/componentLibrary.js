@@ -169,8 +169,7 @@ const overrides = {
       ["IsLoading", "Boolean", "false", "True hides the card and shows a plain colored skeleton placeholder, sized to match the active Style's own layout, instead"],
       ["HasLoadError", "Boolean", "false", "True hides both the card and the skeleton and shows a distinct retry state instead — takes precedence over IsLoading, the same not-the-same-state distinction this catalog's Activity Timeline already draws"],
       ["StyleConfig", "Record", "Light theme tokens", "Centralized colors (cardBg/border/text/textMuted/positive/negative/neutral/skeletonBase/skeletonShine), tones (positive/warning/negative/neutral/info bg+fg pairs for Tone), space (xs..xl), radius (md/lg), type sizes (value/label/body) and abbreviateThreshold — every control references this instead of repeating literal colors/sizes"],
-      ["Icons", "Table", "8 built-in icons", "Name/SVG rows; each SVG string carries the literal placeholder text COLOR where a stroke value goes, substituted at render time with this card's own resolved icon color — one shared icon set, no per-color asset variants"],
-      ["AccessibilityLabel", "Text", "All Assets card, value 118, up 14 percent versus last month", "Screen-reader name for the whole card, wired to the overlay button's real AccessibleLabel property; it's a plain Text value, not a live formula, so keep it in sync with Value/PercentChange yourself, or bind the pasted instance's own property to a formula like Label & \", \" & Text(Value) & \"...\" for one that always matches"]
+      ["Icons", "Table", "8 built-in icons", "Name/SVG rows; each SVG string carries the literal placeholder text COLOR where a stroke value goes, substituted at render time with this card's own resolved icon color — one shared icon set, no per-color asset variants"]
     ],
     events: [
       ["OnSelect", "Fires when the card is tapped — no parameters, since a single-instance card never needs to say which one was pressed; the host already knows, because it placed this exact instance"],
@@ -201,14 +200,13 @@ const overrides = {
       "IsLoading's skeleton and HasLoadError's retry state are both plain, clearly-stated text content, not a silent blank card or a shimmer with no text equivalent",
       "HasLoadError's Retry is a real, focusable, keyboard-and-screen-reader-operable button, not a tap-to-dismiss overlay with no accessible name",
       "The icon SVG is decorative — IconBg/IconColor (or Tone's resolved equivalents) already convey the same category visually — with Label carrying the real accessible name for the card",
-      "AccessibilityLabel is wired to btnCardOverlay's real AccessibleLabel property (CONFIRMED against Microsoft's own canvas-apps accessibility property reference) so the interactive overlay always has a real accessible name, falling back to Label when AccessibilityLabel is left at its default",
       "btnCardOverlay is a real focusable, selectable button over the card (not a bare click handler on a container), so OnSelect fires the same way for keyboard and screen-reader activation as it does for a mouse click",
       "Tone's five options are all pre-checked against WCAG 1.4.3 (4.5:1) for the Filled variant's text-on-background pairing, the same real relative-luminance calculation this catalog used to fix the original Filled variant's contrast failures — picking a Tone can't reintroduce that bug"
     ],
     limitations: [
       "Value is a real Number; NumberFormat covers most real formatting needs (currency, percent, thousands separators) but a format this catalog hasn't anticipated may need the abbreviation formula itself extended",
       "The sparkline is decorative and intentionally omitted from Compact/Minimal/Filled — PercentChange and PercentLabel already state the same trend as text in those styles",
-      "AccessibilityLabel is a plain Text value, not a live formula, so a card whose Value/PercentChange come from a fast-changing live source needs its own AccessibilityLabel kept in sync (or bound to a formula on the pasted instance) or the announced name will drift from what's on screen",
+      "btnCardOverlay has no settable accessible name of its own — a real Studio PA2108 paste error confirmed Classic/Button@2.2.0 does not expose an AccessibleLabel property distinct from Text, and setting Text here would print visible button text over the card's own laid-out content, so a screen reader currently identifies the tap target only as a plain button",
       "Rendering several cards from one collection is the host screen's own job (a Gallery templating this component, per the Examples) — this component intentionally carries no Data/Table property or internal Gallery of its own, so pasting one instance always produces exactly the one card it describes, never more"
     ],
     variants: [

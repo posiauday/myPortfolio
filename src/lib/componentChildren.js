@@ -44,7 +44,7 @@
    a fixed 280 (a single card, not a full-width row), and a host resizes
    the pasted instance per-placement the normal way.
 
-   Past the initial single-card rebuild, five more real, data-practice
+   Past the initial single-card rebuild, four more real, data-practice
    features were added on top of the same shape: NumberFormat (a real
    Power Fx number-format string via Text(Value, format), replacing a
    fragile "does Label say value/price/cost" guess); Target (a goal
@@ -55,16 +55,23 @@
    HasLoadError (a third state alongside the normal card and the loading
    skeleton, with its own message and a real OnRetry-firing Retry
    button, the same distinct-from-IsLoading pattern this catalog's
-   Activity Timeline already uses); AccessibilityLabel (wired to the
-   overlay button's real AccessibleLabel property — CONFIRMED against
-   Microsoft's own canvas-apps accessibility property reference — since
-   an interactive control with no accessible name fails WCAG 4.1.2).
-   A sixth, Tone, makes IconBg/IconColor themselves dynamic: "Custom"
-   (the default) uses them exactly as authored; Positive/Warning/
-   Negative/Neutral/Info instead resolves both from StyleConfig's own
-   already-contrast-checked token pairs, so a card's color follows the
-   *kind* of metric it shows rather than a hex pair the host has to
-   hand-pick and separately verify for contrast every time. */
+   Activity Timeline already uses). A fifth, Tone, makes IconBg/IconColor
+   themselves dynamic: "Custom" (the default) uses them exactly as
+   authored; Positive/Warning/Negative/Neutral/Info instead resolves both
+   from StyleConfig's own already-contrast-checked token pairs, so a
+   card's color follows the *kind* of metric it shows rather than a hex
+   pair the host has to hand-pick and separately verify for contrast
+   every time.
+
+   A sixth attempt — AccessibilityLabel, wired to btnCardOverlay's
+   AccessibleLabel — was reverted: a real Studio PA2108 paste error
+   confirmed Classic/Button@2.2.0 has no such property, despite it being
+   documented as a common canvas-apps accessibility property generally.
+   That reference describes the platform, not every specific versioned
+   control — the same "docs describe it, a real paste rejects it" gap
+   this catalog's Rectangle/Radius* finding already burned once. See
+   scripts/validate-yaml.mjs's KNOWN_INVALID_CONTROL_PROPERTIES and the
+   skill file for the durable record. */
 function kpiCard(pascal) {
   const self = `cmp${pascal}`;
   const isDense = `Or(${self}.Style = "Compact", ${self}.Style = "Minimal")`;
@@ -372,7 +379,6 @@ function kpiCard(pascal) {
         name: "btnCardOverlay",
         control: "Classic/Button@2.2.0",
         properties: {
-          AccessibleLabel: `Coalesce(${self}.AccessibilityLabel, ${self}.Label)`,
           BorderStyle: "BorderStyle.None",
           Fill: "Color.Transparent",
           HoverFill: "RGBA(0, 0, 0, 0.03)",

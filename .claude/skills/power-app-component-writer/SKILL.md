@@ -16,7 +16,7 @@ or `STRONG EVIDENCE` (multiple real, complete `.pa.yaml` files from trustworthy 
 broken YAML twice in one session before this skill existed — see the June/September
 post-mortems folded into the rules below.
 
-## The two failure modes this exists to prevent
+## The three failure modes this exists to prevent
 
 1. **Property-doesn't-exist (PA2108 "Unknown property").** A control type's real
    settable-property set is *narrower* than what shows up in an exported app's YAML —
@@ -25,6 +25,15 @@ post-mortems folded into the rules below.
    than its *export* serializer. GitHub examples prove a property was accepted on
    export; they don't prove it's accepted on import. Only a real paste error, or a
    property appearing in `pa.schema.yaml`'s own definitions, is `CONFIRMED`.
+   A second, equally real trap under this same failure mode: Microsoft's own docs
+   describing a property as common across "canvas apps" or "many controls" (its
+   general accessibility/properties reference pages do this a lot) is a claim about
+   the *platform*, not a guarantee every specific `Control@version` actually exposes
+   it — `AccessibleLabel` is documented this way generally, and a real PA2108 paste
+   error still rejected it on `Classic/Button@2.2.0` on this catalog's own KPI Card.
+   Docs at the platform level are STRONG-EVIDENCE-at-best for one specific control
+   version, never `CONFIRMED` by themselves — only a real paste, or that exact
+   control's own dedicated reference page, gets to `CONFIRMED`.
 2. **Wrong-typed Default (silent schema corruption, or PA1011/PA2231/type-mismatch).**
    A `Table`/`Record`/`Color` custom property's `Default` is not decoration — it's how
    Studio infers that property's column/field types the *first time* the component is
@@ -72,7 +81,7 @@ to be settled with the user before any code gets written, not discovered after.
 |---|---|---|
 | `Rectangle@2.3.0` | **No** — `RadiusTopLeft/TopRight/BottomLeft/BottomRight` all rejected, `CONFIRMED` via a real PA2108 paste error on this catalog's own KPI Card. Only `Fill/X/Y/Width/Height/Visible/BorderColor/BorderThickness` are confirmed safe (same paste, no errors). | Square corners only. Don't reach for Rectangle when a card needs rounded corners — use `GroupContainer` instead. |
 | `GroupContainer@1.5.0` | **Yes** — `STRONG EVIDENCE`, dozens of real `.pa.yaml` files including `pnp/powerplatform-snippets`. | Two `Variant`s: `AutoLayout` (flex-like — `LayoutDirection`, `LayoutGap`, `LayoutWrap`, `LayoutAlignItems`) and `ManualLayout` (absolute `X/Y/Width/Height` children, like a plain container). Also takes `DropShadow`, `Fill`, `BorderColor`, `BorderThickness`. This is the real "card" building block — reach for it before Rectangle. |
-| `Classic/Button@2.2.0` | **Yes** — `STRONG EVIDENCE`, and `CONFIRMED` safe generally (this catalog's own real paste test: zero errors on any Button property used, including `Radius*`). | Used both as a real button (`OnSelect`, `Text`) and, with `Fill`/`BorderColor` transparent and `Text: =""`, as an invisible click-catcher overlay, or as a skeleton-loading placeholder bar/circle (colored `Fill`, no text). Real, common pattern — not a hack. |
+| `Classic/Button@2.2.0` | **Yes** — `STRONG EVIDENCE`, and `CONFIRMED` safe generally (this catalog's own real paste test: zero errors on any Button property used, including `Radius*`). | Used both as a real button (`OnSelect`, `Text`) and, with `Fill`/`BorderColor` transparent and `Text: =""`, as an invisible click-catcher overlay, or as a skeleton-loading placeholder bar/circle (colored `Fill`, no text). Real, common pattern — not a hack. **`AccessibleLabel` — `CONFIRMED` rejected** via a real PA2108 paste error on this catalog's own KPI Card, despite Microsoft's own "Accessibility properties for Power Apps" reference page listing `AccessibleLabel` as a common canvas-apps property. That page describes the platform generally, not every specific versioned control — `Classic/Button@2.2.0`'s real accessible name is its own `Text` property; it has no separate one. See `scripts/validate-yaml.mjs`'s `KNOWN_INVALID_CONTROL_PROPERTIES`. |
 | `Label@2.5.1` | Not checked (no Radius attempted). | `CONFIRMED` safe for `Text/Color/Font/Size/FontWeight/X/Y/Width/Height/Align` (this catalog's real paste test). Older/classic text control. |
 | `ModernText@1.0.0` | Not checked. | `STRONG EVIDENCE` real and current. Adds `AutoHeight`, `FillPortions` (for use inside an `AutoLayout` `GroupContainer`, flex-grow style), `VerticalAlign`, `Wrap`. Prefer this over `Label` for anything inside an `AutoLayout` container. |
 | `Gallery@2.15.0` | n/a | `STRONG EVIDENCE`, extremely common (hundreds of real examples). Real properties: `Items`, `TemplateSize`, `TemplatePadding`, `WrapCount`, `Transition` (`Transition.Pop/Push/None`), `ShowScrollbar`, `LayoutMaxHeight/LayoutMaxWidth`. `Variant: Vertical` for a wrapping grid (`WrapCount` columns per row). This is how one component definition renders *any number* of data-driven cards — don't hand-author N near-duplicate children for "up to N items"; use a Gallery bound to a real `Table`-typed property instead. |
