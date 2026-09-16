@@ -1767,6 +1767,154 @@ function dataTable(pascal) {
   };
 }
 
+/* File Upload — a real staged-file list (Collect()/Remove() on a
+   component-local locStaged context variable, the same pattern this
+   file already uses for Accordion List's expand state and Data
+   Table's multi-select), with a real Undo window on removal
+   (locJustRemoved holds the one most-recently-removed staged record,
+   matching the real canvas Attachments control's own OnUndoRemoveFile
+   behavior this component's architecture already cites). No real OS
+   file-picker/drag-and-drop control was researched for this pass (no
+   CONFIRMED/STRONG-EVIDENCE control to point to) — Add file stages a
+   clearly-labeled placeholder record instead of opening a device file
+   dialog, disclosed in componentLibrary.js's own Limitations. */
+function fileUpload(pascal) {
+  const self = `cmp${pascal}`;
+  const isCompact = `${self}.Style = "Compact"`;
+  const totalCount = `CountRows(${self}.Items) + CountRows(locStaged)`;
+  const atMax = `${totalCount} >= ${self}.MaxFiles`;
+
+  const existingRow = {
+    name: "cntExistingRow",
+    control: "GroupContainer@1.5.0",
+    variant: "ManualLayout",
+    properties: { BorderColor: "RGBA(226, 232, 240, 1)", BorderStyle: "BorderStyle.Solid", BorderThickness: "1", Fill: "Color.White", Height: "Parent.Height", Width: "Parent.Width" },
+    children: [
+      { name: "lblFileName", control: "ModernText@1.0.0", properties: { FontWeight: "FontWeight.Bold", Height: "18", Size: "10", Text: "ThisItem.Name", Width: "200", X: "8", Y: "6" } },
+      { name: "lblFileMeta", control: "ModernText@1.0.0", properties: { Color: "RGBA(100, 116, 139, 1)", Height: "14", Size: "8", Text: `Text(Round(ThisItem.SizeBytes / 1024, 0)) & " KB - " & ThisItem.UploadedBy`, Width: "220", X: "8", Y: "24" } },
+      { name: "btnView", control: "Classic/Button@2.2.0", properties: { BorderStyle: "BorderStyle.None", Color: "RGBA(15, 108, 189, 1)", Fill: "Color.Transparent", Height: "24", OnSelect: `${self}.OnView(ThisItem)`, Size: "9", Text: '"View"', Width: "40", X: "Parent.Width - 130", Y: "12" } },
+      { name: "btnDownload", control: "Classic/Button@2.2.0", properties: { BorderStyle: "BorderStyle.None", Color: "RGBA(15, 108, 189, 1)", Fill: "Color.Transparent", Height: "24", OnSelect: `${self}.OnDownload(ThisItem)`, Size: "9", Text: '"Get"', Width: "36", X: "Parent.Width - 90", Y: "12" } },
+      { name: "btnDeleteExisting", control: "Classic/Button@2.2.0", properties: { BorderStyle: "BorderStyle.None", Color: "RGBA(197, 58, 58, 1)", Fill: "Color.Transparent", Height: "24", OnSelect: `${self}.OnDelete(ThisItem)`, Size: "9", Text: '"Delete"', Visible: `${self}.AllowDelete`, Width: "44", X: "Parent.Width - 50", Y: "12" } }
+    ]
+  };
+
+  const stagedRow = {
+    name: "cntStagedRow",
+    control: "GroupContainer@1.5.0",
+    variant: "ManualLayout",
+    properties: { BorderColor: "RGBA(232, 245, 233, 1)", BorderStyle: "BorderStyle.Solid", BorderThickness: "1", Fill: "RGBA(232, 245, 233, 1)", Height: "Parent.Height", Width: "Parent.Width" },
+    children: [
+      { name: "lblStagedName", control: "ModernText@1.0.0", properties: { FontWeight: "FontWeight.Bold", Height: "Parent.Height", Size: "10", Text: "ThisItem.Name", Width: "Parent.Width - 60", X: "8", Y: "0" } },
+      { name: "btnRemoveStaged", control: "Classic/Button@2.2.0", properties: { BorderStyle: "BorderStyle.None", Color: "RGBA(197, 58, 58, 1)", Fill: "Color.Transparent", Height: "Parent.Height", OnSelect: "UpdateContext({locJustRemoved: ThisItem}); Remove(locStaged, ThisItem)", Size: "9", Text: '"Remove"', Width: "56", X: "Parent.Width - 60" } }
+    ]
+  };
+
+  const cntRoot = {
+    name: "cntRoot",
+    control: "GroupContainer@1.5.0",
+    variant: "ManualLayout",
+    properties: { BorderStyle: "BorderStyle.None", Fill: "Color.White", Height: "Parent.Height", Width: "Parent.Width" },
+    children: [
+      { name: "cntDropzone", control: "GroupContainer@1.5.0", variant: "ManualLayout", properties: { BorderColor: "RGBA(226, 232, 240, 1)", BorderStyle: "BorderStyle.Solid", BorderThickness: "1", Fill: "RGBA(248, 250, 252, 1)", Height: `If(${isCompact}, 0, 60)`, RadiusBottomLeft: "10", RadiusBottomRight: "10", RadiusTopLeft: "10", RadiusTopRight: "10", Visible: `And(!${isCompact}, ${self}.AllowUpload, !${atMax})`, Width: "Parent.Width - 16", X: "8", Y: "8" },
+        children: [{ name: "lblDropHint", control: "ModernText@1.0.0", properties: { Align: "Align.Center", Color: "RGBA(100, 116, 139, 1)", Height: "20", Size: "10", Text: '"Drag files here or tap Add file below"', Width: "Parent.Width", X: "0", Y: "20" } }]
+      },
+      { name: "lblMaxReached", control: "ModernText@1.0.0", properties: { Align: "Align.Center", Color: "RGBA(191, 54, 12, 1)", Height: "24", Size: "10", Text: `${self}.MaxAttachmentsText`, Visible: atMax, Width: "Parent.Width - 16", X: "8", Y: "8" } },
+      { name: "btnAddFile", control: "Classic/Button@2.2.0", properties: { BorderStyle: "BorderStyle.None", Color: "Color.White", Fill: "RGBA(22, 131, 38, 1)", FontWeight: "FontWeight.Bold", Height: "28", OnSelect: `Collect(locStaged, {Id: CountRows(locStaged) + 1, Name: "New file " & (CountRows(locStaged) + 1) & ".pdf", SizeBytes: 102400, Ext: "pdf"})`, RadiusBottomLeft: "14", RadiusBottomRight: "14", RadiusTopLeft: "14", RadiusTopRight: "14", Size: "10", Text: '"Add file"', Visible: `And(${self}.AllowUpload, !${atMax})`, Width: "88", X: "8", Y: `If(${isCompact}, 8, 76)` } },
+      {
+        name: "galExisting",
+        control: "Gallery@2.15.0",
+        variant: "Vertical",
+        properties: { Height: `CountRows(${self}.Items) * 44`, Items: `${self}.Items`, TemplateSize: "44", Width: "Parent.Width - 16", WrapCount: "1", X: "8", Y: `If(${isCompact}, 44, 112)` },
+        children: [existingRow]
+      },
+      {
+        name: "galStaged",
+        control: "Gallery@2.15.0",
+        variant: "Vertical",
+        properties: { Height: "CountRows(locStaged) * 28", Items: "locStaged", TemplateSize: "28", Width: "Parent.Width - 16", WrapCount: "1", X: "8", Y: `If(${isCompact}, 44, 112) + CountRows(${self}.Items) * 44` },
+        children: [stagedRow]
+      },
+      { name: "lblUndoRemoved", control: "ModernText@1.0.0", properties: { Color: "RGBA(100, 116, 139, 1)", Height: "20", Size: "9", Text: `"Removed " & locJustRemoved.Name & " - "`, Visible: "!IsBlank(locJustRemoved)", Width: "160", X: "8", Y: `If(${isCompact}, 44, 112) + CountRows(${self}.Items) * 44 + CountRows(locStaged) * 28 + 6` } },
+      { name: "btnUndoRemove", control: "Classic/Button@2.2.0", properties: { BorderStyle: "BorderStyle.None", Color: "RGBA(15, 108, 189, 1)", Fill: "Color.Transparent", FontWeight: "FontWeight.Bold", Height: "20", OnSelect: `Collect(locStaged, locJustRemoved); UpdateContext({locJustRemoved: Blank()}); ${self}.OnUndoRemove()`, Size: "9", Text: '"Undo"', Visible: "!IsBlank(locJustRemoved)", Width: "40", X: "168", Y: `If(${isCompact}, 44, 112) + CountRows(${self}.Items) * 44 + CountRows(locStaged) * 28 + 6` } },
+      { name: "lblNoFiles", control: "ModernText@1.0.0", properties: { Align: "Align.Center", Color: "RGBA(100, 116, 139, 1)", Height: "24", Size: "10", Text: `${self}.NoFilesText`, Visible: `${totalCount} = 0`, Width: "Parent.Width - 16", X: "8", Y: `If(${isCompact}, 44, 112)` } },
+      { name: "btnUpload", control: "Classic/Button@2.2.0", properties: { BorderStyle: "BorderStyle.None", Color: "Color.White", Fill: "RGBA(22, 131, 38, 1)", FontWeight: "FontWeight.Bold", Height: "32", OnSelect: `${self}.OnSave(locStaged); Clear(locStaged)`, RadiusBottomLeft: "16", RadiusBottomRight: "16", RadiusTopLeft: "16", RadiusTopRight: "16", Size: "10", Text: '"Upload"', Visible: `And(${self}.AllowUpload, CountRows(locStaged) > 0)`, Width: "88", X: "Parent.Width - 192", Y: "8" } },
+      { name: "btnCancel", control: "Classic/Button@2.2.0", properties: { BorderColor: "RGBA(226, 232, 240, 1)", BorderStyle: "BorderStyle.Solid", BorderThickness: "1", Fill: "Color.White", FontWeight: "FontWeight.Bold", Height: "32", OnSelect: `Clear(locStaged); ${self}.OnCancel()`, RadiusBottomLeft: "16", RadiusBottomRight: "16", RadiusTopLeft: "16", RadiusTopRight: "16", Size: "10", Text: '"Cancel"', Visible: `And(${self}.AllowUpload, CountRows(locStaged) > 0)`, Width: "88", X: "Parent.Width - 96", Y: "8" } }
+    ]
+  };
+
+  return {
+    properties: { Height: `(If(${isCompact}, 44, 112) + CountRows(${self}.Items) * 44 + CountRows(locStaged) * 28 + 40)`, Width: "360" },
+    children: [cntRoot]
+  };
+}
+
+/* Email Composer — To/CC/Bcc as real Classic/TextInput fields bound
+   to a comma-separated address string rather than a full typeahead
+   picker against Directory — a disclosed simplification (Directory is
+   still a real property the host can use its own way; this Children
+   tree doesn't build a live-filtered suggestion Gallery under each
+   field). ContextHtml renders as plain text in a tinted box rather
+   than parsed HTML — no CONFIRMED/STRONG-EVIDENCE HTML-rendering
+   control was researched for this pass, and guessing one (e.g. a
+   Classic/HtmlViewer version string) would repeat the exact mistake
+   this catalog's own skill file exists to prevent. Both simplifications
+   are disclosed in componentLibrary.js's own Limitations. */
+function emailComposer(pascal) {
+  const self = `cmp${pascal}`;
+  const isCompact = `${self}.Style = "Compact"`;
+  const hasContext = `${self}.ContextHtml <> ""`;
+  const ctxY = `If(${hasContext}, 40, 0)`;
+
+  const priorityBtn = (label, val, x) => ({
+    name: `btnPriority${val}`,
+    control: "Classic/Button@2.2.0",
+    properties: {
+      BorderColor: "RGBA(226, 232, 240, 1)", BorderStyle: "BorderStyle.Solid", BorderThickness: "1",
+      Color: `If(${self}.DefaultPriority = "${val}", "Color.White", "RGBA(71, 85, 105, 1)")`,
+      Fill: `If(${self}.DefaultPriority = "${val}", "RGBA(23, 32, 27, 1)", "Color.White")`,
+      FontWeight: "FontWeight.Bold",
+      Height: "24",
+      OnSelect: `${self}.OnSend(${self}.Directory, txtSubject.Text, txtBody.Text, "${val}", ${self}.Attachments)`,
+      RadiusBottomLeft: "12", RadiusBottomRight: "12", RadiusTopLeft: "12", RadiusTopRight: "12",
+      Size: "9", Text: `"${label}"`, Width: "60", X: x
+    }
+  });
+
+  const cntRoot = {
+    name: "cntRoot",
+    control: "GroupContainer@1.5.0",
+    variant: "ManualLayout",
+    properties: { BorderStyle: "BorderStyle.None", DropShadow: "DropShadow.Regular", Fill: "Color.White", Height: "Parent.Height", RadiusBottomLeft: "16", RadiusBottomRight: "16", RadiusTopLeft: "16", RadiusTopRight: "16", Visible: `!${self}.Busy`, Width: "Parent.Width" },
+    children: [
+      { name: "txtTo", control: "Classic/TextInput@2.3.2", properties: { BorderColor: "RGBA(226, 232, 240, 1)", BorderThickness: "1", Fill: "Color.White", Height: "30", HintText: '"To (name or email, comma-separated)"', Size: "10", Width: "Parent.Width - 16", X: "8", Y: "8" } },
+      { name: "txtCc", control: "Classic/TextInput@2.3.2", properties: { BorderColor: "RGBA(226, 232, 240, 1)", BorderThickness: "1", Fill: "Color.White", Height: "30", HintText: '"Cc"', Size: "10", Visible: `!${isCompact}`, Width: "Parent.Width - 16", X: "8", Y: "42" } },
+      { name: "txtBcc", control: "Classic/TextInput@2.3.2", properties: { BorderColor: "RGBA(226, 232, 240, 1)", BorderThickness: "1", Fill: "Color.White", Height: "30", HintText: '"Bcc"', Size: "10", Visible: `And(${self}.ShowBcc, !${isCompact})`, Width: "Parent.Width - 16", X: "8", Y: `If(${self}.ShowBcc, 76, 42)` } },
+      { name: "txtSubject", control: "Classic/TextInput@2.3.2", properties: { BorderColor: "RGBA(226, 232, 240, 1)", BorderThickness: "1", Default: `${self}.DefaultSubject`, Fill: "Color.White", Height: "30", HintText: '"Subject"', Size: "10", Width: "Parent.Width - 16", X: "8", Y: `If(${isCompact}, 42, If(${self}.ShowBcc, 110, 76))` } },
+      { name: "cntContext", control: "GroupContainer@1.5.0", variant: "ManualLayout", properties: { BorderStyle: "BorderStyle.None", Fill: "RGBA(248, 250, 252, 1)", Height: "36", RadiusBottomLeft: "8", RadiusBottomRight: "8", RadiusTopLeft: "8", RadiusTopRight: "8", Visible: hasContext, Width: "Parent.Width - 16", X: "8", Y: `If(${isCompact}, 76, If(${self}.ShowBcc, 144, 110))` },
+        children: [{ name: "lblContext", control: "ModernText@1.0.0", properties: { AutoHeight: "false", Color: "RGBA(71, 85, 105, 1)", Height: "Parent.Height", Size: "9", Text: `${self}.ContextHtml`, Width: "Parent.Width - 16", Wrap: "true", X: "8", Y: "0" } }]
+      },
+      { name: "txtBody", control: "Classic/TextInput@2.3.2", properties: { BorderColor: "RGBA(226, 232, 240, 1)", BorderThickness: "1", Fill: "Color.White", Height: "70", HintText: '"Write your note..."', Size: "10", Width: "Parent.Width - 16", X: "8", Y: `If(${isCompact}, 76 + 40, If(${self}.ShowBcc, 144, 110) + ${ctxY}) ` } },
+      { name: "lblSignature", control: "ModernText@1.0.0", properties: { Color: "RGBA(100, 116, 139, 1)", Height: "16", Size: "9", Text: `${self}.Signature`, Visible: `${self}.Signature <> ""`, Width: "Parent.Width - 16", X: "8", Y: `If(${isCompact}, 76 + 40, If(${self}.ShowBcc, 144, 110) + ${ctxY}) + 74` } },
+      priorityBtn("Low", "Low", 8), priorityBtn("Normal", "Normal", 72), priorityBtn("High", "High", 136),
+      { name: "btnCancel", control: "Classic/Button@2.2.0", properties: { BorderColor: "RGBA(226, 232, 240, 1)", BorderStyle: "BorderStyle.Solid", BorderThickness: "1", Fill: "Color.White", FontWeight: "FontWeight.Bold", Height: "28", OnSelect: `${self}.OnCancel()`, RadiusBottomLeft: "14", RadiusBottomRight: "14", RadiusTopLeft: "14", RadiusTopRight: "14", Size: "10", Text: '"Cancel"', Width: "72", X: "Parent.Width - 160", Y: "Parent.Height - 40" } },
+      { name: "btnSend", control: "Classic/Button@2.2.0", properties: { BorderStyle: "BorderStyle.None", Color: "Color.White", Fill: "RGBA(22, 131, 38, 1)", FontWeight: "FontWeight.Bold", Height: "28", OnSelect: `${self}.OnSend(${self}.Directory, txtSubject.Text, txtBody.Text, ${self}.DefaultPriority, ${self}.Attachments)`, RadiusBottomLeft: "14", RadiusBottomRight: "14", RadiusTopLeft: "14", RadiusTopRight: "14", Size: "10", Text: '"Send"', Width: "72", X: "Parent.Width - 80", Y: "Parent.Height - 40" } }
+    ]
+  };
+
+  const cntBusy = {
+    name: "cntBusy",
+    control: "GroupContainer@1.5.0",
+    variant: "ManualLayout",
+    properties: { BorderStyle: "BorderStyle.None", Fill: "Color.White", Height: "Parent.Height", RadiusBottomLeft: "16", RadiusBottomRight: "16", RadiusTopLeft: "16", RadiusTopRight: "16", Visible: `${self}.Busy`, Width: "Parent.Width" },
+    children: [{ name: "lblBusy", control: "ModernText@1.0.0", properties: { Align: "Align.Center", FontWeight: "FontWeight.Bold", Height: "24", Size: "11", Text: '"Sending..."', Width: "Parent.Width", X: "0", Y: "Parent.Height / 2 - 12" } }]
+  };
+
+  return {
+    properties: { Height: "260", Width: "360" },
+    children: [cntRoot, cntBusy]
+  };
+}
+
 export const CHILDREN_BUILDERS = {
   "KPI Card": kpiCard,
   "Notification Badge": notificationBadge,
@@ -1782,5 +1930,7 @@ export const CHILDREN_BUILDERS = {
   "Activity Timeline": activityTimeline,
   "Calendar": calendar,
   "Accordion List": accordionList,
-  "Data Table": dataTable
+  "Data Table": dataTable,
+  "File Upload": fileUpload,
+  "Email Composer": emailComposer
 };
