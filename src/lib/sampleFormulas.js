@@ -77,7 +77,7 @@ export const SAMPLE_FORMULAS = {
   "File Upload::AllowedExtensions": 'Filter(Table({Ext:""}),false)',
   "Email Composer::Directory": 'Table({DisplayName:"Jordan Lee",Mail:"jordan.lee@example.com",JobTitle:"Power Platform Architect"})',
   "Email Composer::Attachments": "Filter(Table({Id:1,Name:\"\",SizeBytes:0}),false)",
-  "Comments & Mentions::Comments": 'Table({Author:"Jordan Lee",Text:"Looks good, ready for review.",Timestamp:Now(),ParentId:Blank()},{Author:"Alex Chen",Text:"Thanks, addressing the last comment now.",Timestamp:DateAdd(Now(),-1,Hours),ParentId:1})',
+  "Comments & Mentions::Comments": 'Table({Id:1,Author:"Jordan Lee",Text:"Looks good, ready for review.",Timestamp:Now(),ParentId:Blank(),ReactionCounts:Table({Emoji:"Like",Count:2})},{Id:2,Author:"Alex Chen",Text:"Thanks, addressing the last comment now.",Timestamp:DateAdd(Now(),-1,Hours),ParentId:1,ReactionCounts:Table({Emoji:"Like",Count:0})})',
   "Comments & Mentions::Directory": 'Table({DisplayName:"Jordan Lee",Mail:"jordan.lee@example.com"})',
   "Sidebar::Items": 'Table({Id:1,ParentId:Blank(),Label:"Dashboard",ItemBadgeCount:0,ItemIconColor:RGBA(22,131,38,1)},{Id:2,ParentId:Blank(),Label:"Projects",ItemBadgeCount:3,ItemIconColor:RGBA(15,108,189,1)})',
   "Responsive Breadcrumbs::Items": 'Table({Label:"Home",Key:"home",ItemClickable:true},{Label:"Projects",Key:"projects",ItemClickable:true},{Label:"Portfolio Command",Key:"portfolio-command",ItemClickable:true},{Label:"Q3 Review",Key:"q3-review",ItemClickable:true},{Label:"Details",Key:"details",ItemClickable:false})',

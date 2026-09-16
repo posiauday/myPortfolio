@@ -1915,6 +1915,126 @@ function emailComposer(pascal) {
   };
 }
 
+/* Dialog — checked directly against Power Apps' own Confirm() function
+   per its own architecture note; the Children tree mirrors that same
+   contract. Size drives a real three-step width scale (Fluent's own
+   Small/Medium/Large Dialog/Panel sizing), Style: Destructive only
+   recolors ConfirmButtonText's own button. No Custom-content body slot
+   is built — Message is the only body text rendered, disclosed in
+   componentLibrary.js's own Limitations. */
+function dialog(pascal) {
+  const self = `cmp${pascal}`;
+  const isDestructive = `${self}.Style = "Destructive"`;
+  const dialogWidth = `Switch(${self}.Size, "Large", 420, "Medium", 340, 280)`;
+
+  const cntBackdrop = { name: "cntBackdrop", control: "GroupContainer@1.5.0", variant: "ManualLayout", properties: { BorderStyle: "BorderStyle.None", Fill: "RGBA(15, 23, 42, 0.5)", Height: "Parent.Height", Width: "Parent.Width" } };
+
+  const cntDialog = {
+    name: "cntDialog",
+    control: "GroupContainer@1.5.0",
+    variant: "ManualLayout",
+    properties: {
+      BorderStyle: "BorderStyle.None", DropShadow: "DropShadow.Regular", Fill: "Color.White",
+      Height: "170", RadiusBottomLeft: "16", RadiusBottomRight: "16", RadiusTopLeft: "16", RadiusTopRight: "16",
+      Width: dialogWidth, X: `(Parent.Width - ${dialogWidth}) / 2`, Y: "Parent.Height / 2 - 85"
+    },
+    children: [
+      { name: "lblTitle", control: "ModernText@1.0.0", properties: { FontWeight: "FontWeight.Bold", Height: "22", Size: "15", Text: `${self}.Title`, Width: "Parent.Width - 32", X: "16", Y: "16" } },
+      { name: "lblSubtitle", control: "ModernText@1.0.0", properties: { Color: "RGBA(100, 116, 139, 1)", Height: "16", Size: "10", Text: `${self}.Subtitle`, Visible: `${self}.Subtitle <> ""`, Width: "Parent.Width - 32", X: "16", Y: "38" } },
+      { name: "lblMessage", control: "ModernText@1.0.0", properties: { AutoHeight: "false", Height: "48", Size: "11", Text: `${self}.Message`, Width: "Parent.Width - 32", Wrap: "true", X: "16", Y: `If(${self}.Subtitle <> "", 58, 44)` } },
+      { name: "btnCancel", control: "Classic/Button@2.2.0", properties: { BorderColor: "RGBA(226, 232, 240, 1)", BorderStyle: "BorderStyle.Solid", BorderThickness: "1", Fill: "Color.White", FontWeight: "FontWeight.Bold", Height: "34", OnSelect: `${self}.OnCancel()`, RadiusBottomLeft: "17", RadiusBottomRight: "17", RadiusTopLeft: "17", RadiusTopRight: "17", Size: "11", Text: `${self}.CancelButtonText`, Visible: `${self}.ShowCancel`, Width: "Parent.Width / 2 - 24", X: "16", Y: "Parent.Height - 50" } },
+      { name: "btnConfirm", control: "Classic/Button@2.2.0", properties: { BorderStyle: "BorderStyle.None", Color: "Color.White", Fill: `If(${isDestructive}, "RGBA(197, 58, 58, 1)", "RGBA(22, 131, 38, 1)")`, FontWeight: "FontWeight.Bold", Height: "34", OnSelect: `${self}.OnConfirm()`, RadiusBottomLeft: "17", RadiusBottomRight: "17", RadiusTopLeft: "17", RadiusTopRight: "17", Size: "11", Text: `${self}.ConfirmButtonText`, Width: `If(${self}.ShowCancel, "Parent.Width / 2 - 24", "Parent.Width - 32")`, X: `If(${self}.ShowCancel, "Parent.Width / 2 + 8", 16)`, Y: "Parent.Height - 50" } }
+    ]
+  };
+
+  return {
+    properties: { Fill: "Color.Transparent", Height: "400", Width: "500" },
+    children: [cntBackdrop, cntDialog]
+  };
+}
+
+/* Comments & Mentions — a real, single flat Gallery over Comments
+   (sorted by Timestamp), with a visual indent for a row whose own
+   ParentId is set rather than nesting replies directly beneath their
+   real parent (the same no-verified-table-union constraint every
+   parent/child component in this file has hit — see Accordion List).
+   Reactions render from ReactionCounts' own real {Emoji,Count} rows
+   (fixed 2 slots) rather than a map, since Power Fx has no map type
+   for a Table cell. @mention live-typing suggestions aren't wired —
+   the compose box is a plain Classic/TextInput plus Post, disclosed in
+   componentLibrary.js's own Limitations. */
+function commentsAndMentions(pascal) {
+  const self = `cmp${pascal}`;
+  const isReadOnly = `${self}.Style = "Read-only"`;
+  const isOwn = "ThisItem.Author = " + self + ".CurrentUser";
+  const sorted = `SortByColumns(${self}.Comments, "Timestamp", SortOrder.Ascending)`;
+
+  const reactionSlot = n => ({
+    name: `btnReaction${n}`,
+    control: "Classic/Button@2.2.0",
+    properties: {
+      BorderColor: "RGBA(226, 232, 240, 1)", BorderStyle: "BorderStyle.Solid", BorderThickness: "1",
+      Color: "RGBA(71, 85, 105, 1)", Fill: "RGBA(248, 250, 252, 1)",
+      Height: "20",
+      OnSelect: `${self}.OnReact(ThisItem.Id, Index(ThisItem.ReactionCounts, ${n}).Emoji)`,
+      RadiusBottomLeft: "10", RadiusBottomRight: "10", RadiusTopLeft: "10", RadiusTopRight: "10",
+      Size: "9",
+      Text: `Index(ThisItem.ReactionCounts, ${n}).Emoji & " " & Index(ThisItem.ReactionCounts, ${n}).Count`,
+      Visible: `And(${self}.AllowReactions, CountRows(ThisItem.ReactionCounts) >= ${n})`,
+      Width: "44",
+      X: 8 + (n - 1) * 48
+    }
+  });
+
+  const cntComment = {
+    name: "cntComment",
+    control: "GroupContainer@1.5.0",
+    variant: "ManualLayout",
+    properties: { BorderStyle: "BorderStyle.None", Fill: "Color.Transparent", Height: "Parent.Height", Width: "Parent.Width", X: "If(IsBlank(ThisItem.ParentId), 0, 24)" },
+    children: [
+      { name: "lblAuthor", control: "ModernText@1.0.0", properties: { FontWeight: "FontWeight.Bold", Height: "16", Size: "10", Text: "ThisItem.Author", Width: "180", X: "0", Y: "0" } },
+      { name: "lblTimestamp", control: "ModernText@1.0.0", properties: { Color: "RGBA(148, 163, 184, 1)", Height: "14", Size: "8", Text: `Text(ThisItem.Timestamp, DateTimeFormat.ShortDateTime, Coalesce(Blank(), Language()))`, Width: "140", X: "Parent.Width - 148", Y: "2" } },
+      { name: "lblCommentText", control: "ModernText@1.0.0", properties: { AutoHeight: "false", Height: "18", Size: "10", Text: "ThisItem.Text", Width: "Parent.Width", X: "0", Y: "16" } },
+      reactionSlot(1), reactionSlot(2),
+      { name: "btnReply", control: "Classic/Button@2.2.0", properties: { BorderStyle: "BorderStyle.None", Color: "RGBA(15, 108, 189, 1)", Fill: "Color.Transparent", Height: "20", OnSelect: `UpdateContext({locReplyTo: ThisItem.Id})`, Size: "9", Text: '"Reply"', Visible: `And(${self}.AllowReply, IsBlank(ThisItem.ParentId))`, Width: "44", X: "104" } },
+      { name: "btnEdit", control: "Classic/Button@2.2.0", properties: { BorderStyle: "BorderStyle.None", Color: "RGBA(100, 116, 139, 1)", Fill: "Color.Transparent", Height: "20", OnSelect: `${self}.OnEdit(ThisItem.Id, ThisItem.Text)`, Size: "9", Text: '"Edit"', Visible: isOwn, Width: "36", X: "148" } },
+      { name: "btnDeleteComment", control: "Classic/Button@2.2.0", properties: { BorderStyle: "BorderStyle.None", Color: "RGBA(197, 58, 58, 1)", Fill: "Color.Transparent", Height: "20", OnSelect: `${self}.OnDelete(ThisItem)`, Size: "9", Text: '"Delete"', Visible: isOwn, Width: "44", X: "186" } }
+    ]
+  };
+
+  const cntCompose = {
+    name: "cntCompose",
+    control: "GroupContainer@1.5.0",
+    variant: "ManualLayout",
+    properties: { BorderStyle: "BorderStyle.None", Fill: "Color.Transparent", Height: "70", Visible: `!${isReadOnly}`, Width: "Parent.Width", Y: `CountRows(${self}.Comments) * 60 + 8` },
+    children: [
+      { name: "lblReplyingTo", control: "ModernText@1.0.0", properties: { Color: "RGBA(100, 116, 139, 1)", Height: "14", Size: "8", Text: '"Replying to a comment - "', Visible: "!IsBlank(locReplyTo)", Width: "160", X: "0", Y: "0" } },
+      { name: "btnCancelReply", control: "Classic/Button@2.2.0", properties: { BorderStyle: "BorderStyle.None", Color: "RGBA(15, 108, 189, 1)", Fill: "Color.Transparent", Height: "14", OnSelect: "UpdateContext({locReplyTo: Blank()})", Size: "8", Text: '"cancel"', Visible: "!IsBlank(locReplyTo)", Width: "40", X: "160", Y: "0" } },
+      { name: "txtCompose", control: "Classic/TextInput@2.3.2", properties: { BorderColor: "RGBA(226, 232, 240, 1)", BorderThickness: "1", Fill: "Color.White", Height: "36", HintText: '"Write a comment... use @ to mention someone"', Size: "10", Width: "Parent.Width - 76", X: "0", Y: "14" } },
+      { name: "btnAttach", control: "Classic/Button@2.2.0", properties: { BorderColor: "RGBA(226, 232, 240, 1)", BorderStyle: "BorderStyle.Solid", BorderThickness: "1", Fill: "Color.White", Height: "36", Size: "9", Text: '"+"', Visible: `${self}.AllowAttachments`, Width: "32", X: "Parent.Width - 76", Y: "14" } },
+      { name: "btnPost", control: "Classic/Button@2.2.0", properties: { BorderStyle: "BorderStyle.None", Color: "Color.White", Fill: "RGBA(22, 131, 38, 1)", FontWeight: "FontWeight.Bold", Height: "36", OnSelect: `${self}.OnPost(txtCompose.Text, Blank(), locReplyTo); UpdateContext({locReplyTo: Blank()})`, RadiusBottomLeft: "18", RadiusBottomRight: "18", RadiusTopLeft: "18", RadiusTopRight: "18", Size: "10", Text: '"Post"', Width: "40", X: "Parent.Width - 40", Y: "14" } }
+    ]
+  };
+
+  const galComments = {
+    name: "galComments",
+    control: "Gallery@2.15.0",
+    variant: "Vertical",
+    properties: { Height: `CountRows(${self}.Comments) * 60`, Items: sorted, TemplateSize: "60", Width: "Parent.Width", WrapCount: "1", Y: "0" },
+    children: [cntComment]
+  };
+
+  return {
+    properties: { Height: `CountRows(${self}.Comments) * 60 + If(${isReadOnly}, 8, 78)`, Width: "360" },
+    children: [galComments, cntCompose],
+    eventParameters: {
+      OnPost: [{ name: "Text", dataType: "Text", defaultFormula: '""' }, { name: "Mentions", dataType: "Table", defaultFormula: "Filter(Table({DisplayName: \"\"}), false)" }, { name: "ParentId", dataType: "Number", defaultFormula: "0" }],
+      OnReact: [{ name: "CommentId", dataType: "Number", defaultFormula: "0" }, { name: "Emoji", dataType: "Text", defaultFormula: '""' }],
+      OnEdit: [{ name: "CommentId", dataType: "Number", defaultFormula: "0" }, { name: "NewText", dataType: "Text", defaultFormula: '""' }]
+    }
+  };
+}
+
 export const CHILDREN_BUILDERS = {
   "KPI Card": kpiCard,
   "Notification Badge": notificationBadge,
@@ -1932,5 +2052,7 @@ export const CHILDREN_BUILDERS = {
   "Accordion List": accordionList,
   "Data Table": dataTable,
   "File Upload": fileUpload,
-  "Email Composer": emailComposer
+  "Email Composer": emailComposer,
+  "Dialog": dialog,
+  "Comments & Mentions": commentsAndMentions
 };
