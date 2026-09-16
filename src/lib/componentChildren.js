@@ -1038,11 +1038,121 @@ function operationalStatusBanner(pascal) {
   };
 }
 
+/* Risk Matrix — a real NxN Gallery (bound to Sequence(Size*Size), one
+   cell per Gallery item) whose color, count and named-risk text are
+   all looked up live from the Risks table for that cell's own
+   Likelihood/Impact, not the earlier preview mockup's hardcoded
+   per-index count arrays. Risks stays a flat table (Likelihood,
+   Impact, Count, optional Name/TrendDirection per row) rather than a
+   nested per-cell list of named risks — a cell with several named
+   risks is several rows sharing the same Likelihood/Impact, which
+   Filter()/Concat() read naturally and keeps every column a plain
+   scalar (a nested Table-typed column inside a Table is real but adds
+   real complexity this component doesn't need).
+
+   Gallery items bound to Sequence(n) expose their row as
+   `ThisItem.Value` inside the template (Sequence's own single column
+   is literally named Value) — not a bare `Value`, which is only the
+   ForAll iteration variable's name in a *ForAll*, a different context
+   this file's other components use for a reason (see KPI Card's
+   sparkline). Getting this wrong here would have been a real, silent
+   binding bug.
+
+   The grid cell's own text uses Label@2.5.1, not ModernText, because
+   this needs Align (CONFIRMED safe on Label; not yet independently
+   verified on ModernText — Notification Badge already made the same
+   choice to skip an unverified property rather than guess).
+
+   The live search box is this catalog's first real Classic/TextInput
+   (STRONG EVIDENCE — see the skill file's control table) — reused as-
+   is by name below rather than re-derived, since several other
+   upcoming components need the identical live-search pattern. */
+function riskMatrix(pascal) {
+  const self = `cmp${pascal}`;
+  const idx = "ThisItem.Value";
+  const likelihood = `(${self}.Size - RoundDown((${idx} - 1) / ${self}.Size, 0))`;
+  const impact = `(Mod(${idx} - 1, ${self}.Size) + 1)`;
+  const matches = `Filter(${self}.Risks, Likelihood = ${likelihood} And Impact = ${impact})`;
+  const totalCount = `Sum(${matches}, Count)`;
+  const severity = `(${likelihood} * ${impact}) / (${self}.Size * ${self}.Size)`;
+  const cellColor = `If(${severity} <= 0.33, "#DCFCE7", If(${severity} <= 0.66, "#FEF3C7", "#FEE2E2"))`;
+  const namedList = `Concat(Filter(${matches}, Name <> Blank()), Name & If(TrendDirection = "Worse", " v", If(TrendDirection = "Better", " ^", "")), ", ")`;
+  const cellText = `If(${self}.ShowNames, If(IsBlank(${namedList}), Text(${totalCount}), ${namedList}), Text(${totalCount}))`;
+  const gridArea = 240;
+  const gridX = `If(${self}.ShowLabels, 28, 8)`;
+
+  const cntCell = {
+    name: "cntCell",
+    control: "GroupContainer@1.5.0",
+    variant: "ManualLayout",
+    properties: {
+      BorderColor: "Color.White", BorderStyle: "BorderStyle.Solid", BorderThickness: "2",
+      Fill: cellColor,
+      Height: `${gridArea} / ${self}.Size`,
+      Width: `${gridArea} / ${self}.Size`
+    },
+    children: [
+      { name: "lblCellText", control: "Label@2.5.1", properties: { Align: "Align.Center", Color: "RGBA(23, 32, 27, 1)", FontWeight: "FontWeight.Bold", Height: "Parent.Height", Size: `If(${self}.ShowNames, 8, 14)`, Text: cellText, Width: "Parent.Width" } },
+      { name: "btnCellTap", control: "Classic/Button@2.2.0", properties: { BorderStyle: "BorderStyle.None", Fill: "Color.Transparent", Height: "Parent.Height", OnSelect: `${self}.OnCellSelect(${likelihood}, ${impact}, ${matches})`, Text: '""', Width: "Parent.Width" } }
+    ]
+  };
+
+  const galGrid = {
+    name: "galGrid",
+    control: "Gallery@2.15.0",
+    variant: "Vertical",
+    properties: { Height: `${gridArea}`, Items: `Sequence(${self}.Size * ${self}.Size)`, TemplateSize: `${gridArea} / ${self}.Size`, Width: `${gridArea}`, WrapCount: `${self}.Size`, X: gridX, Y: "44" },
+    children: [cntCell]
+  };
+
+  const galLikelihoodAxis = {
+    name: "galLikelihoodAxis",
+    control: "Gallery@2.15.0",
+    variant: "Vertical",
+    properties: { Height: `${gridArea}`, Items: `Sequence(${self}.Size)`, TemplateSize: `${gridArea} / ${self}.Size`, Visible: `${self}.ShowLabels`, Width: "24", WrapCount: "1", X: "0", Y: "44" },
+    children: [
+      { name: "lblLikelihoodValue", control: "Label@2.5.1", properties: { Align: "Align.Center", Color: "RGBA(100, 116, 139, 1)", FontWeight: "FontWeight.Bold", Height: "Parent.Height", Size: "9", Text: `Text(${self}.Size - ThisItem.Value + 1)`, Width: "Parent.Width" } }
+    ]
+  };
+
+  const galImpactAxis = {
+    name: "galImpactAxis",
+    control: "Gallery@2.15.0",
+    variant: "Vertical",
+    properties: { Height: "16", Items: `Sequence(${self}.Size)`, TemplateSize: `${gridArea} / ${self}.Size`, Visible: `${self}.ShowLabels`, Width: `${gridArea}`, WrapCount: `${self}.Size`, X: gridX, Y: `44 + ${gridArea}` },
+    children: [
+      { name: "lblImpactValue", control: "Label@2.5.1", properties: { Align: "Align.Center", Color: "RGBA(100, 116, 139, 1)", FontWeight: "FontWeight.Bold", Height: "Parent.Height", Size: "9", Text: "Text(ThisItem.Value)", Width: "Parent.Width" } }
+    ]
+  };
+
+  const cntRoot = {
+    name: "cntRoot",
+    control: "GroupContainer@1.5.0",
+    variant: "ManualLayout",
+    properties: { BorderStyle: "BorderStyle.None", Fill: "Color.White", Height: "Parent.Height", Width: "Parent.Width" },
+    children: [
+      { name: "lblLikelihoodTitle", control: "Label@2.5.1", properties: { Color: "RGBA(100, 116, 139, 1)", FontWeight: "FontWeight.Bold", Height: "14", Size: "8", Text: '"Likelihood"', Visible: `${self}.ShowLabels`, Width: "80", X: "0", Y: "0" } },
+      { name: "lblImpactTitle", control: "Label@2.5.1", properties: { Align: "Align.Center", Color: "RGBA(100, 116, 139, 1)", FontWeight: "FontWeight.Bold", Height: "14", Size: "8", Text: '"Impact"', Visible: `${self}.ShowLabels`, Width: `${gridArea}`, X: gridX, Y: `60 + ${gridArea}` } },
+      { name: "txtSearch", control: "Classic/TextInput@2.3.2", properties: { BorderColor: "RGBA(226, 232, 240, 1)", BorderThickness: "1", Fill: "RGBA(248, 250, 252, 1)", Height: "32", HintText: '"Search risks"', OnChange: `${self}.OnSearch(Self.Text)`, Size: "10", Visible: `And(${self}.Searchable, ${self}.ShowNames)`, Width: "Parent.Width - 130", X: "8", Y: "6" } },
+      { name: "btnExport", control: "Classic/Button@2.2.0", properties: { BorderStyle: "BorderStyle.None", Color: "Color.White", Fill: "RGBA(23, 32, 27, 1)", FontWeight: "FontWeight.Bold", Height: "32", OnSelect: `${self}.OnExport(${self}.Risks)`, RadiusBottomLeft: "16", RadiusBottomRight: "16", RadiusTopLeft: "16", RadiusTopRight: "16", Size: "10", Text: '"Export"', Width: "80", X: "Parent.Width - 88", Y: "6" } },
+      galLikelihoodAxis,
+      galGrid,
+      galImpactAxis
+    ]
+  };
+
+  return {
+    properties: { Height: `44 + ${gridArea} + 40`, Width: "320" },
+    children: [cntRoot]
+  };
+}
+
 export const CHILDREN_BUILDERS = {
   "KPI Card": kpiCard,
   "Notification Badge": notificationBadge,
   "Responsive Line Chart": responsiveLineChart,
   "Command Card": commandCard,
   "Program Scorecard": programScorecard,
-  "Operational Status Banner": operationalStatusBanner
+  "Operational Status Banner": operationalStatusBanner,
+  "Risk Matrix": riskMatrix
 };
