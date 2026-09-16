@@ -1672,6 +1672,101 @@ function accordionList(pascal) {
   };
 }
 
+/* Data Table — Table view only (ViewMode's card/list values render the
+   same table today; see componentLibrary.js's own disclosed
+   Limitations). Sort is real (SortByColumns, guarded against a blank
+   CurrentSortColumn before the host ever sets one) but reads Items
+   as-is otherwise — Searchable's filtering and Sortable's own
+   re-ordering of the *source* data both stay host-executed exactly as
+   documented (OnSearch/OnSort only ever request them), matching every
+   other host-executes-the-mutation event in this catalog. Paging is
+   real and self-contained: a component-local context variable
+   (locPage) tracks the current page, sliced out of Items with
+   FirstN(LastN(...)) — the standard real technique for a plain
+   in-memory table, since Power Fx has no generic Skip() the way SQL
+   does. Multi-select reuses Accordion List's own Collect()/Remove()-
+   on-a-context-variable pattern for the checked set. */
+function dataTable(pascal) {
+  const self = `cmp${pascal}`;
+  const sorted = `If(${self}.Sortable And !IsBlank(${self}.CurrentSortColumn), SortByColumns(${self}.Items, ${self}.CurrentSortColumn, If(${self}.CurrentSortDirection = "Descending", SortOrder.Descending, SortOrder.Ascending)), ${self}.Items)`;
+  const pageCount = `Max(1, RoundUp(CountRows(${self}.Items) / ${self}.PageSize, 0))`;
+  const pageRows = `FirstN(LastN(${sorted}, CountRows(${self}.Items) - (Min(locPage, ${pageCount}) - 1) * ${self}.PageSize), ${self}.PageSize)`;
+  const isSelected = "CountRows(Filter(locSelectedKeys, Key = ThisItem.Id)) > 0";
+  const statusColor = `Coalesce(LookUp(${self}.StatusConfig, Status = ThisItem.Status).Color, LookUp(${self}.StatusConfig, Status = "Default").Color, RGBA(120, 120, 120, 1))`;
+  const priorityColor = `Coalesce(LookUp(${self}.PriorityConfig, Priority = ThisItem.Priority).Color, LookUp(${self}.PriorityConfig, Priority = "Default").Color, RGBA(120, 120, 120, 1))`;
+
+  const sortHeader = (label, col, x, w) => ({
+    name: `btnSort${col}`,
+    control: "Classic/Button@2.2.0",
+    properties: {
+      BorderStyle: "BorderStyle.None",
+      Color: "RGBA(100, 116, 139, 1)",
+      Fill: "Color.Transparent",
+      FontWeight: "FontWeight.Bold",
+      Height: "28",
+      OnSelect: `${self}.OnSort("${col}", If(${self}.CurrentSortColumn = "${col}" And ${self}.CurrentSortDirection = "Ascending", "Descending", "Ascending"))`,
+      Size: "9",
+      Text: `"${label}" & If(${self}.Sortable, If(${self}.CurrentSortColumn = "${col}", If(${self}.CurrentSortDirection = "Ascending", " ^", " v"), ""), "")`,
+      Width: w,
+      X: x
+    }
+  });
+
+  const cntRow = {
+    name: "cntRow",
+    control: "GroupContainer@1.5.0",
+    variant: "ManualLayout",
+    properties: { BorderColor: "RGBA(226, 232, 240, 1)", BorderStyle: "BorderStyle.Solid", BorderThickness: "1", Fill: "Color.White", Height: "Parent.Height", Width: "Parent.Width" },
+    children: [
+      { name: "btnCheck", control: "Classic/Button@2.2.0", properties: { BorderColor: "RGBA(148, 163, 184, 1)", BorderStyle: "BorderStyle.Solid", BorderThickness: "1", Fill: `If(${isSelected}, "#168326", "Color.White")`, Height: "16", OnSelect: `If(${isSelected}, Remove(locSelectedKeys, LookUp(locSelectedKeys, Key = ThisItem.Id)), Collect(locSelectedKeys, {Key: ThisItem.Id})); ${self}.OnSelectionChange(CountRows(locSelectedKeys))`, RadiusBottomLeft: "3", RadiusBottomRight: "3", RadiusTopLeft: "3", RadiusTopRight: "3", Text: '""', Visible: `${self}.SelectionMode = "Multiple"`, Width: "16", X: "8", Y: "12" } },
+      { name: "lblName", control: "ModernText@1.0.0", properties: { FontWeight: "FontWeight.Bold", Height: "20", Size: "10", Text: "ThisItem.Name", Width: "140", X: `If(${self}.SelectionMode = "Multiple", 32, 8)`, Y: "10" } },
+      { name: "lblStatus", control: "ModernText@1.0.0", properties: { Color: statusColor, FontWeight: "FontWeight.Bold", Height: "20", Size: "9", Text: "ThisItem.Status", Width: "80", X: "180", Y: "10" } },
+      { name: "lblPriority", control: "ModernText@1.0.0", properties: { Color: priorityColor, FontWeight: "FontWeight.Bold", Height: "20", Size: "9", Text: "ThisItem.Priority", Width: "70", X: "266", Y: "10" } },
+      { name: "cntProgressTrack", control: "GroupContainer@1.5.0", variant: "ManualLayout", properties: { BorderStyle: "BorderStyle.None", Fill: "RGBA(226, 232, 240, 1)", Height: "6", RadiusBottomLeft: "3", RadiusBottomRight: "3", RadiusTopLeft: "3", RadiusTopRight: "3", Visible: "!IsBlank(ThisItem.TotalSteps)", Width: "80", X: "342", Y: "17" },
+        children: [{ name: "cntProgressFill", control: "GroupContainer@1.5.0", variant: "ManualLayout", properties: { BorderStyle: "BorderStyle.None", Fill: "#168326", Height: "6", RadiusBottomLeft: "3", RadiusBottomRight: "3", RadiusTopLeft: "3", RadiusTopRight: "3", Width: "Min(1, ThisItem.CompletedSteps / Max(ThisItem.TotalSteps, 1)) * Parent.Width" } }]
+      },
+      { name: "btnAction1", control: "Classic/Button@2.2.0", properties: { BorderStyle: "BorderStyle.None", Color: "RGBA(100, 116, 139, 1)", Fill: "Color.Transparent", Height: "24", OnSelect: `${self}.OnMenuItemSelect(ThisItem, Index(${self}.ContextMenuItems, 1).Key)`, Size: "9", Text: `Index(${self}.ContextMenuItems, 1).Label`, Visible: `And(CountRows(${self}.ContextMenuItems) >= 1, Index(${self}.ContextMenuItems, 1).Visible)`, Width: "44", X: "432", Y: "12" } },
+      { name: "btnAction2", control: "Classic/Button@2.2.0", properties: { BorderStyle: "BorderStyle.None", Color: "RGBA(100, 116, 139, 1)", Fill: "Color.Transparent", Height: "24", OnSelect: `${self}.OnMenuItemSelect(ThisItem, Index(${self}.ContextMenuItems, 2).Key)`, Size: "9", Text: `Index(${self}.ContextMenuItems, 2).Label`, Visible: `And(CountRows(${self}.ContextMenuItems) >= 2, Index(${self}.ContextMenuItems, 2).Visible)`, Width: "44", X: "476", Y: "12" } },
+      { name: "btnAction3", control: "Classic/Button@2.2.0", properties: { BorderStyle: "BorderStyle.None", Color: "RGBA(100, 116, 139, 1)", Fill: "Color.Transparent", Height: "24", OnSelect: `${self}.OnMenuItemSelect(ThisItem, Index(${self}.ContextMenuItems, 3).Key)`, Size: "9", Text: `Index(${self}.ContextMenuItems, 3).Label`, Visible: `And(CountRows(${self}.ContextMenuItems) >= 3, Index(${self}.ContextMenuItems, 3).Visible)`, Width: "44", X: "520", Y: "12" } },
+      { name: "btnRowTap", control: "Classic/Button@2.2.0", properties: { BorderStyle: "BorderStyle.None", Fill: "Color.Transparent", Height: "Parent.Height", OnSelect: `${self}.OnRowSelect(ThisItem)`, Text: '""', Width: "420", X: "0" } }
+    ]
+  };
+
+  const cntRoot = {
+    name: "cntRoot",
+    control: "GroupContainer@1.5.0",
+    variant: "ManualLayout",
+    properties: { BorderStyle: "BorderStyle.None", Fill: "Color.White", Height: "Parent.Height", Width: "Parent.Width" },
+    children: [
+      { name: "txtSearch", control: "Classic/TextInput@2.3.2", properties: { BorderColor: "RGBA(226, 232, 240, 1)", BorderThickness: "1", Fill: "RGBA(248, 250, 252, 1)", Height: "30", HintText: '"Search"', OnChange: `${self}.OnSearch(Self.Text)`, Size: "10", Visible: `${self}.Searchable`, Width: "180", X: "8", Y: "8" } },
+      sortHeader("Name", "Name", 8, 140), sortHeader("Status", "Status", 180, 80), sortHeader("Priority", "Priority", 266, 70),
+      {
+        name: "galRows",
+        control: "Gallery@2.15.0",
+        variant: "Vertical",
+        properties: { Height: `CountRows(${pageRows}) * 40`, Items: pageRows, TemplateSize: "40", Width: "580", WrapCount: "1", X: "8", Y: `If(${self}.Searchable, 78, 44)` },
+        children: [cntRow]
+      },
+      { name: "lblNoData", control: "ModernText@1.0.0", properties: { Align: "Align.Center", Color: "RGBA(100, 116, 139, 1)", Height: "40", Size: "11", Text: `${self}.NoDataText`, Visible: `CountRows(${self}.Items) = 0`, Width: "580", X: "8", Y: "80" } },
+      { name: "btnPrevPage", control: "Classic/Button@2.2.0", properties: { BorderStyle: "BorderStyle.None", Fill: "RGBA(241, 245, 249, 1)", FontWeight: "FontWeight.Bold", Height: "26", OnSelect: `UpdateContext({locPage: Max(1, locPage - 1)}); ${self}.OnPageChange(Max(1, locPage - 1))`, RadiusBottomLeft: "13", RadiusBottomRight: "13", RadiusTopLeft: "13", RadiusTopRight: "13", Size: "9", Text: '"Prev"', Width: "50", X: "8", Y: `If(${self}.Searchable, 88, 54) + CountRows(${pageRows}) * 40` } },
+      { name: "lblPageInfo", control: "ModernText@1.0.0", properties: { Color: "RGBA(100, 116, 139, 1)", Height: "26", Size: "9", Text: `"Page " & Min(locPage, ${pageCount}) & " of " & ${pageCount}`, Width: "100", X: "64", Y: `If(${self}.Searchable, 92, 58) + CountRows(${pageRows}) * 40` } },
+      { name: "btnNextPage", control: "Classic/Button@2.2.0", properties: { BorderStyle: "BorderStyle.None", Fill: "RGBA(241, 245, 249, 1)", FontWeight: "FontWeight.Bold", Height: "26", OnSelect: `UpdateContext({locPage: Min(${pageCount}, locPage + 1)}); ${self}.OnPageChange(Min(${pageCount}, locPage + 1))`, RadiusBottomLeft: "13", RadiusBottomRight: "13", RadiusTopLeft: "13", RadiusTopRight: "13", Size: "9", Text: '"Next"', Width: "50", X: "170", Y: `If(${self}.Searchable, 88, 54) + CountRows(${pageRows}) * 40` } }
+    ]
+  };
+
+  return {
+    properties: { Height: `If(${self}.Searchable, 128, 94) + CountRows(${pageRows}) * 40`, Width: "600" },
+    children: [cntRoot],
+    eventParameters: {
+      OnMenuItemSelect: [{ name: "Item", dataType: "Record", defaultFormula: "{Id: 0}" }, { name: "ActionKey", dataType: "Text", defaultFormula: '""' }],
+      OnSort: [{ name: "Column", dataType: "Text", defaultFormula: '""' }, { name: "Direction", dataType: "Text", defaultFormula: '"Ascending"' }],
+      OnSelectionChange: [{ name: "SelectedCount", dataType: "Number", defaultFormula: "0" }],
+      OnSearch: [{ name: "SearchText", dataType: "Text", defaultFormula: '""' }],
+      OnPageChange: [{ name: "PageNumber", dataType: "Number", defaultFormula: "1" }]
+    }
+  };
+}
+
 export const CHILDREN_BUILDERS = {
   "KPI Card": kpiCard,
   "Notification Badge": notificationBadge,
@@ -1686,5 +1781,6 @@ export const CHILDREN_BUILDERS = {
   "Deadline Tracker": deadlineTracker,
   "Activity Timeline": activityTimeline,
   "Calendar": calendar,
-  "Accordion List": accordionList
+  "Accordion List": accordionList,
+  "Data Table": dataTable
 };
