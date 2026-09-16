@@ -2035,6 +2035,215 @@ function commentsAndMentions(pascal) {
   };
 }
 
+/* Sidebar — a real Gallery over top-level Items (ParentId blank), each
+   with up to 4 fixed child-item slots beneath it (the same "avoid a
+   nested Gallery control" technique this file uses throughout) shown
+   only while IsExpanded. IsExpanded also drives label visibility for
+   an icon-only collapsed rail. ItemIconColor is a native Color value
+   in this catalog's own sample data (not text hex), used directly. */
+function sidebar(pascal) {
+  const self = `cmp${pascal}`;
+  const railWidth = `If(${self}.IsExpanded, 260, 64)`;
+  const isDark = `${self}.Theme = "Dark"`;
+  const topItems = `Filter(${self}.Items, IsBlank(ParentId))`;
+  const childrenFor = pid => `Filter(${self}.Items, ParentId = ${pid})`;
+
+  const childSlot = n => ({
+    name: `lblChild${n}`,
+    control: "ModernText@1.0.0",
+    properties: {
+      Color: `If(${isDark}, "RGBA(226, 232, 240, 1)", "RGBA(71, 85, 105, 1)")`,
+      Height: "24",
+      Size: "9",
+      Text: `Index(${childrenFor("ThisItem.Id")}, ${n}).Label`,
+      Visible: `And(${self}.IsExpanded, CountRows(${childrenFor("ThisItem.Id")}) >= ${n})`,
+      Width: "Parent.Width - 48",
+      X: "40",
+      Y: 40 + (n - 1) * 24
+    }
+  });
+
+  const cntNavItem = {
+    name: "cntNavItem",
+    control: "GroupContainer@1.5.0",
+    variant: "ManualLayout",
+    properties: { BorderStyle: "BorderStyle.None", Fill: `If(ThisItem.Key = ${self}.SelectedKey, If(${isDark}, "RGBA(255,255,255,0.08)", "RGBA(22, 131, 38, 0.08)"), "Color.Transparent")`, Height: "Parent.Height", Width: "Parent.Width" },
+    children: [
+      { name: "btnIconDot", control: "Classic/Button@2.2.0", properties: { BorderStyle: "BorderStyle.None", Fill: "ThisItem.ItemIconColor", Height: "10", RadiusBottomLeft: "5", RadiusBottomRight: "5", RadiusTopLeft: "5", RadiusTopRight: "5", Text: '""', Width: "10", X: "16", Y: "13" } },
+      { name: "lblItemLabel", control: "ModernText@1.0.0", properties: { Color: `If(${isDark}, "Color.White", "RGBA(23, 32, 27, 1)")`, FontWeight: "FontWeight.Bold", Height: "20", Size: "10", Text: "ThisItem.Label", Visible: `${self}.IsExpanded`, Width: "Parent.Width - 90", X: "36", Y: "10" } },
+      { name: "lblBadge", control: "ModernText@1.0.0", properties: { Align: "Align.Center", Color: "Color.White", FontWeight: "FontWeight.Bold", Height: "16", Size: "8", Text: "Text(ThisItem.ItemBadgeCount)", Visible: `And(${self}.IsExpanded, ThisItem.ItemBadgeCount > 0)`, Width: "20", X: "Parent.Width - 32", Y: "12" } },
+      childSlot(1), childSlot(2), childSlot(3), childSlot(4),
+      { name: "btnItemTap", control: "Classic/Button@2.2.0", properties: { BorderStyle: "BorderStyle.None", Fill: "Color.Transparent", Height: "36", OnSelect: `${self}.OnItemSelect(ThisItem)`, Text: '""', Width: "Parent.Width" } }
+    ]
+  };
+
+  const galItems = {
+    name: "galItems",
+    control: "Gallery@2.15.0",
+    variant: "Vertical",
+    properties: { Height: `CountRows(${topItems}) * If(${self}.IsExpanded, 40, 36)`, Items: topItems, TemplateSize: `If(${self}.IsExpanded, 40, 36)`, Width: railWidth, WrapCount: "1", X: "0", Y: "16" },
+    children: [cntNavItem]
+  };
+
+  const cntRoot = {
+    name: "cntRoot",
+    control: "GroupContainer@1.5.0",
+    variant: "ManualLayout",
+    properties: { BorderStyle: "BorderStyle.None", Fill: `If(${isDark}, "RGBA(11, 17, 16, 1)", "Color.White")`, Height: "Parent.Height", Width: railWidth },
+    children: [
+      galItems,
+      { name: "cntFooter", control: "GroupContainer@1.5.0", variant: "ManualLayout", properties: { BorderStyle: "BorderStyle.None", Fill: `If(${isDark}, "RGBA(255,255,255,0.06)", "RGBA(248, 250, 252, 1)")`, Height: "48", RadiusBottomLeft: "8", RadiusBottomRight: "8", RadiusTopLeft: "8", RadiusTopRight: "8", Width: railWidth + " - 16", X: "8", Y: "Parent.Height - 56" },
+        children: [
+          { name: "lblInitials", control: "ModernText@1.0.0", properties: { Align: "Align.Center", Color: "Color.White", FontWeight: "FontWeight.Bold", Height: "32", Size: "11", Text: `Upper(Left(${self}.UserName, 1) & Left(Last(Split(${self}.UserName, " ")).Result, 1))`, Width: "32", X: "8", Y: "8" } },
+          { name: "lblUserName", control: "ModernText@1.0.0", properties: { FontWeight: "FontWeight.Bold", Height: "32", Size: "10", Text: `${self}.UserName`, Visible: `${self}.IsExpanded`, Width: "Parent.Width - 56", X: "48", Y: "12" } }
+        ]
+      },
+      { name: "btnExpandToggle", control: "Classic/Button@2.2.0", properties: { BorderStyle: "BorderStyle.None", Color: `If(${isDark}, "Color.White", "RGBA(71, 85, 105, 1)")`, Fill: "Color.Transparent", FontWeight: "FontWeight.Bold", Height: "24", OnSelect: `${self}.OnExpandToggle(!${self}.IsExpanded)`, Size: "10", Text: `If(${self}.IsExpanded, "<", ">")`, Width: "24", X: "8", Y: "-8" } }
+    ]
+  };
+
+  return {
+    properties: { Height: "480", Width: railWidth },
+    children: [cntRoot]
+  };
+}
+
+/* Responsive Breadcrumbs — checked against Fluent UI's own
+   MaxDisplayedItems/OverflowIndex naming per this component's
+   architecture note. Real, but simplified: a fixed 8-slot cap (a
+   Children tree can't create more physical controls than the author
+   built regardless of how deep a host's own Items table goes), and
+   the overflow "..." toggles a component-local locShowAll flag to
+   reveal every crumb rather than a real hover/tap dropdown menu
+   listing just the hidden ones — a disclosed simplification, not the
+   full Fluent overflow-menu behavior. */
+function responsiveBreadcrumbs(pascal) {
+  const self = `cmp${pascal}`;
+  const n = `CountRows(${self}.Items)`;
+  const tailCount = `Max(${self}.MaxDisplayedItems - ${self}.OverflowIndex, 1)`;
+  const showOverflow = `And(${n} > ${self}.MaxDisplayedItems, !locShowAll)`;
+  const maxSlots = 8;
+
+  const crumbVisible = i => `Or(locShowAll, ${i} <= ${self}.OverflowIndex, ${i} > ${n} - ${tailCount})`;
+
+  const crumbSlot = i => ({
+    name: `cntCrumb${i}`,
+    control: "GroupContainer@1.5.0",
+    variant: "ManualLayout",
+    properties: { BorderStyle: "BorderStyle.None", Fill: "Color.Transparent", Height: "24", Visible: `And(${i} <= ${n}, ${crumbVisible(i)})`, Width: "120" },
+    children: [
+      { name: "lblCrumbLabel", control: "Label@2.5.1", properties: { Color: `If(${i} = ${n}, "RGBA(23, 32, 27, 1)", "RGBA(15, 108, 189, 1)")`, FontWeight: `If(${i} = ${n}, "FontWeight.Bold", "FontWeight.Normal")`, Height: "20", Size: "10", Text: `Left(Index(${self}.Items, ${i}).Label, ${self}.TruncateAt) & If(Len(Index(${self}.Items, ${i}).Label) > ${self}.TruncateAt, "...", "")`, Width: "90", X: "0", Y: "2" } },
+      { name: "lblChevron", control: "Label@2.5.1", properties: { Color: "RGBA(148, 163, 184, 1)", Height: "20", Size: "10", Text: '">"', Visible: `${i} < ${n}`, Width: "12", X: "94", Y: "2" } },
+      { name: "btnCrumbTap", control: "Classic/Button@2.2.0", properties: { BorderStyle: "BorderStyle.None", Fill: "Color.Transparent", Height: "20", OnSelect: `${self}.OnItemSelect(Index(${self}.Items, ${i}).Key)`, Text: '""', Visible: `And(${i} <> ${n}, Coalesce(Index(${self}.Items, ${i}).ItemClickable, true))`, Width: "90", X: "0" } }
+    ]
+  });
+
+  const btnOverflow = { name: "btnOverflow", control: "Classic/Button@2.2.0", properties: { BorderStyle: "BorderStyle.None", Color: "RGBA(100, 116, 139, 1)", Fill: "RGBA(241, 245, 249, 1)", FontWeight: "FontWeight.Bold", Height: "24", OnSelect: "UpdateContext({locShowAll: true})", RadiusBottomLeft: "12", RadiusBottomRight: "12", RadiusTopLeft: "12", RadiusTopRight: "12", Size: "10", Text: `"... (" & (${n} - ${self}.OverflowIndex - ${tailCount}) & ")"`, Visible: showOverflow, Width: "60" } };
+
+  const cntRoot = {
+    name: "cntRoot",
+    control: "GroupContainer@1.5.0",
+    variant: "ManualLayout",
+    properties: { BorderStyle: "BorderStyle.None", Fill: "Color.Transparent", Height: "Parent.Height", Width: "Parent.Width" },
+    children: [
+      ...Array.from({ length: maxSlots }, (_, i) => {
+        const slot = crumbSlot(i + 1);
+        slot.properties.X = String(i * 68);
+        return slot;
+      }),
+      (() => { btnOverflow.properties.X = String(maxSlots * 68); return btnOverflow; })()
+    ]
+  };
+
+  return {
+    properties: { Fill: "Color.Transparent", Height: "24", Width: "600" },
+    children: [cntRoot]
+  };
+}
+
+/* Mega Menu — a real Gallery over MenuItems (up to 6 fixed top-level
+   slots), a dropdown panel toggled by a component-local
+   locOpenMenuId, DropdownItems rendered in up to 8 fixed slots split
+   across DropdownColumns (1 or 2) by each row's own real Column
+   value. A transparent screen-sized dismiss control sits first in the
+   tree (lowest z-order), matching this component's own architecture
+   note about a screen-level dismiss closing an open panel on any
+   outside tap. */
+function megaMenu(pascal) {
+  const self = `cmp${pascal}`;
+  const maxTop = 6;
+  const maxDropdown = 8;
+
+  const topSlot = i => ({
+    name: `cntTop${i}`,
+    control: "GroupContainer@1.5.0",
+    variant: "ManualLayout",
+    properties: { BorderStyle: "BorderStyle.None", Fill: "Color.Transparent", Height: "36", Visible: `${i} <= CountRows(${self}.MenuItems)`, Width: "110", X: (i - 1) * 110 },
+    children: [
+      { name: "lblTopLabel", control: "ModernText@1.0.0", properties: { Color: `If(locOpenMenuId = Index(${self}.MenuItems, ${i}).ID, ${self}.ActiveColor, RGBA(23, 32, 27, 1))`, FontWeight: "FontWeight.Bold", Height: "36", Size: "10", Text: `Index(${self}.MenuItems, ${i}).Label`, Width: "110", X: "0", Y: "0" } },
+      { name: "btnTopTap", control: "Classic/Button@2.2.0", properties: { BorderStyle: "BorderStyle.None", Fill: "Color.Transparent", Height: "36", OnSelect: `If(Index(${self}.MenuItems, ${i}).HasDropdown, UpdateContext({locOpenMenuId: If(locOpenMenuId = Index(${self}.MenuItems, ${i}).ID, Blank(), Index(${self}.MenuItems, ${i}).ID)}), ${self}.OnItemSelect(Index(${self}.MenuItems, ${i})))`, Text: '""', Width: "110" } }
+    ]
+  });
+
+  const dropdownSlot = i => ({
+    name: `lblDropdown${i}`,
+    control: "ModernText@1.0.0",
+    properties: {
+      Color: "RGBA(71, 85, 105, 1)",
+      Height: "22",
+      Size: "9",
+      Text: `Index(Filter(${self}.DropdownItems, MenuID = locOpenMenuId), ${i}).Label`,
+      Visible: `CountRows(Filter(${self}.DropdownItems, MenuID = locOpenMenuId)) >= ${i}`,
+      Width: "160",
+      X: `If(${self}.DropdownColumns = 2, Mod(${i} - 1, 2) * 170, 0)`,
+      Y: `RoundDown((${i} - 1) / If(${self}.DropdownColumns = 2, 2, 1), 0) * 24`
+    }
+  });
+
+  const dropdownTapSlot = i => ({
+    name: `btnDropdownTap${i}`,
+    control: "Classic/Button@2.2.0",
+    properties: {
+      BorderStyle: "BorderStyle.None", Fill: "Color.Transparent", Height: "20",
+      OnSelect: `${self}.OnItemSelect(Index(Filter(${self}.DropdownItems, MenuID = locOpenMenuId), ${i}))`,
+      Text: '""', Visible: `CountRows(Filter(${self}.DropdownItems, MenuID = locOpenMenuId)) >= ${i}`, Width: "160",
+      X: `If(${self}.DropdownColumns = 2, Mod(${i} - 1, 2) * 170, 0)`,
+      Y: `RoundDown((${i} - 1) / If(${self}.DropdownColumns = 2, 2, 1), 0) * 24`
+    }
+  });
+
+  const cntDropdownPanel = {
+    name: "cntDropdownPanel",
+    control: "GroupContainer@1.5.0",
+    variant: "ManualLayout",
+    properties: { BorderStyle: "BorderStyle.None", DropShadow: "DropShadow.Regular", Fill: "Color.White", Height: "120", RadiusBottomLeft: "12", RadiusBottomRight: "12", RadiusTopLeft: "12", RadiusTopRight: "12", Visible: "!IsBlank(locOpenMenuId)", Width: "360", X: "0", Y: "44" },
+    children: [
+      ...Array.from({ length: maxDropdown }, (_, i) => dropdownSlot(i + 1)),
+      ...Array.from({ length: maxDropdown }, (_, i) => dropdownTapSlot(i + 1))
+    ]
+  };
+
+  const cntDismiss = { name: "cntDismiss", control: "GroupContainer@1.5.0", variant: "ManualLayout", properties: { BorderStyle: "BorderStyle.None", Fill: "Color.Transparent", Height: "Parent.Height", Visible: "!IsBlank(locOpenMenuId)", Width: "Parent.Width" },
+    children: [{ name: "btnDismiss", control: "Classic/Button@2.2.0", properties: { BorderStyle: "BorderStyle.None", Fill: "Color.Transparent", Height: "Parent.Height", OnSelect: "UpdateContext({locOpenMenuId: Blank()})", Text: '""', Width: "Parent.Width" } }]
+  };
+
+  const cntBar = {
+    name: "cntBar",
+    control: "GroupContainer@1.5.0",
+    variant: "ManualLayout",
+    properties: { BorderStyle: "BorderStyle.None", Fill: "Color.White", Height: "44", Width: "Parent.Width", X: `Switch(${self}.NavAlign, "Left", 0, "Right", Parent.Width - ${maxTop * 110}, (Parent.Width - ${maxTop * 110}) / 2)` },
+    children: [
+      ...Array.from({ length: maxTop }, (_, i) => topSlot(i + 1)),
+      cntDropdownPanel
+    ]
+  };
+
+  return {
+    properties: { Fill: "Color.Transparent", Height: "164", Width: "660" },
+    children: [cntDismiss, cntBar]
+  };
+}
+
 export const CHILDREN_BUILDERS = {
   "KPI Card": kpiCard,
   "Notification Badge": notificationBadge,
@@ -2054,5 +2263,8 @@ export const CHILDREN_BUILDERS = {
   "File Upload": fileUpload,
   "Email Composer": emailComposer,
   "Dialog": dialog,
-  "Comments & Mentions": commentsAndMentions
+  "Comments & Mentions": commentsAndMentions,
+  "Sidebar": sidebar,
+  "Responsive Breadcrumbs": responsiveBreadcrumbs,
+  "Mega Menu": megaMenu
 };
