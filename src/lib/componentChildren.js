@@ -2740,10 +2740,166 @@ function toast(pascal) {
   };
 }
 
+/* Heatmap — adapted from a real, complete reference cmpHeatmap.pa.yaml
+   the user supplied, built with the same generated-SVG-Image technique
+   this file already uses for Responsive Line Chart's sparkline and
+   Calendar's day chips (one Image@2.2.3, one data:image/svg+xml;utf8,
+   URI, EncodeUrl around the whole thing) — not a GroupContainer grid,
+   since real typography/gradients only come from real SVG, and the
+   reference proves this exact technique is what a genuinely polished
+   heatmap looks like.
+
+   Two real bugs in the reference were fixed rather than copied:
+   1. `Index(Split(...), n).Value` — Split's own output column is
+      CONFIRMED `.Result`, not `.Value` (Microsoft's own Split reference
+      page's worked chained-Split example uses `.Result`; this file's
+      own Sidebar already relies on the same confirmed column name for
+      exactly this reason). `.Value` would have been a real "not a valid
+      property" error on a Studio paste.
+   2. `BaseColor` was declared as a real customizable property but never
+      actually read anywhere in the reference's own Image formula — every
+      cell instead came from a fixed six-hex-step indigo Switch(), so
+      changing BaseColor would visibly do nothing. That's the same
+      "documented but doesn't do what it says" bug class as Accordion
+      List's original read-only-property mistake (see the skill file's
+      eventParameters note) — just for a Text property instead of an
+      Output property. Fixed by ramping BaseColor's own fill-opacity by
+      each cell's real intensity (0.15..1) instead of a fixed palette
+      that ignores it — real SVG, no Power Fx color-math needed.
+   Also made the SVG's own height genuinely dynamic
+   (CountRows(TimeLabels) instead of a hardcoded 5 matching only the
+   reference's own sample data), and added a real transparent-Button
+   grid over the generated cells (the same click-catcher-over-visual
+   pattern this file uses throughout — KPI Card's own btnCardOverlay,
+   for one) for a real OnCellSelect the reference had no interaction
+   for at all. Days are fixed at 7 (Mon..Sun, matching DayLabels' own
+   comma-count) — disclosed, the same fixed-slot-count convention this
+   file already uses (Calendar's 3 chip slots, Approval Journey's stage
+   slots) rather than a fully dynamic day axis. */
+function heatmap(pascal) {
+  const self = `cmp${pascal}`;
+  const isDark = `${self}.Theme = "Dark"`;
+  const cellSize = 56, cellGap = 8, padding = 32, labelWidth = 64, dayCount = 7;
+  const step = cellSize + cellGap;
+  const startX = padding + labelWidth;
+  const svgW = padding * 2 + labelWidth + step * dayCount;
+  const titleH = `If(${self}.ShowTitle, 56, 16)`;
+  const startY = `(${padding} + ${titleH})`;
+  const svgH = `(${padding} + ${titleH} + CountRows(${self}.TimeLabels) * ${step} + 56)`;
+
+  const svg = `With(
+    {
+      vData: ${self}.ChartData,
+      vTimeLabels: ${self}.TimeLabels,
+      vDayLabels: Split(${self}.DayLabels, ","),
+      vMax: Max(${self}.ChartData, Value),
+      vBg: If(${isDark}, "#111827", "#FFFFFF"),
+      vTitleColor: If(${isDark}, "#F9FAFB", "#1A202C"),
+      vLabelColor: If(${isDark}, "#9CA3AF", "#64748B")
+    },
+    With(
+      {vTimeCount: CountRows(vTimeLabels)},
+      "data:image/svg+xml;utf8," & EncodeUrl(
+        "<svg width='100%' height='100%' viewBox='0 0 ${svgW} " & ${svgH} & "' xmlns='http://www.w3.org/2000/svg'>" &
+        "<rect width='${svgW}' height='" & ${svgH} & "' fill='" & vBg & "'/>" &
+        If(
+          ${self}.ShowTitle,
+          "<text x='${startX}' y='28' font-family='Segoe UI, system-ui' font-size='16' font-weight='600' fill='" & vTitleColor & "'>" & ${self}.ChartTitle & "</text>",
+          ""
+        ) &
+        Concat(
+          ForAll(Sequence(vTimeCount), {RowIndex: Value, TimeLabel: Index(vTimeLabels, Value)}),
+          With(
+            {vY: ${startY} + (RowIndex - 1) * ${step} + ${cellSize / 2}},
+            "<text x='${startX - 12}' y='" & (vY + 4) & "' text-anchor='end' font-family='Segoe UI, system-ui' font-size='11' fill='" & vLabelColor & "'>" & TimeLabel.Label & "</text>"
+          )
+        ) &
+        Concat(
+          ForAll(Sequence(${dayCount}), {ColIndex: Value, DayLabel: Index(vDayLabels, Value).Result}),
+          With(
+            {vX: ${startX} + (ColIndex - 1) * ${step} + ${cellSize / 2}},
+            "<text x='" & vX & "' y='" & (${startY} - 10) & "' text-anchor='middle' font-family='Segoe UI, system-ui' font-size='11' font-weight='600' fill='" & vLabelColor & "'>" & DayLabel & "</text>"
+          )
+        ) &
+        Concat(
+          ForAll(Sequence(vTimeCount), {RowIndex: Value, TimeLabel: Index(vTimeLabels, Value)}),
+          Concat(
+            ForAll(Sequence(${dayCount}), {ColIndex: Value}),
+            With(
+              {vX: ${startX} + (ColIndex - 1) * ${step}, vY: ${startY} + (RowIndex - 1) * ${step}, vDow: ColIndex - 1, vHour: TimeLabel.Hour},
+              With(
+                {vValue: Coalesce(LookUp(vData, And(DayOfWeek = vDow, Hour = vHour)).Value, 0)},
+                With(
+                  {vOpacity: If(vValue <= 0, 1, 0.15 + (vValue / vMax) * 0.85)},
+                  "<rect x='" & vX & "' y='" & vY & "' width='${cellSize}' height='${cellSize}' rx='8' fill='" & If(vValue <= 0, ${self}.EmptyColor, ${self}.BaseColor) & "' fill-opacity='" & vOpacity & "'/>"
+                )
+              )
+            )
+          )
+        ) &
+        "<text x='${startX}' y='" & (${svgH} - 14) & "' font-family='Segoe UI, system-ui' font-size='10' fill='" & vLabelColor & "'>Less</text>" &
+        Concat(
+          ForAll(Sequence(5), {SwatchIndex: Value}),
+          "<rect x='" & (${startX} + 34 + (SwatchIndex - 1) * 18) & "' y='" & (${svgH} - 24) & "' width='14' height='14' rx='3' fill='" & ${self}.BaseColor & "' fill-opacity='" & (0.15 + (SwatchIndex - 1) / 4 * 0.85) & "'/>"
+        ) &
+        "<text x='" & (${startX} + 34 + 5 * 18 + 6) & "' y='" & (${svgH} - 14) & "' font-family='Segoe UI, system-ui' font-size='10' fill='" & vLabelColor & "'>More</text>" &
+        "</svg>"
+      )
+    )
+  )`.replace(/\s*\n\s*/g, " ");
+
+  const imgHeatmap = { name: "imgHeatmap", control: "Image@2.2.3", properties: { Height: "Parent.Height", Image: svg, Width: "Parent.Width" } };
+
+  const cellTapRow = `RoundUp(ThisItem.Value / ${dayCount}, 0)`;
+  const cellTapCol = `(Mod(ThisItem.Value - 1, ${dayCount}) + 1)`;
+  const cellTapHour = `Index(${self}.TimeLabels, ${cellTapRow}).Hour`;
+  const cellTapDow = `(${cellTapCol} - 1)`;
+  const cellTapValue = `Coalesce(LookUp(${self}.ChartData, And(DayOfWeek = ${cellTapDow}, Hour = ${cellTapHour})).Value, 0)`;
+
+  const cntCellTap = {
+    name: "cntCellTap",
+    control: "GroupContainer@1.5.0",
+    variant: "ManualLayout",
+    properties: { BorderStyle: "BorderStyle.None", Fill: "Color.Transparent", Height: String(cellSize), Width: String(cellSize) },
+    children: [
+      { name: "btnCellTap", control: "Classic/Button@2.2.0", properties: { BorderStyle: "BorderStyle.None", Fill: "Color.Transparent", Height: "Parent.Height", OnSelect: `${self}.OnCellSelect(${cellTapDow}, ${cellTapHour}, ${cellTapValue})`, Text: '""', Width: "Parent.Width" } }
+    ]
+  };
+
+  const galCells = {
+    name: "galCells",
+    control: "Gallery@2.15.0",
+    variant: "Vertical",
+    properties: { Height: `CountRows(${self}.TimeLabels) * ${step}`, Items: `Sequence(CountRows(${self}.TimeLabels) * ${dayCount})`, TemplateSize: String(step), Width: String(step * dayCount), WrapCount: String(dayCount), X: String(startX), Y: startY },
+    children: [cntCellTap]
+  };
+
+  const cntRoot = {
+    name: "cntRoot",
+    control: "GroupContainer@1.5.0",
+    variant: "ManualLayout",
+    properties: { BorderStyle: "BorderStyle.None", Fill: "Color.Transparent", Height: svgH, Width: String(svgW) },
+    children: [imgHeatmap, galCells]
+  };
+
+  return {
+    properties: { Fill: "Color.Transparent", Height: svgH, Width: String(svgW) },
+    children: [cntRoot],
+    eventParameters: {
+      OnCellSelect: [
+        { name: "DayOfWeek", dataType: "Number", defaultFormula: "0" },
+        { name: "Hour", dataType: "Number", defaultFormula: "9" },
+        { name: "Value", dataType: "Number", defaultFormula: "0" }
+      ]
+    }
+  };
+}
+
 export const CHILDREN_BUILDERS = {
   "KPI Card": kpiCard,
   "Notification Badge": notificationBadge,
   "Responsive Line Chart": responsiveLineChart,
+  "Heatmap": heatmap,
   "Command Card": commandCard,
   "Program Scorecard": programScorecard,
   "Operational Status Banner": operationalStatusBanner,

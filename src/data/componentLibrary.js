@@ -32,6 +32,7 @@ const icons = {
 const raw = [
   ["KPI Card", "Analytics", "Verified"],
   ["Responsive Line Chart", "Analytics", "Verified"],
+  ["Heatmap", "Analytics", "Verified"],
   ["Command Card", "Executive", "Original"],
   ["Program Scorecard", "Executive", "Original"],
   ["Operational Status Banner", "Executive", "Original"],
@@ -239,6 +240,42 @@ const overrides = {
       ["Sparkline", "No axis or labels, just the line and fill at a fraction of the size, for embedding inside a KPI card or a table cell."],
       ["Dashed forecast", "A dashed, unfilled stroke instead of the solid gradient, for a projected or unconfirmed series shown alongside a real one."],
       ["Point-labeled", "Markers on, every value printed above its point, for a chart that has to stand alone as a static export or screenshot."]
+    ]
+  },
+  "heatmap": {
+    summary: "A day-by-hour activity heatmap rendered as one dependency-free inline SVG — real gradient-intensity cells, axis labels and a Less/More legend baked into the image itself, the same technique this catalog's own Responsive Line Chart and Calendar already use for a chart with no charting-library dependency.",
+    properties: [
+      ["ChartData", "Table", "16-point sample", "DayOfWeek (0 = Monday..6 = Sunday), Hour and Value columns — one row per non-zero cell; a day/hour combination with no row reads as 0"],
+      ["ChartTitle", "Text", "Issues opening time", "Heading drawn above the grid when ShowTitle is on"],
+      ["DayLabels", "Text", "M,T,W,T,F,S,S", "Seven comma-separated column headers, Monday first — the grid itself always renders exactly 7 day columns regardless of how many labels are supplied"],
+      ["TimeLabels", "Table", "5 sample rows", "Hour (matches ChartData's own Hour column) and Label (the row header text, e.g. \"6am\") — one row per grid row; any number of rows is real, not fixed"],
+      ["BaseColor", "Text", "#6366F1", "Hex color every non-empty cell is drawn in, at an opacity ramped by that cell's Value relative to the data's own max — a real color change, not a decorative property"],
+      ["EmptyColor", "Text", "#E0E7FF", "Hex fill for a day/hour combination with no matching ChartData row (Value 0)"],
+      ["Theme", "Text", "Light", "Light or Dark — swaps the SVG's own background, title and axis-label colors; BaseColor/EmptyColor are used as-is regardless, so pick values that read on both"],
+      ["ShowTitle", "Boolean", "true", "False removes ChartTitle's own row and reclaims that vertical space instead of leaving it blank"]
+    ],
+    events: [["OnCellSelect", "Fires when a cell is tapped; returns that cell's DayOfWeek, Hour and Value (0 when the cell had no matching ChartData row) — the reference this component started from had no interaction at all"]],
+    architecture: [
+      "The whole grid — background, title, axis labels, every cell, and the Less/More legend — is one Image control rendering a single generated inline SVG, exactly the data:image/svg+xml;utf8, + EncodeUrl technique this catalog's own Responsive Line Chart sparkline and Calendar day chips already use, so real typography and a real intensity gradient exist with no charting-library dependency",
+      "A transparent Classic/Button grid sits over the generated image at the exact same geometry (same start offset, same per-cell step) the SVG itself computes, so OnCellSelect fires from a real tap target rather than the image trying to handle its own interaction",
+      "Every cell's color is BaseColor itself, not a fixed palette — fill-opacity ramps from 0.15 at the lowest non-zero value up to 1.0 at the data's own max, so the whole scale genuinely reflects whatever BaseColor a host passes in (a green BaseColor produces a green heatmap, an amber one an amber heatmap) rather than an unrelated indigo scale regardless of the property",
+      "The grid's own Height is CountRows(TimeLabels) times the fixed per-row step — a host with 3 time buckets gets a 3-row image, one with 8 gets an 8-row image, never a fixed canvas with dead space or clipped rows",
+      "Days are a fixed 7 columns (Monday..Sunday, matching DayLabels' own intended shape) — the same fixed-slot-count convention this file uses throughout (Calendar's 3 chip slots, Approval Journey's stage slots) rather than a fully dynamic day axis"
+    ],
+    examples: [
+      ["Customer support activity", "ChartTitle: =\"Support Requests\", BaseColor: =\"#6366F1\" (the default indigo) — peak support hours across a week, Tuesday and Friday afternoons standing out at full BaseColor opacity."],
+      ["Website traffic (green theme)", "ChartTitle: =\"Page Views\", BaseColor: =\"#10B981\", EmptyColor: =\"#D1FAE5\" — the exact same component, recolored to a house green by changing two hex properties, no rebuild."],
+      ["Office occupancy (amber theme)", "ChartTitle: =\"Office Check-ins\", BaseColor: =\"#F59E0B\", Theme: =\"Light\" — badge-scan counts by day and hour, amber instead of indigo for an occupancy-specific dashboard."],
+      ["Custom time buckets", "TimeLabels: =Table({Hour: 0, Label: \"Midnight\"}, {Hour: 6, Label: \"6am\"}, {Hour: 12, Label: \"Noon\"}, {Hour: 18, Label: \"6pm\"}, {Hour: 21, Label: \"9pm\"}) — any number of rows, any hours, any labels; the grid's own height follows automatically."],
+      ["Live SharePoint/Dataverse data", "cmpHeatmap.ChartData: =AddColumns(GroupBy(AddColumns(Filter(SupportTickets, Created >= DateAdd(Today(), -30)), \"DayOfWeek\", Weekday(Created) - 1, \"Hour\", Hour(Created)), \"DayOfWeek\", \"Hour\", \"Tickets\"), \"Value\", CountRows(Tickets)) — the inner AddColumns computes the two real grouping columns Weekday()/Hour() actually produce, GroupBy groups by those two real column names (GroupBy takes column names, not formulas, so the grouping keys have to exist as real columns first), and the outer AddColumns turns each group's own sub-table into a plain row count. The component itself never references SharePoint/Dataverse — only this screen-level binding does, the same reusable-component-vs-screen-level-binding split this catalog's own KPI Card documents."]
+    ],
+    accessibility: ["The grid is one Image control, so it needs AltText summarizing the pattern in words (e.g. \"Support requests peak Tuesday and Friday afternoons\") — the SVG itself carries no accessible structure of its own", "Color intensity is never the only signal available to a sighted user who can't distinguish the gradient — pair the image with a text summary of the busiest cells elsewhere on the screen for anyone who needs it", "btnCellTap has no accessible name of its own — the same real PA2108-confirmed Classic/Button@2.2.0 limitation as this catalog's KPI Card (no AccessibleLabel distinct from Text) — a screen-reader visitor can reach and activate each cell but currently hears only \"button\", not which day/hour it represents"],
+    limitations: ["Days are a fixed 7 columns; a heatmap with a genuinely variable number of day columns isn't this component's shape", "EmptyColor and BaseColor are used exactly as given regardless of Theme — a Light-tuned pair can read poorly against Theme: Dark's own background unless a host explicitly picks colors that work on both", "The Less/More legend's 5 swatches are fixed steps of BaseColor's own opacity ramp, not independently configurable"],
+    variants: [
+      ["Standard", "Title, axis labels, a full BaseColor-intensity grid and the Less/More legend — the full component, as shown in Preview."],
+      ["No title", "ShowTitle: false — the grid alone, for embedding under a heading the host screen already renders."],
+      ["Dark theme", "Theme: Dark — a dark SVG background with light title/axis text; BaseColor/EmptyColor stay as given, so pick values that read on a dark surface."],
+      ["Recolored", "Any BaseColor/EmptyColor pair — the same component, a different accent, no rebuild (see Examples)."]
     ]
   },
   "deadline-tracker": {
