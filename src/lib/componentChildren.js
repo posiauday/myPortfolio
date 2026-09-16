@@ -38,32 +38,93 @@
    radius/type-size token, the real SVG icon library (Substitute() on a
    COLOR placeholder), the real generated-SVG sparkline, real skeleton
    loading — applied to one card instead of a Gallery of them.
-   Card height is 88px (Compact/Minimal) or 190px (Standard/Filled/
-   Chart) — StyleConfig.heights.statsCardCompact/statsCardMax. Width
-   defaults to a fixed 280 (a single card, not a full-width row), and a
-   host resizes the pasted instance per-placement the normal way. */
+   Card height is 88px (Compact/Minimal) or 190px+ (Standard/Filled/
+   Chart, +28 more when a Target goal row is showing) —
+   StyleConfig.heights.statsCardCompact/statsCardMax. Width defaults to
+   a fixed 280 (a single card, not a full-width row), and a host resizes
+   the pasted instance per-placement the normal way.
+
+   Past the initial single-card rebuild, five more real, data-practice
+   features were added on top of the same shape: NumberFormat (a real
+   Power Fx number-format string via Text(Value, format), replacing a
+   fragile "does Label say value/price/cost" guess); Target (a goal
+   track+fill bar and "N% of target" line, sized into the card only
+   when actually used); PositiveDirection (decouples the trend arrow's
+   direction, always the real sign of PercentChange, from whether that
+   direction is good — a cost or incident count where down is the win);
+   HasLoadError (a third state alongside the normal card and the loading
+   skeleton, with its own message and a real OnRetry-firing Retry
+   button, the same distinct-from-IsLoading pattern this catalog's
+   Activity Timeline already uses); AccessibilityLabel (wired to the
+   overlay button's real AccessibleLabel property — CONFIRMED against
+   Microsoft's own canvas-apps accessibility property reference — since
+   an interactive control with no accessible name fails WCAG 4.1.2).
+   A sixth, Tone, makes IconBg/IconColor themselves dynamic: "Custom"
+   (the default) uses them exactly as authored; Positive/Warning/
+   Negative/Neutral/Info instead resolves both from StyleConfig's own
+   already-contrast-checked token pairs, so a card's color follows the
+   *kind* of metric it shows rather than a hex pair the host has to
+   hand-pick and separately verify for contrast every time. */
 function kpiCard(pascal) {
   const self = `cmp${pascal}`;
   const isDense = `Or(${self}.Style = "Compact", ${self}.Style = "Minimal")`;
-  const cardHeight = `If(${isDense}, ${self}.StyleConfig.heights.statsCardCompact, ${self}.StyleConfig.heights.statsCardMax)`;
+  // Target's own goal-comparison row only ever renders in Standard/Filled
+  // (Compact/Minimal have no room, Chart's own bottom space is already
+  // the sparkline's) — its 28px only ever gets added to the card height
+  // in that same condition, so the two can never disagree.
+  const hasTarget = `!IsBlank(${self}.Target) And ${self}.Target <> 0`;
+  const showTargetRow = `And(!Or(${self}.Style = "Compact", ${self}.Style = "Minimal", ${self}.Style = "Chart"), ${hasTarget})`;
+  const cardHeight = `If(${isDense}, ${self}.StyleConfig.heights.statsCardCompact, ${self}.StyleConfig.heights.statsCardMax + If(${showTargetRow}, 28, 0))`;
   const cardWidthExpr = "conKPICard.Width";
   const cardHeightExpr = "conKPICard.Height";
 
+  // Tone makes color dynamic on the *kind* of metric instead of a hex
+  // pair the host has to hand-pick and separately verify for contrast
+  // every time: "Custom" (the default) uses IconBg/IconColor exactly as
+  // authored, unchanged from before this property existed; any other
+  // value resolves both from StyleConfig.tones — the same accessible,
+  // already-contrast-checked pairs this catalog verified with a real
+  // WCAG 1.4.3 relative-luminance calculation, not eyeballed. Every
+  // control below reads these two, never the raw properties directly,
+  // so Tone and manual IconBg/IconColor can never disagree.
+  const resolvedIconBg = `Switch(Lower(Coalesce(${self}.Tone, "custom")), "positive", ${self}.StyleConfig.tones.positive.bg, "warning", ${self}.StyleConfig.tones.warning.bg, "negative", ${self}.StyleConfig.tones.negative.bg, "neutral", ${self}.StyleConfig.tones.neutral.bg, "info", ${self}.StyleConfig.tones.info.bg, ${self}.IconBg)`;
+  const resolvedIconColor = `Switch(Lower(Coalesce(${self}.Tone, "custom")), "positive", ${self}.StyleConfig.tones.positive.fg, "warning", ${self}.StyleConfig.tones.warning.fg, "negative", ${self}.StyleConfig.tones.negative.fg, "neutral", ${self}.StyleConfig.tones.neutral.fg, "info", ${self}.StyleConfig.tones.info.fg, ${self}.IconColor)`;
+
   // Real technique (SVG data: URI, built with EncodeUrl — see the
   // skill file's "SVG icon library" pattern): substitutes the Icons
-  // table's "COLOR" placeholder for this card's own IconColor.
-  const iconImage = `"data:image/svg+xml;utf8," & EncodeUrl(Substitute(LookUp(${self}.Icons, Name = ${self}.Icon, SVG), "COLOR", ${self}.IconColor))`;
+  // table's "COLOR" placeholder for this card's own resolved icon color.
+  const iconImage = `"data:image/svg+xml;utf8," & EncodeUrl(Substitute(LookUp(${self}.Icons, Name = ${self}.Icon, SVG), "COLOR", ${resolvedIconColor}))`;
+
+  // PositiveDirection decouples "which way the number moved" (the arrow,
+  // always the real sign of PercentChange) from "whether that's good"
+  // (the color) — a metric where a decrease is the win (cost, incidents,
+  // open tickets) still colors correctly instead of assuming up is
+  // always positive.
+  const isGoodDirection = `If(${self}.PositiveDirection = "Down", ${self}.PercentChange < 0, ${self}.PercentChange > 0)`;
 
   // Real technique (see skill file's "sparkline via generated SVG"
   // pattern): SparklineData is a plain comma-separated Text value,
   // parsed with MatchAll/ForAll, scaled into an SVG polyline +
-  // translucent polygon fill, colored by the same sign PercentChange
-  // already conveys.
-  const sparklineImage = `With({raw: Coalesce(${self}.SparklineData, "")}, If(raw = "", Blank(), With({nums: ForAll(MatchAll(raw, "-?\\d+\\.?\\d*"), {n: Value(FullMatch)}), w: 200, h: If(${self}.Style = "Chart", 96, 36), clr: If(IsBlank(${self}.PercentChange) Or ${self}.PercentChange = 0, "#9E9E9E", ${self}.PercentChange > 0, "#22C55E", "#EF4444")}, With({lo: Min(nums, n), hi: Max(nums, n), cnt: CountRows(nums)}, With({rng: If(hi = lo, 1, hi - lo)}, "data:image/svg+xml;utf8," & EncodeUrl("<svg viewBox='0 0 " & w & " " & h & "' xmlns='http://www.w3.org/2000/svg' preserveAspectRatio='none'><polygon fill='" & clr & "' fill-opacity='0.12' points='0," & h & " " & Concat(Sequence(cnt), Text(Round((Value - 1) / Max(cnt - 1, 1) * w, 1)) & "," & Text(Round(h - (Index(nums, Value).n - lo) / rng * (h - 4) - 2, 1)), " ") & " " & w & "," & h & "'/><polyline fill='none' stroke='" & clr & "' stroke-width='2' stroke-linecap='round' stroke-linejoin='round' points='" & Concat(Sequence(cnt), Text(Round((Value - 1) / Max(cnt - 1, 1) * w, 1)) & "," & Text(Round(h - (Index(nums, Value).n - lo) / rng * (h - 4) - 2, 1)), " ") & "'/></svg>"))))))`;
+  // translucent polygon fill, colored by the same good/bad direction
+  // PercentChange and PositiveDirection already convey.
+  const sparklineImage = `With({raw: Coalesce(${self}.SparklineData, "")}, If(raw = "", Blank(), With({nums: ForAll(MatchAll(raw, "-?\\d+\\.?\\d*"), {n: Value(FullMatch)}), w: 200, h: If(${self}.Style = "Chart", 96, 36), clr: If(IsBlank(${self}.PercentChange) Or ${self}.PercentChange = 0, "#9E9E9E", ${isGoodDirection}, "#22C55E", "#EF4444")}, With({lo: Min(nums, n), hi: Max(nums, n), cnt: CountRows(nums)}, With({rng: If(hi = lo, 1, hi - lo)}, "data:image/svg+xml;utf8," & EncodeUrl("<svg viewBox='0 0 " & w & " " & h & "' xmlns='http://www.w3.org/2000/svg' preserveAspectRatio='none'><polygon fill='" & clr & "' fill-opacity='0.12' points='0," & h & " " & Concat(Sequence(cnt), Text(Round((Value - 1) / Max(cnt - 1, 1) * w, 1)) & "," & Text(Round(h - (Index(nums, Value).n - lo) / rng * (h - 4) - 2, 1)), " ") & " " & w & "," & h & "'/><polyline fill='none' stroke='" & clr & "' stroke-width='2' stroke-linecap='round' stroke-linejoin='round' points='" & Concat(Sequence(cnt), Text(Round((Value - 1) / Max(cnt - 1, 1) * w, 1)) & "," & Text(Round(h - (Index(nums, Value).n - lo) / rng * (h - 4) - 2, 1)), " ") & "'/></svg>"))))))`;
 
-  const abbreviatedValue = `With({lbl: Lower(Text(${self}.Label)), v: ${self}.Value, thresh: ${self}.StyleConfig.abbreviateThreshold}, If(thresh > 0 And Abs(v) >= 1000000, Text(v / 1000000, "#,##0.0") & "M", thresh > 0 And Abs(v) >= thresh, Text(v / 1000, "#,##0.0") & "K", "value" in lbl Or "price" in lbl Or "cost" in lbl, Text(v, "[$-en-US]$#,##0.00"), Text(v)))`;
-  const trendColor = `Switch(true, IsBlank(${self}.PercentChange), Color.Transparent, ${self}.PercentChange > 0, ${self}.StyleConfig.colors.positive, ${self}.PercentChange < 0, ${self}.StyleConfig.colors.negative, ${self}.StyleConfig.colors.neutral)`;
+  // NumberFormat replaces the old "does Label say value/price/cost"
+  // guess with an explicit, host-set Power Fx number-format string
+  // (e.g. "$#,##0.00", "0%", "#,##0") applied via the real Text(Value,
+  // format) two-argument form — "Auto" (or blank) keeps the sensible
+  // K/M abbreviation default instead of guessing a currency format from
+  // Label's own text.
+  const formattedValue = `If(${self}.NumberFormat <> "" And ${self}.NumberFormat <> "Auto", Text(${self}.Value, ${self}.NumberFormat), With({v: ${self}.Value, thresh: ${self}.StyleConfig.abbreviateThreshold}, If(thresh > 0 And Abs(v) >= 1000000, Text(v / 1000000, "#,##0.0") & "M", thresh > 0 And Abs(v) >= thresh, Text(v / 1000, "#,##0.0") & "K", Text(v))))`;
+  const trendColor = `Switch(true, IsBlank(${self}.PercentChange), Color.Transparent, ${self}.PercentChange = 0, ${self}.StyleConfig.colors.neutral, ${isGoodDirection}, ${self}.StyleConfig.colors.positive, ${self}.StyleConfig.colors.negative)`;
   const trendText = `If(${self}.PercentChange = 0, "0%", If(${self}.PercentChange > 0, "▲ +" & ${self}.PercentChange & "%", "▼ " & ${self}.PercentChange & "%"))`;
+
+  // Target/goal comparison: a thin track+fill bar plus a computed "N%
+  // of target" line, guarded so an unset (blank or 0) Target never
+  // divides by zero even while the row itself is invisible — Power Fx
+  // still evaluates a hidden control's formulas.
+  const targetRatio = `If(${hasTarget}, Min(${self}.Value / ${self}.Target, 1), 0)`;
+  const targetText = `If(${hasTarget}, Round(${self}.Value / ${self}.Target * 100, 0) & "% of target", "")`;
 
   const conKPICard = {
     name: "conKPICard",
@@ -73,13 +134,13 @@ function kpiCard(pascal) {
       BorderColor: `${self}.StyleConfig.colors.border`,
       BorderThickness: `If(${self}.Style = "Filled", 0, 1)`,
       DropShadow: "DropShadow.Light",
-      Fill: `If(${self}.Style = "Filled", ColorValue(${self}.IconBg), ${self}.StyleConfig.colors.cardBg)`,
+      Fill: `If(${self}.Style = "Filled", ColorValue(${resolvedIconBg}), ${self}.StyleConfig.colors.cardBg)`,
       Height: "Parent.Height",
       RadiusTopLeft: `${self}.StyleConfig.radius.lg`,
       RadiusTopRight: `${self}.StyleConfig.radius.lg`,
       RadiusBottomLeft: `${self}.StyleConfig.radius.lg`,
       RadiusBottomRight: `${self}.StyleConfig.radius.lg`,
-      Visible: `!${self}.IsLoading`,
+      Visible: `!${self}.IsLoading And !${self}.HasLoadError`,
       Width: "Parent.Width",
       X: "0",
       Y: "0"
@@ -90,7 +151,7 @@ function kpiCard(pascal) {
         control: "ModernText@1.0.0",
         properties: {
           AutoHeight: "true",
-          Color: `If(${self}.Style = "Filled", ColorValue(${self}.IconColor), ${self}.StyleConfig.colors.textMuted)`,
+          Color: `If(${self}.Style = "Filled", ColorValue(${resolvedIconColor}), ${self}.StyleConfig.colors.textMuted)`,
           FontWeight: "FontWeight.Semibold",
           Size: `${self}.StyleConfig.type.label.size`,
           Text: `Upper(${self}.Label)`,
@@ -122,11 +183,11 @@ function kpiCard(pascal) {
             control: "ModernText@1.0.0",
             properties: {
               AutoHeight: "true",
-              Color: `If(${self}.Style = "Filled", ColorValue(${self}.IconColor), ${self}.StyleConfig.colors.text)`,
+              Color: `If(${self}.Style = "Filled", ColorValue(${resolvedIconColor}), ${self}.StyleConfig.colors.text)`,
               FillPortions: "1",
               FontWeight: "FontWeight.Bold",
               Size: `If(${self}.Style = "Chart", ${self}.StyleConfig.type.value.sizeCompact, ${isDense}, ${self}.StyleConfig.type.value.sizeCompact, ${self}.StyleConfig.type.value.size)`,
-              Text: abbreviatedValue
+              Text: formattedValue
             }
           },
           {
@@ -173,6 +234,65 @@ function kpiCard(pascal) {
         }
       },
       {
+        name: "cntTargetRow",
+        control: "GroupContainer@1.5.0",
+        variant: "ManualLayout",
+        properties: {
+          BorderStyle: "BorderStyle.None",
+          Height: "20",
+          Visible: showTargetRow,
+          Width: `${cardWidthExpr} - 48`,
+          X: "20",
+          Y: `${cardHeightExpr} - 24 - 16 - 28`
+        },
+        children: [
+          {
+            name: "rectTargetTrack",
+            control: "Classic/Button@2.2.0",
+            properties: {
+              BorderStyle: "BorderStyle.None",
+              Fill: `${self}.StyleConfig.colors.skeletonBase`,
+              Height: "4",
+              RadiusTopLeft: "2",
+              RadiusTopRight: "2",
+              RadiusBottomLeft: "2",
+              RadiusBottomRight: "2",
+              Text: '""',
+              Width: "Parent.Width",
+              Y: "0"
+            }
+          },
+          {
+            name: "rectTargetFill",
+            control: "Classic/Button@2.2.0",
+            properties: {
+              BorderStyle: "BorderStyle.None",
+              Fill: `If(${self}.Style = "Filled", ColorValue(${resolvedIconColor}), ${self}.StyleConfig.colors.positive)`,
+              Height: "4",
+              RadiusTopLeft: "2",
+              RadiusTopRight: "2",
+              RadiusBottomLeft: "2",
+              RadiusBottomRight: "2",
+              Text: '""',
+              Width: `Parent.Width * ${targetRatio}`,
+              Y: "0"
+            }
+          },
+          {
+            name: "txtTargetLabel",
+            control: "ModernText@1.0.0",
+            properties: {
+              AutoHeight: "true",
+              Color: `If(${self}.Style = "Filled", ColorValue(${resolvedIconColor}), ${self}.StyleConfig.colors.textMuted)`,
+              Size: `${self}.StyleConfig.type.body.size`,
+              Text: targetText,
+              Wrap: "false",
+              Y: "8"
+            }
+          }
+        ]
+      },
+      {
         name: "cntKPIFooter",
         control: "GroupContainer@1.5.0",
         variant: "AutoLayout",
@@ -207,7 +327,7 @@ function kpiCard(pascal) {
             control: "ModernText@1.0.0",
             properties: {
               AutoHeight: "true",
-              Color: `If(${self}.Style = "Filled", ColorValue(${self}.IconColor), ${self}.StyleConfig.colors.neutral)`,
+              Color: `If(${self}.Style = "Filled", ColorValue(${resolvedIconColor}), ${self}.StyleConfig.colors.neutral)`,
               FillPortions: "1",
               Size: `${self}.StyleConfig.type.body.size`,
               Text: `${self}.PercentLabel`,
@@ -222,7 +342,7 @@ function kpiCard(pascal) {
         control: "Classic/Button@2.2.0",
         properties: {
           BorderStyle: "BorderStyle.None",
-          Fill: `ColorValue(${self}.IconBg)`,
+          Fill: `ColorValue(${resolvedIconBg})`,
           Height: "44",
           Width: "44",
           RadiusTopLeft: "22",
@@ -252,6 +372,7 @@ function kpiCard(pascal) {
         name: "btnCardOverlay",
         control: "Classic/Button@2.2.0",
         properties: {
+          AccessibleLabel: `Coalesce(${self}.AccessibilityLabel, ${self}.Label)`,
           BorderStyle: "BorderStyle.None",
           Fill: "Color.Transparent",
           HoverFill: "RGBA(0, 0, 0, 0.03)",
@@ -277,7 +398,7 @@ function kpiCard(pascal) {
       RadiusTopRight: `${self}.StyleConfig.radius.lg`,
       RadiusBottomLeft: `${self}.StyleConfig.radius.lg`,
       RadiusBottomRight: `${self}.StyleConfig.radius.lg`,
-      Visible: `${self}.IsLoading`,
+      Visible: `${self}.IsLoading And !${self}.HasLoadError`,
       Width: "Parent.Width",
       X: "0",
       Y: "0"
@@ -291,12 +412,93 @@ function kpiCard(pascal) {
     ]
   };
 
+  // A third, distinct state alongside the normal card and the loading
+  // skeleton — matching this catalog's own Activity Timeline precedent
+  // (HasLoadError is a different state from IsLoading, not a repurposing
+  // of it: a metric that hasn't loaded yet and one whose last fetch
+  // failed need different messages and a different recovery action).
+  // OnRetry is a real, focusable button's OnSelect, not a silent
+  // auto-retry, so a host controls exactly when the retry actually runs.
+  const cntErrorCard = {
+    name: "cntErrorCard",
+    control: "GroupContainer@1.5.0",
+    variant: "ManualLayout",
+    properties: {
+      BorderColor: `${self}.StyleConfig.colors.border`,
+      BorderThickness: "1",
+      Fill: `${self}.StyleConfig.colors.cardBg`,
+      Height: "Parent.Height",
+      RadiusTopLeft: `${self}.StyleConfig.radius.lg`,
+      RadiusTopRight: `${self}.StyleConfig.radius.lg`,
+      RadiusBottomLeft: `${self}.StyleConfig.radius.lg`,
+      RadiusBottomRight: `${self}.StyleConfig.radius.lg`,
+      Visible: `${self}.HasLoadError`,
+      Width: "Parent.Width",
+      X: "0",
+      Y: "0"
+    },
+    children: [
+      {
+        name: "txtErrorLabel",
+        control: "ModernText@1.0.0",
+        properties: {
+          AutoHeight: "true",
+          Color: `${self}.StyleConfig.colors.textMuted`,
+          FontWeight: "FontWeight.Semibold",
+          Size: `${self}.StyleConfig.type.label.size`,
+          Text: `Upper(${self}.Label)`,
+          Wrap: "false",
+          Width: "cntErrorCard.Width - 40",
+          X: "20",
+          Y: "20"
+        }
+      },
+      {
+        name: "txtErrorMessage",
+        control: "ModernText@1.0.0",
+        properties: {
+          AutoHeight: "true",
+          Color: `${self}.StyleConfig.colors.negative`,
+          FontWeight: "FontWeight.Semibold",
+          Size: `${self}.StyleConfig.type.body.size`,
+          Text: '"Couldn\'t load this metric"',
+          Wrap: "true",
+          Width: "cntErrorCard.Width - 40",
+          X: "20",
+          Y: "50"
+        }
+      },
+      {
+        name: "btnRetry",
+        control: "Classic/Button@2.2.0",
+        properties: {
+          BorderColor: `${self}.StyleConfig.colors.border`,
+          BorderThickness: "1",
+          BorderStyle: "BorderStyle.Solid",
+          Color: `${self}.StyleConfig.colors.text`,
+          Fill: "Color.Transparent",
+          Size: `${self}.StyleConfig.type.body.size`,
+          Text: '"Retry"',
+          RadiusTopLeft: `${self}.StyleConfig.radius.md`,
+          RadiusTopRight: `${self}.StyleConfig.radius.md`,
+          RadiusBottomLeft: `${self}.StyleConfig.radius.md`,
+          RadiusBottomRight: `${self}.StyleConfig.radius.md`,
+          Height: "32",
+          Width: "72",
+          X: "20",
+          Y: "Parent.Height - 52",
+          OnSelect: `${self}.OnRetry()`
+        }
+      }
+    ]
+  };
+
   return {
     // A fixed default size — one card, not a full-width row. A host
     // resizes the pasted instance per-placement the normal Studio way
     // (drag/Properties panel), same as any other single component.
     properties: { Height: cardHeight, Width: "280" },
-    children: [conKPICard, cntSkeletonCard]
+    children: [conKPICard, cntSkeletonCard, cntErrorCard]
   };
 }
 

@@ -135,7 +135,10 @@ function ComponentPreview({ item, values = {}, interactive = true, variant = nul
     // and rendered several cards from one instance, which wasn't what
     // "KPI Card" was ever supposed to mean). This mockup renders
     // exactly one card per Style variant, using the same default
-    // sample values as the catalog's own Properties tab.
+    // sample values as the catalog's own Properties tab — including
+    // Target's own goal track+fill bar, which the real component only
+    // ever shows in Standard/Filled once Target is set (its own
+    // default is 150, so it renders here too).
     const boxIconPath = "M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z M3.29 7 12 12l8.71-5 M12 22V12";
     // fg is IconColor, which the Filled variant uses as this card's own
     // text color on its IconBg background — chosen (matching the
@@ -143,7 +146,7 @@ function ComponentPreview({ item, values = {}, interactive = true, variant = nul
     // against that specific bg, not just to look like a plausible
     // brand color. A real axe-core run against Filled caught the
     // original lighter Material-palette values failing this pairing.
-    const d = { value: 118, label: "All Assets", pct: 14, pctLabel: "vs last month", bg: "#EBF5FF", fg: "#1565C0", spark: [10, 25, 18, 42, 38, 56, 61, 70] };
+    const d = { value: 118, label: "All Assets", pct: 14, pctLabel: "vs last month", bg: "#EBF5FF", fg: "#1565C0", spark: [10, 25, 18, 42, 38, 56, 61, 70], target: 150 };
     const KpiIcon = ({ color, size = 22 }) => (
       <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
         {boxIconPath.split(" M").map((seg, i) => <path key={i} d={i === 0 ? seg : `M${seg}`} />)}
@@ -162,6 +165,20 @@ function ComponentPreview({ item, values = {}, interactive = true, variant = nul
           <path d={areaPath} fill={color} fillOpacity="0.12" />
           <path d={linePath} fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
         </svg>
+      );
+    };
+    // Target's own track+fill bar — only ever shown in Standard/Filled,
+    // matching componentChildren.js's own showTargetRow condition.
+    const TargetRow = ({ value, target, trackClassName = "bg-slate-200 dark:bg-white/10", trackStyle, fillColor = "#22C55E", textClassName = "text-slate-500 dark:text-slate-400", textColor }) => {
+      if (!target) return null;
+      const pct = Math.round((value / target) * 100);
+      return (
+        <div className="mt-3">
+          <div className={`h-1 w-full overflow-hidden rounded-full ${trackStyle ? "" : trackClassName}`} style={trackStyle}>
+            <div className="h-full rounded-full" style={{ width: `${Math.min(pct, 100)}%`, background: fillColor }} />
+          </div>
+          <p className={`mt-1 text-[10px] font-bold ${textColor ? "" : textClassName}`} style={textColor ? { color: textColor } : undefined}>{pct}% of target</p>
+        </div>
       );
     };
 
@@ -195,6 +212,7 @@ function ComponentPreview({ item, values = {}, interactive = true, variant = nul
       <div className="w-[280px] max-w-full rounded-xl p-4" style={{ background: d.bg, color: d.fg }}>
         <p className="text-[10px] font-black uppercase tracking-wide" style={{ color: d.fg }}>{d.label}</p>
         <b className="mt-2 block text-2xl" style={{ color: d.fg }}>{d.value}</b>
+        <TargetRow value={d.value} target={d.target} trackStyle={{ background: `${d.fg}33` }} fillColor={d.fg} textColor={d.fg} />
         <div className="mt-1 flex items-center gap-1.5 text-[10px] font-bold" style={{ color: d.fg }}>
           <span>{d.pct >= 0 ? "▲" : "▼"} {d.pct >= 0 ? "+" : ""}{d.pct}%</span>
           <span className="truncate">{d.pctLabel}</span>
@@ -221,6 +239,7 @@ function ComponentPreview({ item, values = {}, interactive = true, variant = nul
         <p className="truncate text-[10px] font-black uppercase tracking-wide text-slate-500 dark:text-slate-400">{d.label}</p>
         <b className="mt-1.5 block text-3xl">{d.value}</b>
         {d.spark && <div className="mt-3"><Spark spark={d.spark} color={d.pct >= 0 ? "#22C55E" : "#EF4444"} /></div>}
+        <TargetRow value={d.value} target={d.target} />
         <div className="mt-3 flex items-center gap-1.5 text-[11px] font-bold text-slate-500 dark:text-slate-400">
           <Trend pct={d.pct} />
           <span className="truncate">{d.pctLabel}</span>

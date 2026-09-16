@@ -151,46 +151,65 @@ const GENERIC_VARIANTS = [
 // verbatim, since that library's YAML and prose are its own.
 const overrides = {
   "kpi-card": {
-    summary: "A single, individually-placed KPI card — one instance per metric, its own scalar properties describing that one card — themed by a Style switch and a centralized StyleConfig token set, not a dashboard row rendering many cards from one table.",
+    summary: "A single, individually-placed KPI card — one instance per metric, its own scalar properties describing that one card — themed by a Style switch, a Tone that makes color follow the kind of metric, and a centralized StyleConfig token set, not a dashboard row rendering many cards from one table.",
     properties: [
-      ["Label", "Text", "All Assets", "Card title, rendered uppercase; containing \"value\"/\"price\"/\"cost\" auto-formats Value as currency"],
-      ["Value", "Number", "118", "The headline number; auto-abbreviated at StyleConfig.abbreviateThreshold (e.g. 42000 becomes \"42.0K\")"],
+      ["Label", "Text", "All Assets", "Card title, rendered uppercase"],
+      ["Value", "Number", "118", "The headline number; formatted by NumberFormat, or auto-abbreviated at StyleConfig.abbreviateThreshold when NumberFormat is Auto (e.g. 42000 becomes \"42.0K\")"],
+      ["NumberFormat", "Text", "Auto", "A real Power Fx number-format string applied via Text(Value, NumberFormat) — e.g. \"$#,##0.00\", \"0%\", \"#,##0\"; \"Auto\" (or blank) keeps the K/M abbreviation default instead"],
       ["Icon", "Text", "Box", "A name matching a row in Icons"],
-      ["IconBg", "Text", "#EBF5FF", "Hex background for the icon circle; becomes the whole card's background in Filled"],
-      ["IconColor", "Text", "#1565C0", "Hex stroke for the icon SVG; becomes all text/percent color in Filled"],
-      ["PercentChange", "Number", "14", "Trend %; the arrow/color follow its sign, and IsBlankOrError(PercentChange) hides it entirely when cleared"],
+      ["Tone", "Text", "Custom", "Custom, Positive, Warning, Negative, Neutral or Info — anything but Custom resolves IconBg/IconColor from StyleConfig.tones instead of the two properties below, so color follows the kind of metric rather than a hand-picked hex pair"],
+      ["IconBg", "Text", "#EBF5FF", "Hex background for the icon circle when Tone is Custom; becomes the whole card's background in Filled"],
+      ["IconColor", "Text", "#1565C0", "Hex stroke for the icon SVG when Tone is Custom; becomes all text/percent color in Filled"],
+      ["PercentChange", "Number", "14", "Trend %; the arrow always follows its raw sign, and IsBlankOrError(PercentChange) hides it entirely when cleared"],
+      ["PositiveDirection", "Text", "Up", "Up or Down — Down means a decrease is the good outcome (cost, incidents, open tickets), so the trend color follows that instead of assuming up is always positive; the arrow itself always reflects PercentChange's real sign either way"],
       ["PercentLabel", "Text", "vs last month", "Footer sub-text; blank hides the footer line"],
       ["SparklineData", "Text", "10,25,18,42,38,56,61,70", "Comma-separated numbers; shown only in Standard/Chart, blank hides it in those too"],
+      ["Target", "Number", "150", "Optional goal value; blank or 0 hides the goal row entirely (and the 28px it would otherwise add to card height in Standard/Filled) — shows a track+fill bar and an \"N% of target\" line otherwise"],
       ["Style", "Text", "Standard", "Standard, Compact, Minimal, Filled or Chart — every control's Visible/Height/Width/Color/Fill reads this one property rather than five separately exported trees"],
       ["IsLoading", "Boolean", "false", "True hides the card and shows a plain colored skeleton placeholder, sized to match the active Style's own layout, instead"],
-      ["StyleConfig", "Record", "Light theme tokens", "Centralized colors (cardBg/border/text/textMuted/positive/negative/neutral/skeletonBase/skeletonShine), space (xs..xl), radius (md/lg), type sizes (value/label/body) and abbreviateThreshold — every control references this instead of repeating literal colors/sizes"],
-      ["Icons", "Table", "8 built-in icons", "Name/SVG rows; each SVG string carries the literal placeholder text COLOR where a stroke value goes, substituted at render time with this card's own IconColor — one shared icon set, no per-color asset variants"]
+      ["HasLoadError", "Boolean", "false", "True hides both the card and the skeleton and shows a distinct retry state instead — takes precedence over IsLoading, the same not-the-same-state distinction this catalog's Activity Timeline already draws"],
+      ["StyleConfig", "Record", "Light theme tokens", "Centralized colors (cardBg/border/text/textMuted/positive/negative/neutral/skeletonBase/skeletonShine), tones (positive/warning/negative/neutral/info bg+fg pairs for Tone), space (xs..xl), radius (md/lg), type sizes (value/label/body) and abbreviateThreshold — every control references this instead of repeating literal colors/sizes"],
+      ["Icons", "Table", "8 built-in icons", "Name/SVG rows; each SVG string carries the literal placeholder text COLOR where a stroke value goes, substituted at render time with this card's own resolved icon color — one shared icon set, no per-color asset variants"],
+      ["AccessibilityLabel", "Text", "All Assets card, value 118, up 14 percent versus last month", "Screen-reader name for the whole card, wired to the overlay button's real AccessibleLabel property; it's a plain Text value, not a live formula, so keep it in sync with Value/PercentChange yourself, or bind the pasted instance's own property to a formula like Label & \", \" & Text(Value) & \"...\" for one that always matches"]
     ],
-    events: [["OnSelect", "Fires when the card is tapped — no parameters, since a single-instance card never needs to say which one was pressed; the host already knows, because it placed this exact instance"]],
+    events: [
+      ["OnSelect", "Fires when the card is tapped — no parameters, since a single-instance card never needs to say which one was pressed; the host already knows, because it placed this exact instance"],
+      ["OnRetry", "Fires when the Retry button in the HasLoadError state is pressed — the host re-runs whatever fetch failed and sets HasLoadError back to false on success, the same host-owns-the-retry pattern Activity Timeline's own OnLoadMore/OnLoadMoreError already uses"]
+    ],
     architecture: [
       "One instance is one card — place as many as a screen needs, one per metric, and configure each through its own Label/Value/Icon/... properties, the same way any other single component is placed and configured per-instance in Studio",
       "Style is a single Text property read by If()/Switch() throughout every control's Visible/Height/Width/Color/Fill, rather than five separately exported component trees for five looks",
-      "StyleConfig centralizes every color/spacing/radius/type-size token in one Record property, so retheming touches one place instead of every control that happens to repeat a literal RGBA(...)",
-      "IsLoading swaps in a sibling GroupContainer of plain colored placeholder bars matching the active Style's own layout, rather than a spinner — the real skeleton-loading pattern, sized to this one card rather than a whole Gallery of them",
+      "Tone resolves IconBg/IconColor from StyleConfig.tones through one Switch() each; every control reads the resolved color, never the raw property directly, so Tone and a manually-set IconBg/IconColor can never disagree with what's actually drawn",
+      "StyleConfig centralizes every color/spacing/radius/type-size/tone token in one Record property, so retheming touches one place instead of every control that happens to repeat a literal RGBA(...)",
+      "NumberFormat is applied via the real two-argument Text(Value, format) form when set, ahead of the K/M abbreviation fallback — an explicit host-set format string instead of a guess inferred from Label's own words",
+      "PositiveDirection only ever changes the color Switch()'s own condition; the arrow glyph and its sign are computed from PercentChange alone, so the two can't drift into an arrow pointing one way colored as if it meant the other",
+      "Target's track+fill bar and percentage text share one guarded ratio/text pair (blank or zero Target always evaluates to 0/blank rather than dividing by zero), and only add height to the card in the one Style/visibility combination where the row itself actually renders",
+      "IsLoading and HasLoadError are two distinct sibling containers, not one flag reused for both — a metric that hasn't loaded yet and one whose last fetch failed need different messages and a different recovery action, and HasLoadError wins when both happen to be true at once",
       "The sparkline is a generated SVG data: URI Image, built from a plain comma-separated Text value (MatchAll/ForAll/Concat), not a nested Table and not a second charting implementation",
-      "The icon library is an SVG-with-COLOR-placeholder Table, recolored at render time via Substitute() — one shared asset set instead of per-color icon variants",
+      "The icon library is an SVG-with-COLOR-placeholder Table, recolored at render time via Substitute() with this card's own resolved icon color — one shared asset set instead of per-color icon variants",
       "A screen that needs several of these from one live query builds its own Gallery templating cmpKPICard once per row, binding each instance's Label/Value/Icon/... to ThisItem — that Gallery lives on the screen, never inside this component, so the exact same card works equally well placed once by hand or templated by the dozen (see Examples)"
     ],
     examples: [
       ["One static card", "cmpKPICard.Value: =118, Label: =\"All Assets\", Icon: =\"Box\", IconBg: =\"#EBF5FF\", IconColor: =\"#1565C0\" — placed directly on a screen, no collection or Gallery involved."],
-      ["Several cards from one live query", "A screen-level Gallery (galDashboardKPIs) with Items: =ForAll(GroupBy(Assets, \"Status\", \"Group\"), {Label: Status, Value: CountRows(Group), Icon: Switch(Status, \"Available\", \"Package\", \"In Use\", \"TrendLines\", \"Box\"), IconBg: Switch(Status, \"Available\", \"#E8F5E9\", \"#EBF5FF\"), IconColor: Switch(Status, \"Available\", \"#2E7D32\", \"#1565C0\")}) templates one cmpKPICard per row, each property bound to ThisItem.* — the Gallery is the screen's own; this component's own definition still only ever describes one card."],
-      ["Auto-refreshing metric", "A named formula nfActiveAssetCount = CountRows(Filter(Assets, Status = \"Active\")) recalculates automatically; the screen sets cmpKPICard.Value: =nfActiveAssetCount — no manual refresh call needed anywhere."]
+      ["Dynamic color by metric type", "cmpKPICard.Tone: =If(Value > Target, \"Positive\", \"Warning\") — the card recolors itself from StyleConfig's own accessible tone pairs as the underlying data changes, with no hex value anywhere in the formula."],
+      ["Goal-tracked metric", "cmpKPICard.Value: =nfOpenTickets, Target: =50, PositiveDirection: =\"Down\" — fewer open tickets than the 50-ticket target reads as good (green), and the goal row shows real progress toward it."],
+      ["Several cards from one live query", "A screen-level Gallery (galDashboardKPIs) with Items: =ForAll(GroupBy(Assets, \"Status\", \"Group\"), {Label: Status, Value: CountRows(Group), Icon: Switch(Status, \"Available\", \"Package\", \"In Use\", \"TrendLines\", \"Box\"), Tone: Switch(Status, \"Available\", \"Positive\", \"Info\")}) templates one cmpKPICard per row, each property bound to ThisItem.* — the Gallery is the screen's own; this component's own definition still only ever describes one card."],
+      ["Auto-refreshing metric with retry", "A named formula nfActiveAssetCount recalculates automatically from a collection loaded in App.OnStart; cmpKPICard.Value: =nfActiveAssetCount, HasLoadError: =varAssetLoadFailed, OnRetry: =ClearCollect(colAssets, <source query>); Set(varAssetLoadFailed, false) — no manual refresh call for the normal path, and a real recovery action for the failed one."]
     ],
     accessibility: [
-      "PercentChange's direction reads as a real arrow glyph plus a signed percentage in text, never color alone",
-      "IsLoading's skeleton is a plain, textless colored fill, so a screen reader doesn't announce meaningless placeholder content while data loads",
-      "The icon SVG is decorative — IconBg/IconColor already convey the same category visually — with Label carrying the real accessible name for the card",
-      "btnCardOverlay is a real focusable, selectable button over the card (not a bare click handler on a container), so OnSelect fires the same way for keyboard and screen-reader activation as it does for a mouse click"
+      "PercentChange's direction reads as a real arrow glyph plus a signed percentage in text, never color alone, and PositiveDirection changes only the color, never removes the text",
+      "IsLoading's skeleton and HasLoadError's retry state are both plain, clearly-stated text content, not a silent blank card or a shimmer with no text equivalent",
+      "HasLoadError's Retry is a real, focusable, keyboard-and-screen-reader-operable button, not a tap-to-dismiss overlay with no accessible name",
+      "The icon SVG is decorative — IconBg/IconColor (or Tone's resolved equivalents) already convey the same category visually — with Label carrying the real accessible name for the card",
+      "AccessibilityLabel is wired to btnCardOverlay's real AccessibleLabel property (CONFIRMED against Microsoft's own canvas-apps accessibility property reference) so the interactive overlay always has a real accessible name, falling back to Label when AccessibilityLabel is left at its default",
+      "btnCardOverlay is a real focusable, selectable button over the card (not a bare click handler on a container), so OnSelect fires the same way for keyboard and screen-reader activation as it does for a mouse click",
+      "Tone's five options are all pre-checked against WCAG 1.4.3 (4.5:1) for the Filled variant's text-on-background pairing, the same real relative-luminance calculation this catalog used to fix the original Filled variant's contrast failures — picking a Tone can't reintroduce that bug"
     ],
     limitations: [
-      "Value is a real Number, not pre-formatted text — use Label's own value/price/cost keyword-triggered currency formatting, or extend the abbreviation formula, for other units",
+      "Value is a real Number; NumberFormat covers most real formatting needs (currency, percent, thousands separators) but a format this catalog hasn't anticipated may need the abbreviation formula itself extended",
       "The sparkline is decorative and intentionally omitted from Compact/Minimal/Filled — PercentChange and PercentLabel already state the same trend as text in those styles",
-      "Rendering several cards from one collection is the host screen's own job (a Gallery templating this component, per the second Example) — this component intentionally carries no Data/Table property or internal Gallery of its own, so pasting one instance always produces exactly the one card it describes, never more"
+      "AccessibilityLabel is a plain Text value, not a live formula, so a card whose Value/PercentChange come from a fast-changing live source needs its own AccessibilityLabel kept in sync (or bound to a formula on the pasted instance) or the announced name will drift from what's on screen",
+      "Rendering several cards from one collection is the host screen's own job (a Gallery templating this component, per the Examples) — this component intentionally carries no Data/Table property or internal Gallery of its own, so pasting one instance always produces exactly the one card it describes, never more"
     ],
     variants: [
       ["Standard", "Icon, label, abbreviated/currency-formatted value, sparkline, and a footer trend + sub-label line — the full card."],
