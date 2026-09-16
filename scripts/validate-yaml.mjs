@@ -141,7 +141,80 @@ function validateComponentDefinition(item) {
     }
   });
 
-  if (CHILDREN_BUILDERS[item.title]) validateChildrenTree(definition, context);
+  validateSelfPropertyReferences(item, pascal, context, yamlText);
+  if (CHILDREN_BUILDERS[item.title]) {
+    validateChildrenTree(definition, context);
+    validateEventArgCounts(item, pascal, context, yamlText, customProperties);
+  }
+}
+
+/* Real Studio error caught this class live: Calendar's own Children tree
+   called `cmpCalendar.OnSelectEvent(Index(...))` (and two other events)
+   with a real argument, but calendar()'s own return object never
+   declared an `eventParameters` entry for them — so buildComponentYaml
+   emitted those events with zero declared Parameters, and Studio's real
+   paste-time compiler rejected the call: "Invalid number of arguments:
+   received 1, expected 0." The same gap turned out to affect nearly
+   every value-returning event across the whole catalog (Command Card,
+   Program Scorecard, Risk Matrix, Data Table, Sidebar, Mega Menu, and
+   more) — every one of those event calls would have thrown the same
+   error the moment a real user tapped the control. Scans the generated
+   YAML text for every `cmp<Pascal>.EventName(...)` call, and for each
+   real declared event, cross-checks whether the call site passes a
+   non-empty argument list against whether CustomProperties actually
+   declares a Parameters: block for that event — a mismatch either way
+   (args passed but none declared, or declared but never passed any)
+   is a real Studio arg-count error waiting to happen. */
+function validateEventArgCounts(item, pascal, context, yamlText, customProperties) {
+  const eventNames = new Set(item.events.map(([name]) => name));
+  const marker = `cmp${pascal}.`;
+  let idx = 0;
+  while ((idx = yamlText.indexOf(marker, idx)) !== -1) {
+    const nameStart = idx + marker.length;
+    const nameMatch = /^\w+/.exec(yamlText.slice(nameStart));
+    if (!nameMatch) { idx = nameStart; continue; }
+    const name = nameMatch[0];
+    const afterName = nameStart + name.length;
+    idx = afterName;
+    if (yamlText[afterName] !== "(" || !eventNames.has(name)) continue;
+    let depth = 1, i = afterName + 1;
+    while (i < yamlText.length && depth > 0) {
+      if (yamlText[i] === "(") depth++;
+      else if (yamlText[i] === ")") depth--;
+      i++;
+    }
+    const hasArgs = yamlText.slice(afterName + 1, i - 1).trim().length > 0;
+    const declaresParams = Array.isArray(customProperties[name]?.Parameters) && customProperties[name].Parameters.length > 0;
+    if (hasArgs && !declaresParams) {
+      fail(context, `formula calls cmp${pascal}.${name}(...) with an argument, but this event has no Parameters: declared — add an eventParameters entry for it, or Studio will reject the call with "Invalid number of arguments: received 1, expected 0"`);
+    }
+  }
+}
+
+/* Real Studio paste error caught this class live: Activity Timeline's
+   own Children tree referenced `cmpActivityTimeline.Language` in three
+   places, but "Language" was never added to its CustomProperties list in
+   componentLibrary.js — every other catalog component with a Language
+   property has one declared, this one was simply missed when the
+   pattern was added elsewhere. A reference to an undeclared component
+   property is a real "Name isn't valid" error on paste, and nothing
+   about YAML syntax or the schema's enum set catches it — only knowing
+   this component's own declared property/event names does. Scans the
+   generated YAML text (not just the Children tree) for every
+   `cmp<Pascal>.PropName` reference and fails on any name that isn't one
+   of this item's own declared properties or events. */
+function validateSelfPropertyReferences(item, pascal, context, yamlText) {
+  const allowedNames = new Set([...item.properties.map(([name]) => name), ...item.events.map(([name]) => name)]);
+  const pattern = new RegExp(`cmp${pascal}\\.(\\w+)`, "g");
+  const reported = new Set();
+  let match;
+  while ((match = pattern.exec(yamlText))) {
+    const propName = match[1];
+    if (!allowedNames.has(propName) && !reported.has(propName)) {
+      reported.add(propName);
+      fail(context, `formula references cmp${pascal}.${propName}, but "${propName}" isn't a declared property or event in componentLibrary.js — a real Studio "Name isn't valid" error on paste`);
+    }
+  }
 }
 
 const CONTROL_REF_PATTERN = /^[\w/]+@\d+\.\d+\.\d+$/;

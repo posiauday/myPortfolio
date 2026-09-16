@@ -86,9 +86,21 @@ function formatFormulaValue(rawValue, dataType, realFormula) {
   const isNumericLiteral = dataType === "Number" && /^-?\d+(\.\d+)?$/.test(value.trim());
   const isBooleanLiteral = dataType === "Boolean" && (value === "true" || value === "false");
   const isDateTimeCall = dataType === "DateAndTime" && /^(Today|Now|Blank|Date|DateAdd|DateTime)\s*\(/.test(value.trim());
+  // CONFIRMED via a real Studio error on Calendar's Language property:
+  // a Text property whose catalog `def` is the prose placeholder "Blank"
+  // (meaning "no value set" — see e.g. Language/TimeZone's own catalog
+  // descriptions) was wrapped as the literal 5-character text "Blank" by
+  // powerFxTextLiteral below, same as any other word. A control then
+  // reading it via Coalesce(cmp.Language, Language()) got back the
+  // non-blank string "Blank" instead of falling through to Language() —
+  // "Language code 'Blank' not supported" on a real Studio paste. A Text
+  // property's own "Blank" placeholder needs a real empty string, not
+  // text that merely spells the word "blank".
+  const isBlankPlaceholder = dataType === "Text" && value.trim() === "Blank";
   let expression;
   if (isNumericLiteral || isBooleanLiteral || isDateTimeCall) expression = value;
   else if (dataType === "DateAndTime") expression = "Blank()";
+  else if (isBlankPlaceholder) expression = '""';
   else expression = powerFxTextLiteral(value);
   return { expression, multiline: needsMultiline(expression) };
 }

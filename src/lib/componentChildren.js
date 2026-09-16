@@ -914,7 +914,11 @@ function commandCard(pascal) {
 
   return {
     properties: { Height: cardHeight, Width: "340" },
-    children: [cntCard]
+    children: [cntCard],
+    eventParameters: {
+      OnMetricSelect: [{ name: "Metric", dataType: "Record", defaultFormula: '{Label:"Health",Value:"74%",Tone:"Positive"}' }],
+      OnChartSelect: [{ name: "Index", dataType: "Number", defaultFormula: "1" }, { name: "Value", dataType: "Number", defaultFormula: "12" }]
+    }
   };
 }
 
@@ -986,7 +990,15 @@ function programScorecard(pascal) {
 
   return {
     properties: { Height: `72 + If(${isCompact}, CountRows(${self}.Metrics) * 106, RoundUp(CountRows(${self}.Metrics) / If(${isPrint}, 1, 3), 0) * If(${self}.ShowTrend, 140, 110)) + 20`, Width: "380" },
-    children: [cntCard]
+    children: [cntCard],
+    eventParameters: {
+      OnExport: [
+        { name: "Metrics", dataType: "Table", defaultFormula: 'Table({Name:"Budget",Value:82,Target:90,Tone:"Green",Trend:"70,75,78,80,82"})' },
+        { name: "Period", dataType: "Text", defaultFormula: '"This quarter"' },
+        { name: "ExportFormat", dataType: "Text", defaultFormula: '"PDF"' }
+      ],
+      OnMetricSelect: [{ name: "Metric", dataType: "Record", defaultFormula: '{Name:"Budget",Value:82,Target:90,Tone:"Green",Trend:"70,75,78,80,82"}' }]
+    }
   };
 }
 
@@ -1038,7 +1050,10 @@ function operationalStatusBanner(pascal) {
 
   return {
     properties: { Height: `If(${showAffected}, 82, 58)`, Width: "640" },
-    children: [cntBanner]
+    children: [cntBanner],
+    eventParameters: {
+      OnDetailsSelect: [{ name: "System", dataType: "Record", defaultFormula: '{Name:"Sample"}' }]
+    }
   };
 }
 
@@ -1147,7 +1162,16 @@ function riskMatrix(pascal) {
 
   return {
     properties: { Height: `44 + ${gridArea} + 40`, Width: "320" },
-    children: [cntRoot]
+    children: [cntRoot],
+    eventParameters: {
+      OnSearch: [{ name: "SearchText", dataType: "Text", defaultFormula: '""' }],
+      OnExport: [{ name: "Risks", dataType: "Table", defaultFormula: 'Table({Likelihood:1,Impact:1,Count:1,Name:Blank(),TrendDirection:Blank()})' }],
+      OnCellSelect: [
+        { name: "Likelihood", dataType: "Number", defaultFormula: "1" },
+        { name: "Impact", dataType: "Number", defaultFormula: "1" },
+        { name: "Risks", dataType: "Table", defaultFormula: 'Table({Likelihood:1,Impact:1,Count:1,Name:Blank(),TrendDirection:Blank()})' }
+      ]
+    }
   };
 }
 
@@ -1201,7 +1225,10 @@ function projectHealthSummary(pascal) {
 
   return {
     properties: { Height: `If(${isCompact}, 86, If(And(${isNarrative}, ${self}.NarrativeText <> ""), 180, 136))`, Width: "360" },
-    children: [cntCard]
+    children: [cntCard],
+    eventParameters: {
+      OnDimensionSelect: [{ name: "Dimension", dataType: "Record", defaultFormula: '{Dimension:"Scope",Tone:"Green",Note:"On track",TrendDirection:"Same"}' }]
+    }
   };
 }
 
@@ -1253,7 +1280,10 @@ function milestoneTracker(pascal) {
 
   return {
     properties: { Fill: "Color.Transparent", Height: `If(${isVertical}, 220, If(${self}.ShowDates, 60, 36))`, Width: `If(${isVertical}, 220, 360)` },
-    children: [cntRail, galMilestones]
+    children: [cntRail, galMilestones],
+    eventParameters: {
+      OnMilestoneSelect: [{ name: "Milestone", dataType: "Record", defaultFormula: "{Name:\"Kickoff\",DueDate:Date(2026,1,10),Status:\"Complete\",CompletedDate:Date(2026,1,9)}" }]
+    }
   };
 }
 
@@ -1308,7 +1338,11 @@ function decisionLog(pascal) {
 
   return {
     properties: { Height: `56 + CountRows(${self}.Decisions) * If(${isCompact}, 44, 76) + 20`, Width: "420" },
-    children: [cntCard]
+    children: [cntCard],
+    eventParameters: {
+      OnExport: [{ name: "Decisions", dataType: "Table", defaultFormula: 'Table({Date:Date(2026,1,5),Decision:"Adopt Dataverse for storage",Owner:"Jordan Lee",Status:"Decided",Rationale:"Governed, scalable, integrates with Power Platform"})' }],
+      OnDecisionSelect: [{ name: "Decision", dataType: "Record", defaultFormula: '{Date:Date(2026,1,5),Decision:"Adopt Dataverse for storage",Owner:"Jordan Lee",Status:"Decided",Rationale:"Governed, scalable, integrates with Power Platform"}' }]
+    }
   };
 }
 
@@ -1333,7 +1367,7 @@ function deadlineTracker(pascal) {
   const isCompact = `${self}.Config.Compact`;
   const isComplete = `!IsBlank(${self}.CompletedDate)`;
 
-  const dueDate = `With({window: Sequence(Min(${self}.Days, 400) * 2 + 20)}, With({cand: AddColumns(window, "d", DateAdd(${self}.StartDate, Value, TimeUnit.Days))}, With({biz: Filter(cand, Weekday(d, StartOfWeek.Monday) <= 5 And IsBlank(LookUp(${self}.Holidays, HolidayDate = d)))}, Index(biz, Min(${self}.Days, CountRows(biz))).d)))`.replace(/\s*\n\s*/g, " ");
+  const dueDate = `With({window: Sequence(Min(${self}.Days, 400) * 2 + 20)}, With({cand: AddColumns(window, "d", DateAdd(${self}.StartDate, Value, TimeUnit.Days))}, With({biz: Filter(cand, Weekday(d, StartOfWeek.Monday) <= 5 And IsBlank(LookUp(${self}.Holidays, HolidayDate = d)))}, If(CountRows(biz) = 0, ${self}.StartDate, Index(biz, Min(${self}.Days, CountRows(biz))).d))))`.replace(/\s*\n\s*/g, " ");
   const daysLeft = `DateDiff(Today(), ${dueDate}, TimeUnit.Days)`;
   const status = `If(${isComplete}, "Complete", If(${daysLeft} < 0, "Overdue", If(${daysLeft} <= ${self}.ReminderThreshold, "DueSoon", "OnTrack")))`;
   const statusColor = `ColorValue(Switch(${status}, "Complete", "#2E7D32", "Overdue", "#C62828", "DueSoon", "#BF360C", "#1565C0"))`;
@@ -1455,7 +1489,10 @@ function activityTimeline(pascal) {
 
   return {
     properties: { Fill: "Color.White", Height: `56 + CountRows(${shown}) * If(${isCompact}, 36, ${self}.CardHeight)`, Width: "360" },
-    children: [galItems, galSkeleton, cntError, btnLoadMore]
+    children: [galItems, galSkeleton, cntError, btnLoadMore],
+    eventParameters: {
+      OnItemSelect: [{ name: "Item", dataType: "Record", defaultFormula: '{Title:"Project created",Description:"Initial workspace set up",Author:"Jordan Lee",Timestamp:Now(),Category:"System"}' }]
+    }
   };
 }
 
@@ -1510,7 +1547,7 @@ function calendar(pascal) {
       control: "Image@2.2.3",
       properties: {
         Height: "14",
-        Image: `With({ev: Index(${dayEvents}, ${n}), ch: LookUp(${self}.Channels, Key = Index(${dayEvents}, ${n}).Channel)}, "data:image/svg+xml;utf8," & EncodeUrl("<svg xmlns='http://www.w3.org/2000/svg' width='100' height='14'><title>" & ev.Title & "</title><rect width='100' height='14' rx='3' fill='" & Coalesce(ch.Color, "#64748B") & "'/><text x='4' y='10' font-size='8' fill='white'>" & Left(ev.Title, 10) & "</text></svg>"))`.replace(/\s*\n\s*/g, " "),
+        Image: `If(CountRows(${dayEvents}) < ${n}, "", With({ev: Index(${dayEvents}, ${n}), ch: LookUp(${self}.Channels, Key = Index(${dayEvents}, ${n}).Channel)}, "data:image/svg+xml;utf8," & EncodeUrl("<svg xmlns='http://www.w3.org/2000/svg' width='100' height='14'><title>" & ev.Title & "</title><rect width='100' height='14' rx='3' fill='" & Coalesce(ch.Color, "#64748B") & "'/><text x='4' y='10' font-size='8' fill='white'>" & Left(ev.Title, 10) & "</text></svg>")))`.replace(/\s*\n\s*/g, " "),
         Visible: `And(CountRows(${dayEvents}) >= ${n}, ${n} <= ${self}.Config.ChipSlots)`,
         Width: "Parent.Width - 8",
         X: "4",
@@ -1584,7 +1621,12 @@ function calendar(pascal) {
 
   return {
     properties: { Height: `56 + ${self}.Config.RowHeight * 6`, Width: "532" },
-    children: [cntRoot]
+    children: [cntRoot],
+    eventParameters: {
+      OnRangeChange: [{ name: "RangeStart", dataType: "DateAndTime", defaultFormula: "Date(2026,1,1)" }, { name: "RangeEnd", dataType: "DateAndTime", defaultFormula: "Date(2026,1,31)" }],
+      OnSelectEvent: [{ name: "Event", dataType: "Record", defaultFormula: '{Title:"",Date:Date(2026,1,1),Channel:"",SeriesId:""}' }],
+      OnSelectDay: [{ name: "Date", dataType: "DateAndTime", defaultFormula: "Today()" }]
+    }
   };
 }
 
@@ -1642,8 +1684,8 @@ function accordionList(pascal) {
       Y: `40 + (${n} - 1) * ${rowH}`
     },
     children: [
-      { name: "lblItemLine", control: "ModernText@1.0.0", properties: { Height: "Parent.Height", Size: "10", Text: `Index(${itemsForGroup}, ${n}).Line`, Width: "Parent.Width - 70", X: "0", Y: "0" } },
-      { name: "lblItemTag", control: "ModernText@1.0.0", properties: { Color: `ColorValue(Switch(Index(${itemsForGroup}, ${n}).Tone, "Positive", "#2E7D32", "Negative", "#C62828", "#BF360C"))`, FontWeight: "FontWeight.Bold", Height: "Parent.Height", Size: "9", Text: `Index(${itemsForGroup}, ${n}).Tag`, Visible: `${self}.Config.ShowTags`, Width: "60", X: "Parent.Width - 60", Y: "0" } },
+      { name: "lblItemLine", control: "ModernText@1.0.0", properties: { Height: "Parent.Height", Size: "10", Text: `If(CountRows(${itemsForGroup}) >= ${n}, Index(${itemsForGroup}, ${n}).Line, "")`, Width: "Parent.Width - 70", X: "0", Y: "0" } },
+      { name: "lblItemTag", control: "ModernText@1.0.0", properties: { Color: `If(CountRows(${itemsForGroup}) >= ${n}, ColorValue(Switch(Index(${itemsForGroup}, ${n}).Tone, "Positive", "#2E7D32", "Negative", "#C62828", "#BF360C")), Color.Transparent)`, FontWeight: "FontWeight.Bold", Height: "Parent.Height", Size: "9", Text: `If(CountRows(${itemsForGroup}) >= ${n}, Index(${itemsForGroup}, ${n}).Tag, "")`, Visible: `${self}.Config.ShowTags`, Width: "60", X: "Parent.Width - 60", Y: "0" } },
       { name: "btnItemTap", control: "Classic/Button@2.2.0", properties: { BorderStyle: "BorderStyle.None", Fill: "Color.Transparent", Height: "Parent.Height", OnSelect: `${self}.OnSelectItem(Index(${itemsForGroup}, ${n}).ItemKey)`, Text: '""', Width: "Parent.Width - 60" } }
     ]
   });
@@ -1752,9 +1794,9 @@ function dataTable(pascal) {
       { name: "cntProgressTrack", control: "GroupContainer@1.5.0", variant: "ManualLayout", properties: { BorderStyle: "BorderStyle.None", Fill: "RGBA(226, 232, 240, 1)", Height: "6", RadiusBottomLeft: "3", RadiusBottomRight: "3", RadiusTopLeft: "3", RadiusTopRight: "3", Visible: "!IsBlank(ThisItem.TotalSteps)", Width: "80", X: "342", Y: "17" },
         children: [{ name: "cntProgressFill", control: "GroupContainer@1.5.0", variant: "ManualLayout", properties: { BorderStyle: "BorderStyle.None", Fill: "RGBA(22, 131, 38, 1)", Height: "6", RadiusBottomLeft: "3", RadiusBottomRight: "3", RadiusTopLeft: "3", RadiusTopRight: "3", Width: "Min(1, ThisItem.CompletedSteps / Max(ThisItem.TotalSteps, 1)) * Parent.Width" } }]
       },
-      { name: "btnAction1", control: "Classic/Button@2.2.0", properties: { BorderStyle: "BorderStyle.None", Color: "RGBA(100, 116, 139, 1)", Fill: "Color.Transparent", Height: "24", OnSelect: `${self}.OnMenuItemSelect(ThisItem, Index(${self}.ContextMenuItems, 1).Key)`, Size: "9", Text: `Index(${self}.ContextMenuItems, 1).Label`, Visible: `And(CountRows(${self}.ContextMenuItems) >= 1, Index(${self}.ContextMenuItems, 1).Visible)`, Width: "44", X: "432", Y: "12" } },
-      { name: "btnAction2", control: "Classic/Button@2.2.0", properties: { BorderStyle: "BorderStyle.None", Color: "RGBA(100, 116, 139, 1)", Fill: "Color.Transparent", Height: "24", OnSelect: `${self}.OnMenuItemSelect(ThisItem, Index(${self}.ContextMenuItems, 2).Key)`, Size: "9", Text: `Index(${self}.ContextMenuItems, 2).Label`, Visible: `And(CountRows(${self}.ContextMenuItems) >= 2, Index(${self}.ContextMenuItems, 2).Visible)`, Width: "44", X: "476", Y: "12" } },
-      { name: "btnAction3", control: "Classic/Button@2.2.0", properties: { BorderStyle: "BorderStyle.None", Color: "RGBA(100, 116, 139, 1)", Fill: "Color.Transparent", Height: "24", OnSelect: `${self}.OnMenuItemSelect(ThisItem, Index(${self}.ContextMenuItems, 3).Key)`, Size: "9", Text: `Index(${self}.ContextMenuItems, 3).Label`, Visible: `And(CountRows(${self}.ContextMenuItems) >= 3, Index(${self}.ContextMenuItems, 3).Visible)`, Width: "44", X: "520", Y: "12" } },
+      { name: "btnAction1", control: "Classic/Button@2.2.0", properties: { BorderStyle: "BorderStyle.None", Color: "RGBA(100, 116, 139, 1)", Fill: "Color.Transparent", Height: "24", OnSelect: `${self}.OnMenuItemSelect(ThisItem, Index(${self}.ContextMenuItems, 1).Key)`, Size: "9", Text: `If(CountRows(${self}.ContextMenuItems) >= 1, Index(${self}.ContextMenuItems, 1).Label, "")`, Visible: `And(CountRows(${self}.ContextMenuItems) >= 1, Index(${self}.ContextMenuItems, 1).Visible)`, Width: "44", X: "432", Y: "12" } },
+      { name: "btnAction2", control: "Classic/Button@2.2.0", properties: { BorderStyle: "BorderStyle.None", Color: "RGBA(100, 116, 139, 1)", Fill: "Color.Transparent", Height: "24", OnSelect: `${self}.OnMenuItemSelect(ThisItem, Index(${self}.ContextMenuItems, 2).Key)`, Size: "9", Text: `If(CountRows(${self}.ContextMenuItems) >= 2, Index(${self}.ContextMenuItems, 2).Label, "")`, Visible: `And(CountRows(${self}.ContextMenuItems) >= 2, Index(${self}.ContextMenuItems, 2).Visible)`, Width: "44", X: "476", Y: "12" } },
+      { name: "btnAction3", control: "Classic/Button@2.2.0", properties: { BorderStyle: "BorderStyle.None", Color: "RGBA(100, 116, 139, 1)", Fill: "Color.Transparent", Height: "24", OnSelect: `${self}.OnMenuItemSelect(ThisItem, Index(${self}.ContextMenuItems, 3).Key)`, Size: "9", Text: `If(CountRows(${self}.ContextMenuItems) >= 3, Index(${self}.ContextMenuItems, 3).Label, "")`, Visible: `And(CountRows(${self}.ContextMenuItems) >= 3, Index(${self}.ContextMenuItems, 3).Visible)`, Width: "44", X: "520", Y: "12" } },
       { name: "btnRowTap", control: "Classic/Button@2.2.0", properties: { BorderStyle: "BorderStyle.None", Fill: "Color.Transparent", Height: "Parent.Height", OnSelect: `${self}.OnRowSelect(ThisItem)`, Text: '""', Width: "420", X: "0" } }
     ]
   };
@@ -1785,6 +1827,7 @@ function dataTable(pascal) {
     properties: { Height: `If(${self}.Searchable, 128, 94) + CountRows(${pageRows}) * 40`, Width: "600" },
     children: [cntRoot],
     eventParameters: {
+      OnRowSelect: [{ name: "Row", dataType: "Record", defaultFormula: '{Id:1,Name:"Task A",Status:"Active",Priority:"High",CompletedSteps:3,TotalSteps:5}' }],
       OnMenuItemSelect: [{ name: "Item", dataType: "Record", defaultFormula: "{Id: 0}" }, { name: "ActionKey", dataType: "Text", defaultFormula: '""' }],
       OnSort: [{ name: "Column", dataType: "Text", defaultFormula: '""' }, { name: "Direction", dataType: "Text", defaultFormula: '"Ascending"' }],
       OnSelectionChange: [{ name: "SelectedCount", dataType: "Number", defaultFormula: "0" }],
@@ -1871,7 +1914,13 @@ function fileUpload(pascal) {
 
   return {
     properties: { Height: `(If(${isCompact}, 44, 112) + CountRows(${self}.Items) * 44 + CountRows(locStaged) * 28 + 40)`, Width: "360" },
-    children: [cntRoot]
+    children: [cntRoot],
+    eventParameters: {
+      OnView: [{ name: "File", dataType: "Record", defaultFormula: '{Id:1,Name:"Statement-of-Work.pdf",SizeBytes:245000,UploadedOn:Date(2026,1,12),UploadedBy:"Jordan Lee",Ext:"pdf"}' }],
+      OnDownload: [{ name: "File", dataType: "Record", defaultFormula: '{Id:1,Name:"Statement-of-Work.pdf",SizeBytes:245000,UploadedOn:Date(2026,1,12),UploadedBy:"Jordan Lee",Ext:"pdf"}' }],
+      OnDelete: [{ name: "File", dataType: "Record", defaultFormula: '{Id:1,Name:"Statement-of-Work.pdf",SizeBytes:245000,UploadedOn:Date(2026,1,12),UploadedBy:"Jordan Lee",Ext:"pdf"}' }],
+      OnSave: [{ name: "Files", dataType: "Table", defaultFormula: 'Table({Id:1,Name:"New file 1.pdf",SizeBytes:102400,Ext:"pdf"})' }]
+    }
   };
 }
 
@@ -1938,7 +1987,16 @@ function emailComposer(pascal) {
 
   return {
     properties: { Height: "260", Width: "360" },
-    children: [cntRoot, cntBusy]
+    children: [cntRoot, cntBusy],
+    eventParameters: {
+      OnSend: [
+        { name: "Recipients", dataType: "Table", defaultFormula: 'Table({DisplayName:"Jordan Lee",Mail:"jordan.lee@example.com",JobTitle:"Power Platform Architect"})' },
+        { name: "Subject", dataType: "Text", defaultFormula: '""' },
+        { name: "Body", dataType: "Text", defaultFormula: '""' },
+        { name: "Priority", dataType: "Text", defaultFormula: '"Low"' },
+        { name: "Attachments", dataType: "Table", defaultFormula: 'Filter(Table({Id:1,Name:"",SizeBytes:0}),false)' }
+      ]
+    }
   };
 }
 
@@ -2006,7 +2064,7 @@ function commentsAndMentions(pascal) {
       OnSelect: `${self}.OnReact(ThisItem.Id, Index(ThisItem.ReactionCounts, ${n}).Emoji)`,
       RadiusBottomLeft: "10", RadiusBottomRight: "10", RadiusTopLeft: "10", RadiusTopRight: "10",
       Size: "9",
-      Text: `Index(ThisItem.ReactionCounts, ${n}).Emoji & " " & Index(ThisItem.ReactionCounts, ${n}).Count`,
+      Text: `If(CountRows(ThisItem.ReactionCounts) >= ${n}, Index(ThisItem.ReactionCounts, ${n}).Emoji & " " & Index(ThisItem.ReactionCounts, ${n}).Count, "")`,
       Visible: `And(${self}.AllowReactions, CountRows(ThisItem.ReactionCounts) >= ${n})`,
       Width: "44",
       X: 8 + (n - 1) * 48
@@ -2057,7 +2115,8 @@ function commentsAndMentions(pascal) {
     eventParameters: {
       OnPost: [{ name: "Text", dataType: "Text", defaultFormula: '""' }, { name: "Mentions", dataType: "Table", defaultFormula: "Filter(Table({DisplayName: \"\"}), false)" }, { name: "ParentId", dataType: "Number", defaultFormula: "0" }],
       OnReact: [{ name: "CommentId", dataType: "Number", defaultFormula: "0" }, { name: "Emoji", dataType: "Text", defaultFormula: '""' }],
-      OnEdit: [{ name: "CommentId", dataType: "Number", defaultFormula: "0" }, { name: "NewText", dataType: "Text", defaultFormula: '""' }]
+      OnEdit: [{ name: "CommentId", dataType: "Number", defaultFormula: "0" }, { name: "NewText", dataType: "Text", defaultFormula: '""' }],
+      OnDelete: [{ name: "Comment", dataType: "Record", defaultFormula: '{Id:1,Author:"Jordan Lee",Text:"Looks good, ready for review.",Timestamp:Now(),ParentId:Blank(),ReactionCounts:Table({Emoji:"Like",Count:2})}' }]
     }
   };
 }
@@ -2082,7 +2141,7 @@ function sidebar(pascal) {
       Color: `If(${isDark}, RGBA(226, 232, 240, 1), RGBA(71, 85, 105, 1))`,
       Height: "24",
       Size: "9",
-      Text: `Index(${childrenFor("ThisItem.Id")}, ${n}).Label`,
+      Text: `If(CountRows(${childrenFor("ThisItem.Id")}) >= ${n}, Index(${childrenFor("ThisItem.Id")}, ${n}).Label, "")`,
       Visible: `And(${self}.IsExpanded, CountRows(${childrenFor("ThisItem.Id")}) >= ${n})`,
       Width: "Parent.Width - 48",
       X: "40",
@@ -2131,7 +2190,11 @@ function sidebar(pascal) {
 
   return {
     properties: { Height: "480", Width: railWidth },
-    children: [cntRoot]
+    children: [cntRoot],
+    eventParameters: {
+      OnItemSelect: [{ name: "Item", dataType: "Record", defaultFormula: "{Id:1,ParentId:Blank(),Label:\"Dashboard\",ItemBadgeCount:0,ItemIconColor:RGBA(22,131,38,1)}" }],
+      OnExpandToggle: [{ name: "IsExpanded", dataType: "Boolean", defaultFormula: "true" }]
+    }
   };
 }
 
@@ -2159,9 +2222,9 @@ function responsiveBreadcrumbs(pascal) {
     variant: "ManualLayout",
     properties: { BorderStyle: "BorderStyle.None", Fill: "Color.Transparent", Height: "24", Visible: `And(${i} <= ${n}, ${crumbVisible(i)})`, Width: "120" },
     children: [
-      { name: "lblCrumbLabel", control: "Label@2.5.1", properties: { Color: `If(${i} = ${n}, RGBA(23, 32, 27, 1), RGBA(15, 108, 189, 1))`, FontWeight: `If(${i} = ${n}, FontWeight.Bold, FontWeight.Normal)`, Height: "20", Size: "10", Text: `Left(Index(${self}.Items, ${i}).Label, ${self}.TruncateAt) & If(Len(Index(${self}.Items, ${i}).Label) > ${self}.TruncateAt, "...", "")`, Width: "90", X: "0", Y: "2" } },
+      { name: "lblCrumbLabel", control: "Label@2.5.1", properties: { Color: `If(${i} = ${n}, RGBA(23, 32, 27, 1), RGBA(15, 108, 189, 1))`, FontWeight: `If(${i} = ${n}, FontWeight.Bold, FontWeight.Normal)`, Height: "20", Size: "10", Text: `If(${i} > ${n}, "", Left(Index(${self}.Items, ${i}).Label, ${self}.TruncateAt) & If(Len(Index(${self}.Items, ${i}).Label) > ${self}.TruncateAt, "...", ""))`, Width: "90", X: "0", Y: "2" } },
       { name: "lblChevron", control: "Label@2.5.1", properties: { Color: "RGBA(148, 163, 184, 1)", Height: "20", Size: "10", Text: '">"', Visible: `${i} < ${n}`, Width: "12", X: "94", Y: "2" } },
-      { name: "btnCrumbTap", control: "Classic/Button@2.2.0", properties: { BorderStyle: "BorderStyle.None", Fill: "Color.Transparent", Height: "20", OnSelect: `${self}.OnItemSelect(Index(${self}.Items, ${i}).Key)`, Text: '""', Visible: `And(${i} <> ${n}, Coalesce(Index(${self}.Items, ${i}).ItemClickable, true))`, Width: "90", X: "0" } }
+      { name: "btnCrumbTap", control: "Classic/Button@2.2.0", properties: { BorderStyle: "BorderStyle.None", Fill: "Color.Transparent", Height: "20", OnSelect: `${self}.OnItemSelect(Index(${self}.Items, ${i}).Key)`, Text: '""', Visible: `And(${i} <= ${n}, ${i} <> ${n}, Coalesce(Index(${self}.Items, ${i}).ItemClickable, true))`, Width: "90", X: "0" } }
     ]
   });
 
@@ -2184,7 +2247,10 @@ function responsiveBreadcrumbs(pascal) {
 
   return {
     properties: { Fill: "Color.Transparent", Height: "24", Width: "600" },
-    children: [cntRoot]
+    children: [cntRoot],
+    eventParameters: {
+      OnItemSelect: [{ name: "Key", dataType: "Text", defaultFormula: '"home"' }]
+    }
   };
 }
 
@@ -2207,8 +2273,8 @@ function megaMenu(pascal) {
     variant: "ManualLayout",
     properties: { BorderStyle: "BorderStyle.None", Fill: "Color.Transparent", Height: "36", Visible: `${i} <= CountRows(${self}.MenuItems)`, Width: "110", X: (i - 1) * 110 },
     children: [
-      { name: "lblTopLabel", control: "ModernText@1.0.0", properties: { Color: `If(locOpenMenuId = Index(${self}.MenuItems, ${i}).ID, ${self}.ActiveColor, RGBA(23, 32, 27, 1))`, FontWeight: "FontWeight.Bold", Height: "36", Size: "10", Text: `Index(${self}.MenuItems, ${i}).Label`, Width: "110", X: "0", Y: "0" } },
-      { name: "btnTopTap", control: "Classic/Button@2.2.0", properties: { BorderStyle: "BorderStyle.None", Fill: "Color.Transparent", Height: "36", OnSelect: `If(Index(${self}.MenuItems, ${i}).HasDropdown, UpdateContext({locOpenMenuId: If(locOpenMenuId = Index(${self}.MenuItems, ${i}).ID, Blank(), Index(${self}.MenuItems, ${i}).ID)}), ${self}.OnItemSelect(Index(${self}.MenuItems, ${i})))`, Text: '""', Width: "110" } }
+      { name: "lblTopLabel", control: "ModernText@1.0.0", properties: { Color: `If(${i} > CountRows(${self}.MenuItems), RGBA(23, 32, 27, 1), If(locOpenMenuId = Index(${self}.MenuItems, ${i}).ID, ${self}.ActiveColor, RGBA(23, 32, 27, 1)))`, FontWeight: "FontWeight.Bold", Height: "36", Size: "10", Text: `If(${i} <= CountRows(${self}.MenuItems), Index(${self}.MenuItems, ${i}).Label, "")`, Width: "110", X: "0", Y: "0" } },
+      { name: "btnTopTap", control: "Classic/Button@2.2.0", properties: { BorderStyle: "BorderStyle.None", Fill: "Color.Transparent", Height: "36", OnSelect: `If(Index(${self}.MenuItems, ${i}).HasDropdown, UpdateContext({locOpenMenuId: If(locOpenMenuId = Index(${self}.MenuItems, ${i}).ID, Blank(), Index(${self}.MenuItems, ${i}).ID)}), ${self}.OnItemSelect({Label: Index(${self}.MenuItems, ${i}).Label, Link: Index(${self}.MenuItems, ${i}).Link}))`, Text: '""', Width: "110" } }
     ]
   });
 
@@ -2219,7 +2285,7 @@ function megaMenu(pascal) {
       Color: "RGBA(71, 85, 105, 1)",
       Height: "22",
       Size: "9",
-      Text: `Index(Filter(${self}.DropdownItems, MenuID = locOpenMenuId), ${i}).Label`,
+      Text: `If(CountRows(Filter(${self}.DropdownItems, MenuID = locOpenMenuId)) >= ${i}, Index(Filter(${self}.DropdownItems, MenuID = locOpenMenuId), ${i}).Label, "")`,
       Visible: `CountRows(Filter(${self}.DropdownItems, MenuID = locOpenMenuId)) >= ${i}`,
       Width: "160",
       X: `If(${self}.DropdownColumns = 2, Mod(${i} - 1, 2) * 170, 0)`,
@@ -2232,7 +2298,7 @@ function megaMenu(pascal) {
     control: "Classic/Button@2.2.0",
     properties: {
       BorderStyle: "BorderStyle.None", Fill: "Color.Transparent", Height: "20",
-      OnSelect: `${self}.OnItemSelect(Index(Filter(${self}.DropdownItems, MenuID = locOpenMenuId), ${i}))`,
+      OnSelect: `${self}.OnItemSelect({Label: Index(Filter(${self}.DropdownItems, MenuID = locOpenMenuId), ${i}).Label, Link: ""})`,
       Text: '""', Visible: `CountRows(Filter(${self}.DropdownItems, MenuID = locOpenMenuId)) >= ${i}`, Width: "160",
       X: `If(${self}.DropdownColumns = 2, Mod(${i} - 1, 2) * 170, 0)`,
       Y: `RoundDown((${i} - 1) / If(${self}.DropdownColumns = 2, 2, 1), 0) * 24`
@@ -2267,7 +2333,10 @@ function megaMenu(pascal) {
 
   return {
     properties: { Fill: "Color.Transparent", Height: "164", Width: "660" },
-    children: [cntDismiss, cntBar]
+    children: [cntDismiss, cntBar],
+    eventParameters: {
+      OnItemSelect: [{ name: "Item", dataType: "Record", defaultFormula: '{Label:"Products",Link:""}' }]
+    }
   };
 }
 
@@ -2322,7 +2391,8 @@ function approvalJourney(pascal) {
     eventParameters: {
       OnApprove: [{ name: "Response", dataType: "Text", defaultFormula: '"Approve"' }],
       OnReject: [{ name: "Response", dataType: "Text", defaultFormula: '"Reject"' }],
-      OnDelegate: [{ name: "Stage", dataType: "Record", defaultFormula: '{Approver: ""}' }, { name: "RequestedDelegate", dataType: "Text", defaultFormula: '""' }]
+      OnDelegate: [{ name: "Stage", dataType: "Record", defaultFormula: '{Approver: ""}' }, { name: "RequestedDelegate", dataType: "Text", defaultFormula: '""' }],
+      OnStageSelect: [{ name: "Stage", dataType: "Record", defaultFormula: '{Approver:"Jordan Lee",Status:"Approved",RespondedOn:Date(2026,1,10),DueDate:Blank(),DelegatedTo:Blank()}' }]
     }
   };
 }
@@ -2370,7 +2440,10 @@ function processStepper(pascal) {
 
   return {
     properties: { Fill: "Color.Transparent", Height: "78", Width: "440" },
-    children: [cntRoot]
+    children: [cntRoot],
+    eventParameters: {
+      OnStepChange: [{ name: "StepIndex", dataType: "Number", defaultFormula: "1" }]
+    }
   };
 }
 
@@ -2412,7 +2485,10 @@ function routeMap(pascal) {
 
   return {
     properties: { Fill: "Color.Transparent", Height: `If(${isVertical}, 320, 60)`, Width: `If(${isVertical}, 200, 480)` },
-    children: [cntRail, galNodes]
+    children: [cntRail, galNodes],
+    eventParameters: {
+      OnNodeSelect: [{ name: "Node", dataType: "Record", defaultFormula: '{Label:"Intake",Status:"Complete",Order:1,Lane:Blank()}' }]
+    }
   };
 }
 
