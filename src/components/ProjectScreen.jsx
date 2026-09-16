@@ -29,7 +29,9 @@ function ProjectScreen({ kind, color }) {
         </div>
         <div className="mt-3 grid grid-cols-3 gap-2"><Metric label="Clients" value="128" /><Metric label="Active" value="42" /><Metric label="Pending" value="07" /></div>
         <div className="mt-3 rounded-xl bg-white p-3 shadow-sm">
-          <div className="mb-2 h-8 rounded-lg bg-slate-100" />
+          <div className="mb-2 grid h-8 grid-cols-[1fr_.5fr_.4fr] items-center rounded-lg bg-slate-100 px-2 text-[8px] font-black uppercase tracking-wider text-slate-500">
+            <span>Client</span><span>Account</span><span>Status</span>
+          </div>
           {["Northgate Medical Centre", "Eastside Service Depot", "Civic Operations Hub"].map((x, i) => (
             <div key={x} className="grid grid-cols-[1fr_.5fr_.4fr] border-t border-slate-100 py-2 text-[9px]">
               <b>{x}</b><span>Account {210 + i}</span><span className="font-bold text-green-700">Active</span>

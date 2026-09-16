@@ -113,8 +113,22 @@ body {
 .lift-hover:hover {
   transform: translateY(-6px);
 }
+/* Grows in on mount via a real CSS keyframe, not a scroll-triggered
+   IntersectionObserver reveal — this chart lives in the hero, already
+   visible on first paint with nothing to scroll into view, so gating
+   it on useReveal left a one-frame (sometimes longer) window where
+   React hadn't yet run the observer callback and every bar rendered at
+   0% height, a real visible flash of an empty chart on load. A pure
+   CSS animation has no such gap: the browser starts it as soon as the
+   element paints. --bar-h is set inline per bar, since each has its
+   own target height. */
+@keyframes bar-grow-in {
+  from { height: 0%; }
+  to { height: var(--bar-h); }
+}
 .bar-grow {
-  transition: height 0.7s ease;
+  height: var(--bar-h);
+  animation: bar-grow-in 0.7s ease both;
 }
 
 /* YAML / docs code panel and its copy affordance. */
@@ -292,7 +306,7 @@ body {
     transform: none;
   }
   .bar-grow {
-    transition: none;
+    animation: none;
   }
   .orbit-item {
     animation: none;

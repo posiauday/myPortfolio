@@ -5,7 +5,6 @@ import { certifications } from "../data/certifications.js";
 import { skills } from "../data/skills.js";
 import { buildBrandThemeYaml } from "../lib/themeYaml.js";
 import { CONTACT } from "../config.js";
-import useReveal from "../hooks/useReveal.js";
 import useParallaxLayer from "../hooks/useParallaxLayer.js";
 import useTilt from "../hooks/useTilt.js";
 import useComponentRoute from "../hooks/useComponentRoute.js";
@@ -68,7 +67,6 @@ export default function Portfolio() {
   const [dark, setDark] = useState(false);
   const { view, openComponent, switchComponent, openCatalog, openCheatSheet, goHome, closeDetail } = useComponentRoute(components);
   const [menuOpen, setMenuOpen] = useState(false);
-  const [barsRef, barsIn] = useReveal();
   const scrolledPastHero = useScrollThreshold(40);
   const activeSection = useActiveSection(NAV_SECTION_IDS);
   const {
@@ -301,8 +299,8 @@ export default function Portfolio() {
                       <div key={a} className="lift-hover rounded-2xl bg-slate-50 p-4"><span className="text-xs text-slate-500">{a}</span><b className="mt-2 block text-2xl" style={{ color: i === 2 ? "#D13438" : "#168326" }}>{b}</b></div>
                     ))}
                   </div>
-                  <div ref={barsRef} className="mt-4 flex h-40 items-end gap-2 rounded-2xl bg-[#F0F5F1] p-5 [transform:translateZ(42px)]">
-                    {[42, 56, 48, 70, 62, 82, 76, 94].map((h, i) => <div key={i} className="bar-grow flex-1 rounded-t-lg" style={{ height: barsIn ? `${h}%` : "0%", background: i === 7 ? "#168326" : "#73C184" }} />)}
+                  <div className="mt-4 flex h-40 items-end gap-2 rounded-2xl bg-[#F0F5F1] p-5 [transform:translateZ(42px)]">
+                    {[42, 56, 48, 70, 62, 82, 76, 94].map((h, i) => <div key={i} className="bar-grow flex-1 rounded-t-lg" style={{ "--bar-h": `${h}%`, animationDelay: `${i * 60}ms`, background: i === 7 ? "#168326" : "#73C184" }} />)}
                   </div>
                 </div>
               </div>
