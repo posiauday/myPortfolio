@@ -16,7 +16,7 @@ or `STRONG EVIDENCE` (multiple real, complete `.pa.yaml` files from trustworthy 
 broken YAML twice in one session before this skill existed — see the June/September
 post-mortems folded into the rules below.
 
-## The three failure modes this exists to prevent
+## The four failure modes this exists to prevent
 
 1. **Property-doesn't-exist (PA2108 "Unknown property").** A control type's real
    settable-property set is *narrower* than what shows up in an exported app's YAML —
@@ -34,6 +34,32 @@ post-mortems folded into the rules below.
    Docs at the platform level are STRONG-EVIDENCE-at-best for one specific control
    version, never `CONFIRMED` by themselves — only a real paste, or that exact
    control's own dedicated reference page, gets to `CONFIRMED`.
+   The generalized rule this proves: **never assume parity across controls, even
+   within the same property "family."** `AccessibleLabel` failed on
+   `Classic/Button@2.2.0` and later, on Notification Badge, was independently
+   re-verified as real on `Image@2.2.3` (multiple real `.pa.yaml` files setting it
+   on that exact control version, plus Image's own dedicated docs page listing it
+   as one of *its* properties, not just the generic accessibility-properties page).
+   Same property name, opposite outcome, one control apart. Before putting any
+   accessibility-sounding property (`AccessibleLabel`, `Tooltip`, `TabIndex`,
+   `Live`, `Role`, `AccessKey`, ...) on a control type this file hasn't already
+   cleared for that exact property, look for real evidence *on that exact
+   `Control@version`* — a control-specific docs page ("Image control in Power
+   Apps" naming `AccessibleLabel` under its own "Additional properties") counts;
+   a platform-wide accessibility reference page listing it as common does not, by
+   itself. This is not limited to accessibility properties — it's the same
+   caution that applies to any property before it's in the table below.
+   **Core Power Fx language functions are a different, safer tier than control
+   properties and don't need this per-use scrutiny.** `If`/`Switch`/`Text`/`Round`/
+   `Concat`/`ForAll`/`Sequence`/`Mid`/`Hex2Dec`/`RGBA`/`ColorValue`/`ColorFade`/
+   `EncodeUrl`/`Coalesce`/`Power`/`Max`/`Min` and the rest of the Power Fx formula
+   language are universal and unversioned — they don't vary by control or go
+   missing on import the way a *control's own settable property* can. Treat them
+   like you'd treat `+` or `&&`: safe to compose freely without hunting for a
+   real `.pa.yaml` example of that exact function first. The distinction that
+   actually matters is control **properties** (`Fill`, `AccessibleLabel`,
+   `RadiusTopLeft`, ...), which are real, versioned, narrower-than-you'd-guess
+   surface area — that's what this whole file's verification discipline is for.
 2. **Wrong-typed Default (silent schema corruption, or PA1011/PA2231/type-mismatch).**
    A `Table`/`Record`/`Color` custom property's `Default` is not decoration — it's how
    Studio infers that property's column/field types the *first time* the component is
@@ -69,11 +95,34 @@ post-mortems folded into the rules below.
    real StyleConfig token set, real skeleton loading) is reusable in *either* shape —
    don't let "the reference did it this way" settle the shape question by itself.
 
-Both of these shipped silently in this catalog before `scripts/validate-yaml.mjs`
-checked for them. If you add a new failure mode, add a check for it in that script
-too — a rule that isn't enforced by a script gets forgotten under the next deadline.
-The third failure mode (wrong shape) can't be caught by a script at all — it needs
-to be settled with the user before any code gets written, not discovered after.
+4. **Unverified color contrast (WCAG 1.4.3, real axe-core findings — plural).** Every
+   component in this catalog that pairs a text/icon color with a background it wasn't
+   *originally* designed for has failed a real contrast check at least once: KPI
+   Card's Filled variant (icon-color-as-text on its own icon-bg tint, using
+   Material-palette hex values picked to look plausible, not measured — several
+   failed 4.5:1), the Catalog page's active category pill (`text-white/70` on
+   `#168326` measured 3.21:1), and — while building this exact skill's own
+   Notification Badge — reusing KPI Card's lighter `positive`/`warning` swatches
+   (`#16A34A`/`#D97706`, picked for *text on a light tint*) as *backgrounds behind
+   white count text* failed at 3.30:1 and 3.19:1 respectively, caught only by
+   actually computing it before shipping, not by eye. **A color that passes 4.5:1
+   in one pairing does not transfer to a different pairing** — same hex, different
+   role (text-on-tint vs. white-text-on-solid), different result, every time. Never
+   reuse a hex value in a new text/background role without computing that *specific*
+   pairing's contrast ratio (see the Verification discipline section for a
+   ready-to-run snippet) — "it passed before, in a similar-looking spot" is exactly
+   how three of these four shipped.
+
+Failure modes 1, 2, and 4 shipped silently in this catalog before something started
+checking for them — 1 and 2 are now caught by `scripts/validate-yaml.mjs`; 4 has no
+script check yet (a real automated contrast linter needs to know which text sits on
+which background *semantically*, which nothing here currently declares in a
+structured way — computing it by hand per new color pairing, every time, is still
+the discipline until that changes). If you add a new failure mode, add a script
+check for it where you can — a rule that isn't enforced by a script gets forgotten
+under the next deadline. Failure mode 3 (wrong shape) can't be caught by a script at
+all — it needs to be settled with the user before any code gets written, not
+discovered after.
 
 ## Control property reference (this project's own findings)
 
@@ -229,14 +278,49 @@ paraphrase, when documenting a component's own Examples):
    error as ground truth that overrides every GitHub example and every claim in
    this file — fix the file's row in the control-property table above in the same
    commit as the code fix, so the same mistake can't recur on the next component.
+5. **Compute contrast for every new text/background color pairing** (failure mode 4
+   above) — don't eyeball it and don't reuse a hex value from a different pairing
+   without recomputing. Real WCAG relative-luminance formula, ready to paste into a
+   throwaway `node -e` or scratch script:
+   ```js
+   function luminance([r, g, b]) {
+     const c = [r, g, b].map(v => {
+       v /= 255;
+       return v <= 0.03928 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4;
+     });
+     return 0.2126 * c[0] + 0.7152 * c[1] + 0.0722 * c[2];
+   }
+   function contrast(hex1, hex2) {
+     const toRgb = h => { h = h.replace("#", ""); return [0, 2, 4].map(i => parseInt(h.slice(i, i + 2), 16)); };
+     const [l1, l2] = [luminance(toRgb(hex1)), luminance(toRgb(hex2))];
+     const [lighter, darker] = l1 > l2 ? [l1, l2] : [l2, l1];
+     return (lighter + 0.05) / (darker + 0.05);
+   }
+   // contrast("15803D", "FFFFFF") -> 5.02 (this catalog's real Notification Badge fix)
+   ```
+   Need ≥4.5:1 for normal text, ≥3:1 for large text (≥18pt, or ≥14pt bold) and for
+   non-text UI elements. Below 4.5:1 (normal text), darken/lighten one side and
+   recompute — don't ship on "looks close enough."
+6. **Toggle dark mode for real before screenshotting or running axe in "dark
+   mode."** This app's dark mode is a manual React state toggle (a button labeled
+   "Switch to dark mode"/"Switch to light mode" in `Portfolio.jsx`), not
+   `prefers-color-scheme` — Playwright's `page.emulateMedia({ colorScheme: 'dark'
+   })` does **nothing** here and silently leaves you testing light mode twice. Real
+   procedure: `page.goto('/')` → `page.getByLabel('Switch to dark mode').click()` →
+   navigate via real UI clicks from there (`getByRole('button', { name: /Browse
+   all \d+ components/ })`, `getByRole('button', { name: /Open component/ })`,
+   `getByLabel('Close, back to components')`) — never a fresh `page.goto(url#hash)`
+   after toggling, since that reloads the app and resets the toggle to its default
+   `false`. This caught a real bug once already (a Catalog pill at 3.21:1) that a
+   flawed emulateMedia-based sweep had missed entirely.
 
 ## Applying this to the rest of the catalog
 
-Each of the other 27 components needs the same treatment KPI Card got — but settle its
-shape (failure mode 3 above) explicitly first, per component, against its own name and
-what the user actually says they'll do with it (place one per X? or feed it a
-collection?), not by assuming a shape from whatever reference happened to be at hand.
-Some of the 27 genuinely are collections (a list, a menu, a stepper) where one
+Each other component not yet in `CHILDREN_BUILDERS` needs the same treatment KPI Card
+got — but settle its shape (failure mode 3 above) explicitly first, per component,
+against its own name and what the user actually says they'll do with it (place one per
+X? or feed it a collection?), not by assuming a shape from whatever reference happened
+to be at hand. Some genuinely are collections (a list, a menu, a stepper) where one
 `Table`-typed property plus a `Gallery` is right; KPI Card looked like it might be one
 too and wasn't. Once the shape is settled, build a real `Children:` tree using the
 control table above, `sampleFormulas.js` entries for every `Table`/`Record`/`Color`
