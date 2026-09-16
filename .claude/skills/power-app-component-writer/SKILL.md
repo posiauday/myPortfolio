@@ -477,18 +477,31 @@ In this order, every time:
    `false`. This caught a real bug once already (a Catalog pill at 3.21:1) that a
    flawed emulateMedia-based sweep had missed entirely.
 
-## Applying this to the rest of the catalog
+## Applying this to a new component (or the next revision of an existing one)
 
-Each other component not yet in `CHILDREN_BUILDERS` needs the same treatment KPI Card
-got — but settle its shape (failure mode 3 above) explicitly first, per component,
-against its own name and what the user actually says they'll do with it (place one per
-X? or feed it a collection?), not by assuming a shape from whatever reference happened
-to be at hand. Some genuinely are collections (a list, a menu, a stepper) where one
-`Table`-typed property plus a `Gallery` is right; KPI Card looked like it might be one
-too and wasn't. Once the shape is settled, build a real `Children:` tree using the
-control table above, `sampleFormulas.js` entries for every `Table`/`Record`/`Color`
-property, and run the same verification pipeline. Do them one at a time, each through
-the full verification discipline above, rather than batching many components through
-steps 1-3 before any of them sees step 4 — the whole point of this file existing is
-that steps 1-3 catch syntax and geometry, not every real Studio compiler quirk (and
-none of them catch a wrong shape at all — only the user, asked early, does that).
+Every component this catalog currently ships has a real `Children:` tree in
+`CHILDREN_BUILDERS` — settle shape (failure mode 3 above) explicitly first, per
+component, against its own name and what the user actually says they'll do with it
+(place one per X? or feed it a collection?), not by assuming a shape from whatever
+reference happened to be at hand. Some genuinely are collections (a list, a menu, a
+stepper) where one `Table`-typed property plus a `Gallery` is right; KPI Card looked
+like it might be one too and wasn't. Once the shape is settled, build a real
+`Children:` tree using the control table above, `sampleFormulas.js` entries for every
+`Table`/`Record`/`Color` property, and run the same verification pipeline. Do them one
+at a time, each through the full verification discipline above, rather than batching
+many components through steps 1-3 before any of them sees step 4 — the whole point of
+this file existing is that steps 1-3 catch syntax and geometry, not every real Studio
+compiler quirk (and none of them catch a wrong shape at all — only the user, asked
+early, does that).
+
+Real gaps found while building out the full catalog this way, worth carrying into the
+next component rather than rediscovering: a documented "read-only, component-sets-this"
+property is never actually buildable here (`componentDocs.js` emits every
+`CustomProperty` as `PropertyKind: Input`, unconditionally) — reach for `eventParameters`
+instead (see Real syntax rules). A `Filter`/`Sort` pair over two related tables (parents
+and children, comments and replies) can't be unioned into one flat table without real
+evidence for a Power Fx table-union technique — a fixed number of physical child/reply
+slots per parent row (the same technique used repeatedly above) is the real, working
+substitute. And a plausible-looking multi-branch formula built inside a JS template
+literal is exactly where the quoted-reference bug (Real syntax rules, above) hides —
+grep for it before trusting any new `If`/`Switch` with more than one branch.
