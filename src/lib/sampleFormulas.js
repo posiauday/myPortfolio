@@ -14,9 +14,15 @@
 
    A "Blank" prose default means the property is genuinely meant to
    start empty, not that it has no schema — those use
-   `Filter(Table({col: ...}), false)`, a real, standard Power Fx
+   `Filter(Table({col: ...}), col <> col)`, a real, standard Power Fx
    pattern for a correctly-typed-but-empty table (build one throwaway
-   row so the columns exist, then filter it away). */
+   row so the columns exist, then filter it away with a predicate that's
+   always false). The predicate references a real column from that row
+   rather than a bare `false` literal — CONFIRMED via a real Studio
+   warning ("This predicate is a literal value and does not reference
+   the input table") on a bare `false`: harmless (still parses, pastes,
+   and behaves identically — an always-false predicate is an always-
+   false predicate either way), but avoidable, so it's avoided. */
 
 export const SAMPLE_FORMULAS = {
   // IconColor pairs each with an IconBg tint; in the Filled variant
@@ -51,7 +57,7 @@ export const SAMPLE_FORMULAS = {
   "Command Card::Metrics": 'Table({Label:"Health",Value:"74%",Tone:"Positive"},{Label:"Active",Value:"32",Tone:"Neutral"},{Label:"At risk",Value:"06",Tone:"Negative"})',
   "Command Card::ChartData": "Table({x:1,y:12},{x:2,y:18},{x:3,y:15},{x:4,y:22},{x:5,y:19},{x:6,y:25},{x:7,y:21},{x:8,y:28})",
   "Program Scorecard::Metrics": 'Table({Name:"Budget",Value:82,Target:90,Tone:"Green",Trend:"70,75,78,80,82"},{Name:"Schedule",Value:68,Target:80,Tone:"Amber",Trend:"75,72,70,69,68"},{Name:"Quality",Value:74,Target:85,Tone:"Green",Trend:"65,68,70,72,74"},{Name:"Scope",Value:55,Target:75,Tone:"Red",Trend:"62,60,58,56,55"},{Name:"Risk",Value:70,Target:80,Tone:"Amber",Trend:"66,68,69,70,70"},{Name:"Team",Value:88,Target:85,Tone:"Green",Trend:"80,82,84,86,88"})',
-  "Operational Status Banner::AffectedSystems": 'Filter(Table({Name:"Sample"}),false)',
+  "Operational Status Banner::AffectedSystems": 'Filter(Table({Name:"Sample"}),Name<>Name)',
   "Risk Matrix::Risks": 'Table({Likelihood:1,Impact:1,Count:1,Name:Blank(),TrendDirection:Blank()},{Likelihood:1,Impact:2,Count:2,Name:Blank(),TrendDirection:Blank()},{Likelihood:1,Impact:3,Count:1,Name:Blank(),TrendDirection:Blank()},{Likelihood:2,Impact:1,Count:3,Name:Blank(),TrendDirection:Blank()},{Likelihood:2,Impact:2,Count:4,Name:"Vendor delay",TrendDirection:"Worse"},{Likelihood:2,Impact:3,Count:2,Name:Blank(),TrendDirection:Blank()},{Likelihood:3,Impact:1,Count:1,Name:Blank(),TrendDirection:Blank()},{Likelihood:3,Impact:2,Count:3,Name:Blank(),TrendDirection:Blank()},{Likelihood:3,Impact:3,Count:5,Name:"Budget overrun",TrendDirection:"Same"})',
   "Project Health Summary::Dimensions": 'Table({Dimension:"Scope",Tone:"Green",Note:"On track",TrendDirection:"Same"},{Dimension:"Schedule",Tone:"Amber",Note:"Slipping slightly",TrendDirection:"Worse"},{Dimension:"Budget",Tone:"Green",Note:"Under budget",TrendDirection:"Better"},{Dimension:"Quality",Tone:"Red",Note:"Defect backlog rising",TrendDirection:"Worse"})',
   "Milestone Tracker::Milestones": 'Table({Name:"Kickoff",DueDate:Date(2026,1,10),Status:"Complete",CompletedDate:Date(2026,1,9)},{Name:"Design sign-off",DueDate:Date(2026,2,15),Status:"Complete",CompletedDate:Date(2026,2,14)},{Name:"Beta release",DueDate:Date(2026,4,1),Status:"OnTrack",CompletedDate:Blank()},{Name:"UAT",DueDate:Date(2026,5,10),Status:"AtRisk",CompletedDate:Blank()},{Name:"Go-live",DueDate:Date(2026,6,1),Status:"OnTrack",CompletedDate:Blank()},{Name:"Hypercare exit",DueDate:Date(2026,6,30),Status:"Missed",CompletedDate:Blank()})',
@@ -61,10 +67,10 @@ export const SAMPLE_FORMULAS = {
   "Activity Timeline::Items": 'Table({Title:"Project created",Description:"Initial workspace set up",Author:"Jordan Lee",Timestamp:Now(),Category:"System"},{Title:"Status updated",Description:"Marked On track",Author:"Jordan Lee",Timestamp:DateAdd(Now(),-1,Days),Category:"Update"})',
   "Activity Timeline::FilterOptions": 'Table({Category:"System"},{Category:"Update"},{Category:"Comment"},{Category:"Approval"},{Category:"Milestone"},{Category:"Alert"})',
   "Activity Timeline::IconMap": 'Table({Category:"System",Icon:"Gear",Color:"#646464"},{Category:"Update",Icon:"Refresh",Color:"#0F6CBD"},{Category:"Comment",Icon:"Comment",Color:"#168326"},{Category:"Approval",Icon:"CheckMark",Color:"#107C10"},{Category:"Milestone",Icon:"Flag",Color:"#CA5010"},{Category:"Alert",Icon:"Warning",Color:"#C53A3A"})',
-  "Activity Timeline::PinnedIds": 'Filter(Table({Id:""}),false)',
-  "Calendar::Events": 'Filter(Table({Title:"",Date:Date(2026,1,1),Channel:"",SeriesId:""}),false)',
+  "Activity Timeline::PinnedIds": 'Filter(Table({Id:""}),Id<>Id)',
+  "Calendar::Events": 'Filter(Table({Title:"",Date:Date(2026,1,1),Channel:"",SeriesId:""}),Title<>Title)',
   "Calendar::Channels": 'Table({Key:"work",Title:"Work",Color:"#0F6CBD"},{Key:"personal",Title:"Personal",Color:"#168326"})',
-  "Calendar::Holidays": 'Filter(Table({Date:Date(2026,1,1),Name:""}),false)',
+  "Calendar::Holidays": 'Filter(Table({Date:Date(2026,1,1),Name:""}),Name<>Name)',
   "Calendar::Config": "{RowHeight:96,ChipSlots:3,FirstDayOfWeek:1,WorkHoursStart:9,WorkHoursEnd:17,ShowWeekNumbers:false,ShowHolidayTint:true}",
   "Accordion List::Groups": 'Table({GroupKey:1,Title:"Order 1042",Tag:"Shipped",Tone:"Positive",Meta:"2 items",Locked:false},{GroupKey:2,Title:"Order 1043",Tag:"Processing",Tone:"Warning",Meta:"1 item",Locked:false},{GroupKey:3,Title:"Order 1044",Tag:"On hold",Tone:"Negative",Meta:"1 item",Locked:true})',
   "Accordion List::Items": 'Table({ItemKey:1,GroupKey:1,Line:"Widget A x2",Tag:"Packed",Tone:"Positive",Locked:false},{ItemKey:2,GroupKey:1,Line:"Widget B x1",Tag:"Packed",Tone:"Positive",Locked:false},{ItemKey:3,GroupKey:2,Line:"Gadget C x5",Tag:"Backordered",Tone:"Warning",Locked:false},{ItemKey:4,GroupKey:3,Line:"Part D x10",Tag:"On hold",Tone:"Negative",Locked:true})',
@@ -74,9 +80,9 @@ export const SAMPLE_FORMULAS = {
   "Data Table::StatusConfig": 'Table({Status:"Active",Color:RGBA(15,108,189,1)},{Status:"Done",Color:RGBA(16,124,16,1)},{Status:"Blocked",Color:RGBA(197,58,58,1)},{Status:"Default",Color:RGBA(120,120,120,1)})',
   "Data Table::PriorityConfig": 'Table({Priority:"High",Color:RGBA(197,58,58,1)},{Priority:"Normal",Color:RGBA(15,108,189,1)},{Priority:"Low",Color:RGBA(120,120,120,1)},{Priority:"Default",Color:RGBA(120,120,120,1)})',
   "File Upload::Items": 'Table({Id:1,Name:"Statement-of-Work.pdf",SizeBytes:245000,UploadedOn:Date(2026,1,12),UploadedBy:"Jordan Lee",Ext:"pdf"})',
-  "File Upload::AllowedExtensions": 'Filter(Table({Ext:""}),false)',
+  "File Upload::AllowedExtensions": 'Filter(Table({Ext:""}),Ext<>Ext)',
   "Email Composer::Directory": 'Table({DisplayName:"Jordan Lee",Mail:"jordan.lee@example.com",JobTitle:"Power Platform Architect"})',
-  "Email Composer::Attachments": "Filter(Table({Id:1,Name:\"\",SizeBytes:0}),false)",
+  "Email Composer::Attachments": "Filter(Table({Id:1,Name:\"\",SizeBytes:0}),Id<>Id)",
   "Comments & Mentions::Comments": 'Table({Id:1,Author:"Jordan Lee",Text:"Looks good, ready for review.",Timestamp:Now(),ParentId:Blank(),ReactionCounts:Table({Emoji:"Like",Count:2})},{Id:2,Author:"Alex Chen",Text:"Thanks, addressing the last comment now.",Timestamp:DateAdd(Now(),-1,Hours),ParentId:1,ReactionCounts:Table({Emoji:"Like",Count:0})})',
   "Comments & Mentions::Directory": 'Table({DisplayName:"Jordan Lee",Mail:"jordan.lee@example.com"})',
   "Sidebar::Items": 'Table({Id:1,ParentId:Blank(),Label:"Dashboard",ItemBadgeCount:0,ItemIconColor:RGBA(22,131,38,1)},{Id:2,ParentId:Blank(),Label:"Projects",ItemBadgeCount:3,ItemIconColor:RGBA(15,108,189,1)})',

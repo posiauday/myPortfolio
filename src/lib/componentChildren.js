@@ -1994,7 +1994,7 @@ function emailComposer(pascal) {
         { name: "Subject", dataType: "Text", defaultFormula: '""' },
         { name: "Body", dataType: "Text", defaultFormula: '""' },
         { name: "Priority", dataType: "Text", defaultFormula: '"Low"' },
-        { name: "Attachments", dataType: "Table", defaultFormula: 'Filter(Table({Id:1,Name:"",SizeBytes:0}),false)' }
+        { name: "Attachments", dataType: "Table", defaultFormula: 'Filter(Table({Id:1,Name:"",SizeBytes:0}),Id<>Id)' }
       ]
     }
   };
@@ -2113,7 +2113,7 @@ function commentsAndMentions(pascal) {
     properties: { Height: `CountRows(${self}.Comments) * 60 + If(${isReadOnly}, 8, 78)`, Width: "360" },
     children: [galComments, cntCompose],
     eventParameters: {
-      OnPost: [{ name: "Text", dataType: "Text", defaultFormula: '""' }, { name: "Mentions", dataType: "Table", defaultFormula: "Filter(Table({DisplayName: \"\"}), false)" }, { name: "ParentId", dataType: "Number", defaultFormula: "0" }],
+      OnPost: [{ name: "Text", dataType: "Text", defaultFormula: '""' }, { name: "Mentions", dataType: "Table", defaultFormula: "Filter(Table({DisplayName: \"\"}), DisplayName <> DisplayName)" }, { name: "ParentId", dataType: "Number", defaultFormula: "0" }],
       OnReact: [{ name: "CommentId", dataType: "Number", defaultFormula: "0" }, { name: "Emoji", dataType: "Text", defaultFormula: '""' }],
       OnEdit: [{ name: "CommentId", dataType: "Number", defaultFormula: "0" }, { name: "NewText", dataType: "Text", defaultFormula: '""' }],
       OnDelete: [{ name: "Comment", dataType: "Record", defaultFormula: '{Id:1,Author:"Jordan Lee",Text:"Looks good, ready for review.",Timestamp:Now(),ParentId:Blank(),ReactionCounts:Table({Emoji:"Like",Count:2})}' }]
