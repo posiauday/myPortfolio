@@ -134,7 +134,7 @@ discovered after.
 | `Label@2.5.1` | Not checked (no Radius attempted). | `CONFIRMED` safe for `Text/Color/Font/Size/FontWeight/X/Y/Width/Height/Align` (this catalog's real paste test). Older/classic text control. |
 | `ModernText@1.0.0` | Not checked. | `STRONG EVIDENCE` real and current. Adds `AutoHeight`, `FillPortions` (for use inside an `AutoLayout` `GroupContainer`, flex-grow style), `VerticalAlign`, `Wrap`. Prefer this over `Label` for anything inside an `AutoLayout` container. |
 | `Gallery@2.15.0` | n/a | `STRONG EVIDENCE`, extremely common (hundreds of real examples). Real properties: `Items`, `TemplateSize`, `TemplatePadding`, `WrapCount`, `Transition` (`Transition.Pop/Push/None`), `ShowScrollbar`, `LayoutMaxHeight/LayoutMaxWidth`. `Variant: Vertical` for a wrapping grid (`WrapCount` columns per row). This is how one component definition renders *any number* of data-driven cards — don't hand-author N near-duplicate children for "up to N items"; use a Gallery bound to a real `Table`-typed property instead. |
-| `Image@2.2.3` | n/a | Real. `Image` property accepts a literal `data:image/svg+xml,<url-encoded-svg>` string — a real, standard technique for a dependency-free chart/icon with no external asset. Build it with `EncodeUrl(...)`, never raw string concatenation (unescaped `<`, `#`, quotes inside the SVG would break the URI or the YAML). `AccessibleLabel` — `STRONG EVIDENCE` real on this exact control version (multiple real `.pa.yaml` files, plus Image's own dedicated docs page lists it under "Additional properties"), unlike `Classic/Button@2.2.0` above — see the "never assume parity across controls" rule in failure mode 1. |
+| `Image@2.2.3` | n/a | Real. `Image` property accepts a literal `data:image/svg+xml,<url-encoded-svg>` string — a real, standard technique for a dependency-free chart/icon with no external asset. Build it with `EncodeUrl(...)`, never raw string concatenation (unescaped `<`, `#`, quotes inside the SVG would break the URI or the YAML). `AccessibleLabel` — `STRONG EVIDENCE` real on this exact control version (multiple real `.pa.yaml` files, plus Image's own dedicated docs page lists it under "Additional properties"), unlike `Classic/Button@2.2.0` above — see the "never assume parity across controls" rule in failure mode 1. **`AltText`/`Opacity` — `CONFIRMED` rejected**, via a real PA2108 paste error on this catalog's own Responsive Line Chart ("Unknown property 'AltText'"/"'Opacity' for control type 'Image@2.2.3'"). Neither had ever been researched before use — they were assumed safe by analogy to other controls/platforms, exactly the guessing this file exists to prevent. Accessible text belongs in the SVG itself (a `<title>` element inside the data URI, read by a screen reader same as any inline SVG); a fade-in/opacity effect belongs on the SVG's own root `opacity="..."` attribute, not the host `Image` control's property. See `scripts/validate-yaml.mjs`'s `KNOWN_INVALID_CONTROL_PROPERTIES`. |
 | `Classic/TextInput@2.3.2` | n/a | `STRONG EVIDENCE` — real in `pnp/powerplatform-snippets`, `pnp/powerplatform-samples`, and `microsoft/scmsamples-EnterpriseAssetManagement`'s own `SearchBar.pa.yaml` (a real live search box, `txtSearchInput`). Real properties from that exact file: `Default`, `HintText`, `DelayOutput` (debounced live search), `BorderColor`, `BorderThickness`, `Fill`, `Color`, `Font`, `Size`, `X/Y/Width/Height`, `Clear`. Reads live-typed text via `Self.Text` (not `.Value`). `OnChange` confirmed real on this exact control via two further real files. A modern non-Classic `TextInput@0.0.53/54` also exists (`Value`/`Placeholder`/`Appearance` instead of `Default`/`HintText`/Border props) and is what Studio inserts by default — reach for Classic here since this catalog already prefers Classic controls (`Classic/Button`) for explicit Border/Fill styling control. |
 | `Timer@2.1.0` | n/a | `STRONG EVIDENCE`, confirmed via 20+ real shipped `.pa.yaml` files (`pnp/powerplatform-snippets` and two separate `microsoft/*` sample repos). Real properties: `Duration` (ms), `Repeat`, `AutoStart`, `AutoPause`, `Start` (a live boolean formula, not just a literal — any other control's own formula can toggle it), `OnTimerStart`, `OnTimerEnd`, and a read-only `Value` (elapsed ms since the current cycle started). **`Value`/`Duration` can be read directly inside a *sibling* control's own formula** — not only inside the Timer's own `OnTimerEnd` — for a live, continuously-animating value with no `UpdateContext`/`Set()` polling. Real example: `pnp/powerplatform-snippets`'s `animated-accordions` reads `tmrAccordionTimer.Value / tmrAccordionTimer.Duration` directly inside another control's own `Height` formula — the exact pattern this catalog's Notification Badge reuses for its pulse ring's `Height`/`Width`/alpha. |
 
@@ -195,6 +195,32 @@ immediately, in the same commit as the fix.
   build one throwaway row so the columns exist, then filter it away). A `Record`
   property's `Default` is a real `{col: val, ...}` literal. A `Color` property's
   `Default` is `RGBA(r, g, b, a)`. Never the catalog's own prose description string.
+- A `DateAndTime`-typed property's `Default` is a real date-producing formula
+  (`Today()`, `Now()`, `Blank()`, `Date(...)`, `DateAdd(...)`, `DateTime(...)`),
+  never quoted text. `CONFIRMED` — a real Studio paste error on this catalog's own
+  Project Health Summary: `="Today()"` (the call wrapped as a 9-character quoted
+  TEXT literal, the same mistake `powerFxTextLiteral` makes for every other type
+  by default) failed outright with "The value 'Today()' cannot be converted to a
+  date or time value" — a `DateAndTime` property needs a real formula, not text
+  that merely looks like one. `componentDocs.js`'s `formatFormulaValue` special-
+  cases `dataType === "DateAndTime"` for exactly this reason; `validate-yaml.mjs`
+  enforces it the same way it enforces Number/Boolean/Table/Record/Color.
+- **A `Text` value assigned to a `Color`-typed control property (`Fill`, `Color`,
+  `BorderColor`, ...) needs `ColorValue(...)` around it — a hex string like
+  `"#2E7D32"` is not itself a Color, even though `RGBA(...)` and `Color.White` are.**
+  This is the same failure-mode-3 mistake as the quoted-enum bug above but the
+  mirror image of it: there the bug was wrapping a real Power Fx reference in
+  quotes; here the bug is leaving a genuine Text value unwrapped where the
+  property actually needs a Color. It shipped repeatedly across this catalog
+  (`Switch()`/`If()` helper variables returning a hex string straight from a
+  `Tone`/`Status` property, used directly as a `Fill`/`Color`) and is the real
+  root cause the user's own Studio screenshots showed — black-rendered cards and
+  a broken bar `Fill` — on Command Card and Project Health Summary. Any helper
+  that returns a bare hex string for use as a color needs `ColorValue(...)`
+  wrapped around either the helper itself or every call site; grep the finished
+  file for a bare `"#` hex literal landing directly in a `Fill:`/`Color:`/
+  `BorderColor:` branch (inside an `If`/`Switch`) with no enclosing `ColorValue(`/
+  `RGBA(` to catch it before a real paste does.
 - A control referencing its parent component's own custom property uses
   `cmp<PascalTitle>.PropName` (e.g. `cmpKPI.Style`), not `Self.PropName` — inside a
   *child* control, `Self` means that child, not the component. `Parent.Width`/

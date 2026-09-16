@@ -585,15 +585,11 @@ function notificationBadge(pascal) {
         properties: {
           AccessibleLabel: badgeAnnouncement,
           BorderStyle: "BorderStyle.None",
-          Height: "Parent.Height",
+          Height: "Parent.Height * 0.7",
           Image: iconImage,
-          PaddingBottom: "Parent.Height * 0.15",
-          PaddingLeft: "Parent.Width * 0.15",
-          PaddingRight: "Parent.Width * 0.15",
-          PaddingTop: "Parent.Height * 0.15",
-          Width: "Parent.Width",
-          X: "0",
-          Y: "0"
+          Width: "Parent.Width * 0.7",
+          X: "Parent.Width * 0.15",
+          Y: "Parent.Height * 0.15"
         }
       }
     ]
@@ -726,12 +722,22 @@ function notificationBadge(pascal) {
    adjacent pairs), not a four-point lookback/lookahead window, so it
    stays a single pass over Sequence(cnt - 1) like the straight case.
 
-   Animate ("staggered draw-in") is a real Timer-driven Image.Opacity
-   fade-in (the same Timer.Value/Timer.Duration-in-a-sibling-formula
-   pattern as Notification Badge's pulse ring) rather than a literal
-   per-point reveal timeline, which raw Power Fx over one static Image
-   has no way to express — a deliberate, disclosed simplification, not
-   an oversight. */
+   Animate ("staggered draw-in") is a real Timer-driven fade-in — but
+   NOT via an Image.Opacity property: a real Studio paste confirmed
+   PA2108 rejecting both `AltText` and `Opacity` on `Image@2.2.3`
+   (neither is a real property on this control, despite Opacity being
+   common on many other controls), so the fade is baked directly into
+   the generated SVG's own root `opacity='...'` attribute instead —
+   real SVG/XML syntax inside the image bytes, not a Power Apps
+   control property, so it needs no separate verification. The same
+   real paste error is why accessible text here is an SVG `<title>`
+   element baked into the image content rather than an `AltText`
+   property. Both read the same Timer.Value/Timer.Duration-in-a-
+   sibling-formula pattern as Notification Badge's pulse ring; this is
+   still a literal-per-point-reveal simplification (a single fade for
+   the whole chart, not a staggered per-point timeline), which raw
+   Power Fx over one static Image has no way to express — a
+   deliberate, disclosed simplification, not an oversight. */
 function responsiveLineChart(pascal) {
   const self = `cmp${pascal}`;
   const w = 320, h = 140, pad = 10, axisH = 22, viewH = h + axisH;
@@ -757,7 +763,7 @@ function responsiveLineChart(pascal) {
         With(
           {nums: ForAll(Sequence(cnt), {n: Index(sorted, Value).y, lbl: Index(sorted, Value).label, px: ${pad} + (Value - 1) * (${w} - ${pad * 2}) / (cnt - 1), py: ${h - pad} - (Index(sorted, Value).y / maxY) * ${h - pad * 2}})},
           "data:image/svg+xml;utf8," & EncodeUrl(
-            "<svg viewBox='0 0 ${w} ${viewH}' xmlns='http://www.w3.org/2000/svg'><defs><linearGradient id='lc' x1='0' y1='0' x2='0' y2='1'><stop offset='0%' stop-color='" & ${self}.LineColor & "' stop-opacity='0.35'/><stop offset='100%' stop-color='" & ${self}.LineColor & "' stop-opacity='0'/></linearGradient></defs><path d='" &
+            "<svg viewBox='0 0 ${w} ${viewH}' xmlns='http://www.w3.org/2000/svg' opacity='" & If(${self}.Animate, Min(tmrChartAnimate.Value / tmrChartAnimate.Duration, 1), 1) & "'><title>Line chart, " & CountRows(${self}.ChartData) & " points, " & ${self}.LineColor & " line</title><defs><linearGradient id='lc' x1='0' y1='0' x2='0' y2='1'><stop offset='0%' stop-color='" & ${self}.LineColor & "' stop-opacity='0.35'/><stop offset='100%' stop-color='" & ${self}.LineColor & "' stop-opacity='0'/></linearGradient></defs><path d='" &
             ${linePath} & " L " & Text(Round(Index(nums, cnt).px, 1)) & "," & ${h - pad} & " L " & Text(Round(Index(nums, 1).px, 1)) & "," & ${h - pad} & " Z' fill='url(#lc)'/><path d='" &
             ${linePath} &
             "' fill='none' stroke='" & ${self}.LineColor & "' stroke-width='2.5' stroke-linecap='round'/>" &
@@ -789,11 +795,9 @@ function responsiveLineChart(pascal) {
     name: "imgChart",
     control: "Image@2.2.3",
     properties: {
-      AltText: `"Line chart, " & CountRows(${self}.ChartData) & " points, " & ${self}.LineColor & " line"`,
       Height: "Parent.Height",
       Image: svgUri,
       ImagePosition: "ImagePosition.Fit",
-      Opacity: `If(${self}.Animate, Min(tmrChartAnimate.Value / tmrChartAnimate.Duration, 1), 1)`,
       Width: "Parent.Width",
       X: "0",
       Y: "0"
@@ -829,7 +833,7 @@ function commandCard(pascal) {
   const showMetrics = `Or(${self}.Style = "Standard", ${self}.Style = "Metrics only", ${isCompact})`;
   const showChart = `Or(${self}.Style = "Standard", ${self}.Style = "Chart only")`;
   const cardHeight = `Switch(${self}.Style, "Metrics only", 176, "Chart only", 168, "Compact", 132, 300)`;
-  const toneColor = `Switch(ThisItem.Tone, "Positive", "#2E7D32", "Negative", "#C62828", "#475569")`;
+  const toneColor = `ColorValue(Switch(ThisItem.Tone, "Positive", "#2E7D32", "Negative", "#C62828", "#475569"))`;
 
   const cntCard = {
     name: "cntCard",
@@ -894,7 +898,7 @@ function commandCard(pascal) {
             control: "Classic/Button@2.2.0",
             properties: {
               BorderStyle: "BorderStyle.None",
-              Fill: `If(ThisItem.x = ${self}.HighlightIndex, "#168326", "#CBD5E1")`,
+              Fill: `ColorValue(If(ThisItem.x = ${self}.HighlightIndex, "#168326", "#CBD5E1"))`,
               Height: `Max(4, ThisItem.y / Max(${self}.ChartData, y) * 60)`,
               OnSelect: `${self}.OnChartSelect(ThisItem.x, ThisItem.y)`,
               RadiusBottomLeft: "2", RadiusBottomRight: "2", RadiusTopLeft: "2", RadiusTopRight: "2",
@@ -926,7 +930,7 @@ function commandCard(pascal) {
    a documented, host-facing property with no real data behind it. */
 function programScorecard(pascal) {
   const self = `cmp${pascal}`;
-  const toneColor = `Switch(ThisItem.Tone, "Green", "#2E7D32", "Red", "#C62828", "#BF360C")`;
+  const toneColor = `ColorValue(Switch(ThisItem.Tone, "Green", "#2E7D32", "Red", "#C62828", "#BF360C"))`;
   const toneStatus = `Switch(ThisItem.Tone, "Green", "On target", "Red", "Off track", "At risk")`;
   const isCompact = `${self}.Style = "Compact"`;
   const isPrint = `${self}.Style = "Print"`;
@@ -997,8 +1001,8 @@ function programScorecard(pascal) {
    hold every other claim in this catalog to. */
 function operationalStatusBanner(pascal) {
   const self = `cmp${pascal}`;
-  const toneBg = `Switch(${self}.Status, "Degraded", "#FFF3E0", "Outage", "#FFEBEE", "Maintenance", "#EBF5FF", "#E8F5E9")`;
-  const toneFg = `Switch(${self}.Status, "Degraded", "#BF360C", "Outage", "#C62828", "Maintenance", "#1565C0", "#2E7D32")`;
+  const toneBg = `ColorValue(Switch(${self}.Status, "Degraded", "#FFF3E0", "Outage", "#FFEBEE", "Maintenance", "#EBF5FF", "#E8F5E9"))`;
+  const toneFg = `ColorValue(Switch(${self}.Status, "Degraded", "#BF360C", "Outage", "#C62828", "Maintenance", "#1565C0", "#2E7D32"))`;
   const showAffected = `Or(${self}.Status = "Degraded", ${self}.Status = "Outage")`;
 
   const relativeTime = `With(
@@ -1075,7 +1079,7 @@ function riskMatrix(pascal) {
   const matches = `Filter(${self}.Risks, Likelihood = ${likelihood} And Impact = ${impact})`;
   const totalCount = `Sum(${matches}, Count)`;
   const severity = `(${likelihood} * ${impact}) / (${self}.Size * ${self}.Size)`;
-  const cellColor = `If(${severity} <= 0.33, "#DCFCE7", If(${severity} <= 0.66, "#FEF3C7", "#FEE2E2"))`;
+  const cellColor = `ColorValue(If(${severity} <= 0.33, "#DCFCE7", If(${severity} <= 0.66, "#FEF3C7", "#FEE2E2")))`;
   const namedList = `Concat(Filter(${matches}, Name <> Blank()), Name & If(TrendDirection = "Worse", " v", If(TrendDirection = "Better", " ^", "")), ", ")`;
   const cellText = `If(${self}.ShowNames, If(IsBlank(${namedList}), Text(${totalCount}), ${namedList}), Text(${totalCount}))`;
   const gridArea = 240;
@@ -1159,10 +1163,10 @@ function projectHealthSummary(pascal) {
   const self = `cmp${pascal}`;
   const isCompact = `${self}.Style = "Compact"`;
   const isNarrative = `${self}.Style = "Narrative"`;
-  const toneColor = `Switch(ThisItem.Tone, "Green", "#2E7D32", "Red", "#C62828", "#BF360C")`;
-  const toneBg = `Switch(ThisItem.Tone, "Green", "#E8F5E9", "Red", "#FFEBEE", "#FFF3E0")`;
+  const toneColor = `ColorValue(Switch(ThisItem.Tone, "Green", "#2E7D32", "Red", "#C62828", "#BF360C"))`;
+  const toneBg = `ColorValue(Switch(ThisItem.Tone, "Green", "#E8F5E9", "Red", "#FFEBEE", "#FFF3E0"))`;
   const trendGlyph = `Switch(ThisItem.TrendDirection, "Better", " ^", "Worse", " v", "")`;
-  const overallColor = `Switch(${self}.OverallTone, "Green", "#2E7D32", "Red", "#C62828", "#BF360C")`;
+  const overallColor = `ColorValue(Switch(${self}.OverallTone, "Green", "#2E7D32", "Red", "#C62828", "#BF360C"))`;
 
   const cntDimCard = {
     name: "cntDimCard",
@@ -1214,7 +1218,7 @@ function milestoneTracker(pascal) {
   const isVertical = `${self}.Orientation = "vertical"`;
   const isUpcoming = `${self}.Style = "Upcoming only"`;
   const items = `If(${isUpcoming}, FirstN(Filter(${self}.Milestones, Status <> "Complete"), 4), ${self}.Milestones)`;
-  const statusColor = `Switch(ThisItem.Status, "Complete", "#2E7D32", "AtRisk", "#BF360C", "Missed", "#C62828", "#2563EB")`;
+  const statusColor = `ColorValue(Switch(ThisItem.Status, "Complete", "#2E7D32", "AtRisk", "#BF360C", "Missed", "#C62828", "#2563EB"))`;
   const dateText = `If(ThisItem.Status = "Complete" And !IsBlank(ThisItem.CompletedDate), Text(ThisItem.CompletedDate, DateTimeFormat.ShortDate, Coalesce(${self}.Language, Language())), Text(ThisItem.DueDate, DateTimeFormat.ShortDate, Coalesce(${self}.Language, Language())))`;
 
   const cntMilestone = {
@@ -1238,7 +1242,7 @@ function milestoneTracker(pascal) {
     properties: {
       Height: `If(${isVertical}, Parent.Height, If(${self}.ShowDates, 60, 36))`,
       Items: items,
-      TemplateSize: `If(${isVertical}, 48, (Parent.Width - 40) / CountRows(${items}))`,
+      TemplateSize: `If(${isVertical}, 48, (Parent.Width - 40) / Max(CountRows(${items}), 1))`,
       Width: `If(${isVertical}, Parent.Width, Parent.Width - 40)`,
       WrapCount: `If(${isVertical}, 1, CountRows(${items}))`,
       X: `If(${isVertical}, 0, 20)`,
@@ -1264,7 +1268,7 @@ function decisionLog(pascal) {
   const self = `cmp${pascal}`;
   const isCompact = `${self}.Style = "Compact"`;
   const isPrint = `${self}.Style = "Print"`;
-  const statusColor = `Switch(ThisItem.Status, "Decided", "#2E7D32", "Superseded", "#475569", "#BF360C")`;
+  const statusColor = `ColorValue(Switch(ThisItem.Status, "Decided", "#2E7D32", "Superseded", "#475569", "#BF360C"))`;
   const sorted = `Sort(${self}.Decisions, Date, If(${self}.SortOrder = "Newest first", SortOrder.Descending, SortOrder.Ascending))`;
   const dateText = `Text(ThisItem.Date, DateTimeFormat.ShortDate, Coalesce(${self}.Language, Language()))`;
 
@@ -1332,7 +1336,7 @@ function deadlineTracker(pascal) {
   const dueDate = `With({window: Sequence(Min(${self}.Days, 400) * 2 + 20)}, With({cand: AddColumns(window, "d", DateAdd(${self}.StartDate, Value, TimeUnit.Days))}, With({biz: Filter(cand, Weekday(d, StartOfWeek.Monday) <= 5 And IsBlank(LookUp(${self}.Holidays, HolidayDate = d)))}, Index(biz, Min(${self}.Days, CountRows(biz))).d)))`.replace(/\s*\n\s*/g, " ");
   const daysLeft = `DateDiff(Today(), ${dueDate}, TimeUnit.Days)`;
   const status = `If(${isComplete}, "Complete", If(${daysLeft} < 0, "Overdue", If(${daysLeft} <= ${self}.ReminderThreshold, "DueSoon", "OnTrack")))`;
-  const statusColor = `Switch(${status}, "Complete", "#2E7D32", "Overdue", "#C62828", "DueSoon", "#BF360C", "#1565C0")`;
+  const statusColor = `ColorValue(Switch(${status}, "Complete", "#2E7D32", "Overdue", "#C62828", "DueSoon", "#BF360C", "#1565C0"))`;
   const statusLabel = `Switch(${status}, "Complete", "Complete", "Overdue", "Overdue", "DueSoon", "Due soon", "On track")`;
   const holidayCount = `CountRows(${self}.Holidays)`;
   const breakdown = `"Weekends" & If(${holidayCount} > 0, " and " & ${holidayCount} & " observed holiday" & If(${holidayCount} <> 1, "s", ""), "") & " already excluded. Due " & Text(${dueDate}, DateTimeFormat.LongDate, Coalesce(${self}.Language, Language()))`;
@@ -1382,7 +1386,7 @@ function deadlineTracker(pascal) {
 function activityTimeline(pascal) {
   const self = `cmp${pascal}`;
   const isCompact = `${self}.Style = "Compact"`;
-  const sorted = `SortByColumns(AddColumns(${self}.Items, "IsPinned", CountRows(Filter(${self}.PinnedIds, Id = Title)) > 0), "IsPinned", SortOrder.Descending, "Timestamp", If(${self}.SortDirection = "Newest first", SortOrder.Descending, SortOrder.Ascending))`;
+  const sorted = `SortByColumns(AddColumns(${self}.Items As Entry, "IsPinned", CountRows(Filter(${self}.PinnedIds, Id = Entry.Title)) > 0), "IsPinned", SortOrder.Descending, "Timestamp", If(${self}.SortDirection = "Newest first", SortOrder.Descending, SortOrder.Ascending))`;
   const shown = `FirstN(${sorted}, ${self}.RecordsToLoad)`;
   const iconColor = `ColorValue(Coalesce(LookUp(${self}.IconMap, Category = ThisItem.Category).Color, "#64748B"))`;
 
@@ -1492,20 +1496,43 @@ function calendar(pascal) {
   const isToday = `${cellDate} = Today()`;
   const holidayMatch = `LookUp(${self}.Holidays, Date = ${cellDate})`;
 
-  const chipSlot = n => ({
-    name: `imgChip${n}`,
-    control: "Image@2.2.3",
-    properties: {
-      AltText: `Index(${dayEvents}, ${n}).Title`,
-      Height: "14",
-      Image: `With({ev: Index(${dayEvents}, ${n}), ch: LookUp(${self}.Channels, Key = Index(${dayEvents}, ${n}).Channel)}, "data:image/svg+xml;utf8," & EncodeUrl("<svg xmlns='http://www.w3.org/2000/svg' width='100' height='14'><rect width='100' height='14' rx='3' fill='" & Coalesce(ch.Color, "#64748B") & "'/><text x='4' y='10' font-size='8' fill='white'>" & Left(ev.Title, 10) & "</text></svg>"))`.replace(/\s*\n\s*/g, " "),
-      OnSelect: `${self}.OnSelectEvent(Index(${dayEvents}, ${n}))`,
-      Visible: `And(CountRows(${dayEvents}) >= ${n}, ${n} <= ${self}.Config.ChipSlots)`,
-      Width: "Parent.Width - 8",
-      X: "4",
-      Y: `16 + (${n} - 1) * 15`
+  // A real Studio paste confirmed PA2108 rejecting both AltText and
+  // OnSelect on Image@2.2.3 in this same file's own Responsive Line
+  // Chart (AltText) — Image has no OnSelect either (STRONG EVIDENCE:
+  // no real .pa.yaml example was found setting one). Accessible text
+  // is an SVG <title> baked into the image content instead; the tap
+  // target is a real transparent Classic/Button overlay sibling, the
+  // same click-catcher-over-visual pattern this file already uses
+  // throughout (KPI Card's own btnCardOverlay, for one).
+  const chipSlot = n => [
+    {
+      name: `imgChip${n}`,
+      control: "Image@2.2.3",
+      properties: {
+        Height: "14",
+        Image: `With({ev: Index(${dayEvents}, ${n}), ch: LookUp(${self}.Channels, Key = Index(${dayEvents}, ${n}).Channel)}, "data:image/svg+xml;utf8," & EncodeUrl("<svg xmlns='http://www.w3.org/2000/svg' width='100' height='14'><title>" & ev.Title & "</title><rect width='100' height='14' rx='3' fill='" & Coalesce(ch.Color, "#64748B") & "'/><text x='4' y='10' font-size='8' fill='white'>" & Left(ev.Title, 10) & "</text></svg>"))`.replace(/\s*\n\s*/g, " "),
+        Visible: `And(CountRows(${dayEvents}) >= ${n}, ${n} <= ${self}.Config.ChipSlots)`,
+        Width: "Parent.Width - 8",
+        X: "4",
+        Y: `16 + (${n} - 1) * 15`
+      }
+    },
+    {
+      name: `btnChipTap${n}`,
+      control: "Classic/Button@2.2.0",
+      properties: {
+        BorderStyle: "BorderStyle.None",
+        Fill: "Color.Transparent",
+        Height: "14",
+        OnSelect: `${self}.OnSelectEvent(Index(${dayEvents}, ${n}))`,
+        Text: '""',
+        Visible: `And(CountRows(${dayEvents}) >= ${n}, ${n} <= ${self}.Config.ChipSlots)`,
+        Width: "Parent.Width - 8",
+        X: "4",
+        Y: `16 + (${n} - 1) * 15`
+      }
     }
-  });
+  ];
 
   const cntDayCell = {
     name: "cntDayCell",
@@ -1513,14 +1540,14 @@ function calendar(pascal) {
     variant: "ManualLayout",
     properties: {
       BorderColor: "RGBA(226, 232, 240, 1)", BorderStyle: "BorderStyle.Solid", BorderThickness: "1",
-      Fill: `If(${self}.Config.ShowHolidayTint, If(!IsBlank(${holidayMatch}), "#FFF3E0", If(${isToday}, "#EBF5FF", If(${isCurrentMonth}, Color.White, "#F8FAFC"))), If(${isToday}, "#EBF5FF", If(${isCurrentMonth}, Color.White, "#F8FAFC")))`,
+      Fill: `ColorValue(If(${self}.Config.ShowHolidayTint, If(!IsBlank(${holidayMatch}), "#FFF3E0", If(${isToday}, "#EBF5FF", If(${isCurrentMonth}, "#FFFFFF", "#F8FAFC"))), If(${isToday}, "#EBF5FF", If(${isCurrentMonth}, "#FFFFFF", "#F8FAFC"))))`,
       Height: `${self}.Config.RowHeight`,
       Width: "76"
     },
     children: [
       { name: "lblDayNumber", control: "ModernText@1.0.0", properties: { Color: `If(${isCurrentMonth}, RGBA(23, 32, 27, 1), RGBA(148, 163, 184, 1))`, FontWeight: `If(${isToday}, FontWeight.Bold, FontWeight.Normal)`, Height: "14", Size: "9", Text: `Text(Day(${cellDate}))`, Width: "Parent.Width - 8", X: "4", Y: "2" } },
       { name: "lblHolidayName", control: "ModernText@1.0.0", properties: { Color: "RGBA(191, 54, 12, 1)", Height: "10", Size: "6", Text: `${holidayMatch}.Name`, Visible: `And(${self}.Config.ShowHolidayTint, !IsBlank(${holidayMatch}))`, Width: "Parent.Width - 8", X: "4", Y: "14" } },
-      chipSlot(1), chipSlot(2), chipSlot(3),
+      ...chipSlot(1), ...chipSlot(2), ...chipSlot(3),
       { name: "lblOverflow", control: "ModernText@1.0.0", properties: { Color: "RGBA(100, 116, 139, 1)", Height: "12", Size: "7", Text: `"+" & (CountRows(${dayEvents}) - ${self}.Config.ChipSlots) & " more"`, Visible: `CountRows(${dayEvents}) > ${self}.Config.ChipSlots`, Width: "Parent.Width - 8", X: "4", Y: "61" } },
       { name: "btnDayTap", control: "Classic/Button@2.2.0", properties: { BorderStyle: "BorderStyle.None", Fill: "Color.Transparent", Height: "Parent.Height", OnSelect: `${self}.OnSelectDay(${cellDate})`, Text: '""', Width: "Parent.Width" } }
     ]
@@ -1597,7 +1624,7 @@ function accordionList(pascal) {
   const isCompact = `${self}.Style = "Compact"`;
   const itemsForGroup = `Filter(${self}.Items, GroupKey = ThisItem.GroupKey)`;
   const isExpanded = "CountRows(Filter(locExpandedKeys, Key = ThisItem.GroupKey)) > 0";
-  const toneColor = `Switch(ThisItem.Tone, "Positive", "#2E7D32", "Negative", "#C62828", "#BF360C")`;
+  const toneColor = `ColorValue(Switch(ThisItem.Tone, "Positive", "#2E7D32", "Negative", "#C62828", "#BF360C"))`;
   const rowH = `If(${isCompact}, 24, 30)`;
   const maxSlots = 6;
 
@@ -1616,7 +1643,7 @@ function accordionList(pascal) {
     },
     children: [
       { name: "lblItemLine", control: "ModernText@1.0.0", properties: { Height: "Parent.Height", Size: "10", Text: `Index(${itemsForGroup}, ${n}).Line`, Width: "Parent.Width - 70", X: "0", Y: "0" } },
-      { name: "lblItemTag", control: "ModernText@1.0.0", properties: { Color: `Switch(Index(${itemsForGroup}, ${n}).Tone, "Positive", "#2E7D32", "Negative", "#C62828", "#BF360C")`, FontWeight: "FontWeight.Bold", Height: "Parent.Height", Size: "9", Text: `Index(${itemsForGroup}, ${n}).Tag`, Visible: `${self}.Config.ShowTags`, Width: "60", X: "Parent.Width - 60", Y: "0" } },
+      { name: "lblItemTag", control: "ModernText@1.0.0", properties: { Color: `ColorValue(Switch(Index(${itemsForGroup}, ${n}).Tone, "Positive", "#2E7D32", "Negative", "#C62828", "#BF360C"))`, FontWeight: "FontWeight.Bold", Height: "Parent.Height", Size: "9", Text: `Index(${itemsForGroup}, ${n}).Tag`, Visible: `${self}.Config.ShowTags`, Width: "60", X: "Parent.Width - 60", Y: "0" } },
       { name: "btnItemTap", control: "Classic/Button@2.2.0", properties: { BorderStyle: "BorderStyle.None", Fill: "Color.Transparent", Height: "Parent.Height", OnSelect: `${self}.OnSelectItem(Index(${itemsForGroup}, ${n}).ItemKey)`, Text: '""', Width: "Parent.Width - 60" } }
     ]
   });
@@ -1718,12 +1745,12 @@ function dataTable(pascal) {
     variant: "ManualLayout",
     properties: { BorderColor: "RGBA(226, 232, 240, 1)", BorderStyle: "BorderStyle.Solid", BorderThickness: "1", Fill: "Color.White", Height: "Parent.Height", Width: "Parent.Width" },
     children: [
-      { name: "btnCheck", control: "Classic/Button@2.2.0", properties: { BorderColor: "RGBA(148, 163, 184, 1)", BorderStyle: "BorderStyle.Solid", BorderThickness: "1", Fill: `If(${isSelected}, "#168326", Color.White)`, Height: "16", OnSelect: `If(${isSelected}, Remove(locSelectedKeys, LookUp(locSelectedKeys, Key = ThisItem.Id)), Collect(locSelectedKeys, {Key: ThisItem.Id})); ${self}.OnSelectionChange(CountRows(locSelectedKeys))`, RadiusBottomLeft: "3", RadiusBottomRight: "3", RadiusTopLeft: "3", RadiusTopRight: "3", Text: '""', Visible: `${self}.SelectionMode = "Multiple"`, Width: "16", X: "8", Y: "12" } },
+      { name: "btnCheck", control: "Classic/Button@2.2.0", properties: { BorderColor: "RGBA(148, 163, 184, 1)", BorderStyle: "BorderStyle.Solid", BorderThickness: "1", Fill: `If(${isSelected}, ColorValue("#168326"), Color.White)`, Height: "16", OnSelect: `If(${isSelected}, Remove(locSelectedKeys, LookUp(locSelectedKeys, Key = ThisItem.Id)), Collect(locSelectedKeys, {Key: ThisItem.Id})); ${self}.OnSelectionChange(CountRows(locSelectedKeys))`, RadiusBottomLeft: "3", RadiusBottomRight: "3", RadiusTopLeft: "3", RadiusTopRight: "3", Text: '""', Visible: `${self}.SelectionMode = "Multiple"`, Width: "16", X: "8", Y: "12" } },
       { name: "lblName", control: "ModernText@1.0.0", properties: { FontWeight: "FontWeight.Bold", Height: "20", Size: "10", Text: "ThisItem.Name", Width: "140", X: `If(${self}.SelectionMode = "Multiple", 32, 8)`, Y: "10" } },
       { name: "lblStatus", control: "ModernText@1.0.0", properties: { Color: statusColor, FontWeight: "FontWeight.Bold", Height: "20", Size: "9", Text: "ThisItem.Status", Width: "80", X: "180", Y: "10" } },
       { name: "lblPriority", control: "ModernText@1.0.0", properties: { Color: priorityColor, FontWeight: "FontWeight.Bold", Height: "20", Size: "9", Text: "ThisItem.Priority", Width: "70", X: "266", Y: "10" } },
       { name: "cntProgressTrack", control: "GroupContainer@1.5.0", variant: "ManualLayout", properties: { BorderStyle: "BorderStyle.None", Fill: "RGBA(226, 232, 240, 1)", Height: "6", RadiusBottomLeft: "3", RadiusBottomRight: "3", RadiusTopLeft: "3", RadiusTopRight: "3", Visible: "!IsBlank(ThisItem.TotalSteps)", Width: "80", X: "342", Y: "17" },
-        children: [{ name: "cntProgressFill", control: "GroupContainer@1.5.0", variant: "ManualLayout", properties: { BorderStyle: "BorderStyle.None", Fill: "#168326", Height: "6", RadiusBottomLeft: "3", RadiusBottomRight: "3", RadiusTopLeft: "3", RadiusTopRight: "3", Width: "Min(1, ThisItem.CompletedSteps / Max(ThisItem.TotalSteps, 1)) * Parent.Width" } }]
+        children: [{ name: "cntProgressFill", control: "GroupContainer@1.5.0", variant: "ManualLayout", properties: { BorderStyle: "BorderStyle.None", Fill: "RGBA(22, 131, 38, 1)", Height: "6", RadiusBottomLeft: "3", RadiusBottomRight: "3", RadiusTopLeft: "3", RadiusTopRight: "3", Width: "Min(1, ThisItem.CompletedSteps / Max(ThisItem.TotalSteps, 1)) * Parent.Width" } }]
       },
       { name: "btnAction1", control: "Classic/Button@2.2.0", properties: { BorderStyle: "BorderStyle.None", Color: "RGBA(100, 116, 139, 1)", Fill: "Color.Transparent", Height: "24", OnSelect: `${self}.OnMenuItemSelect(ThisItem, Index(${self}.ContextMenuItems, 1).Key)`, Size: "9", Text: `Index(${self}.ContextMenuItems, 1).Label`, Visible: `And(CountRows(${self}.ContextMenuItems) >= 1, Index(${self}.ContextMenuItems, 1).Visible)`, Width: "44", X: "432", Y: "12" } },
       { name: "btnAction2", control: "Classic/Button@2.2.0", properties: { BorderStyle: "BorderStyle.None", Color: "RGBA(100, 116, 139, 1)", Fill: "Color.Transparent", Height: "24", OnSelect: `${self}.OnMenuItemSelect(ThisItem, Index(${self}.ContextMenuItems, 2).Key)`, Size: "9", Text: `Index(${self}.ContextMenuItems, 2).Label`, Visible: `And(CountRows(${self}.ContextMenuItems) >= 2, Index(${self}.ContextMenuItems, 2).Visible)`, Width: "44", X: "476", Y: "12" } },
@@ -2258,7 +2285,7 @@ function approvalJourney(pascal) {
   const row = `Index(${self}.Stages, ${idx})`;
   const firstPendingIdx = `Min(Filter(Sequence(CountRows(${self}.Stages)), Index(${self}.Stages, Value).Status = "Pending"), Value)`;
   const isActionable = `And(${row}.Status = "Pending", Or(${self}.ApprovalType <> "Sequential", ${idx} = ${firstPendingIdx}))`;
-  const statusColor = `Switch(${row}.Status, "Approved", "#2E7D32", "Rejected", "#C62828", If(${isActionable}, "#1565C0", "#94A3B8"))`;
+  const statusColor = `ColorValue(Switch(${row}.Status, "Approved", "#2E7D32", "Rejected", "#C62828", If(${isActionable}, "#1565C0", "#94A3B8")))`;
 
   const cntStage = {
     name: "cntStage",
@@ -2312,7 +2339,7 @@ function processStepper(pascal) {
   const self = `cmp${pascal}`;
   const idx = "ThisItem.Value";
   const row = `Index(${self}.Steps, ${idx})`;
-  const dotColor = `Switch(${row}.Status, "Complete", "#2E7D32", "Current", "#168326", "#CBD5E1")`;
+  const dotColor = `ColorValue(Switch(${row}.Status, "Complete", "#2E7D32", "Current", "#168326", "#CBD5E1"))`;
   const isReachable = `Or(${idx} = ${self}.CurrentStep, And(${row}.Status = "Complete", ${self}.AllowStepBack))`;
 
   const cntStep = {
@@ -2321,12 +2348,12 @@ function processStepper(pascal) {
     variant: "ManualLayout",
     properties: { BorderStyle: "BorderStyle.None", Fill: "Color.Transparent", Height: "Parent.Height", Width: "Parent.Width" },
     children: [
-      { name: "btnDot", control: "Classic/Button@2.2.0", properties: { BorderColor: `If(${idx} = ${self}.CurrentStep, "#168326", Color.White)`, BorderStyle: "BorderStyle.Solid", BorderThickness: "2", Color: "Color.White", Fill: dotColor, FontWeight: "FontWeight.Bold", Height: "24", OnSelect: `If(${isReachable}, ${self}.OnStepChange(${idx}))`, RadiusBottomLeft: "12", RadiusBottomRight: "12", RadiusTopLeft: "12", RadiusTopRight: "12", Size: "10", Text: `Text(${idx})`, Width: "24", X: "Parent.Width / 2 - 12", Y: "0" } },
+      { name: "btnDot", control: "Classic/Button@2.2.0", properties: { BorderColor: `If(${idx} = ${self}.CurrentStep, ColorValue("#168326"), Color.White)`, BorderStyle: "BorderStyle.Solid", BorderThickness: "2", Color: "Color.White", Fill: dotColor, FontWeight: "FontWeight.Bold", Height: "24", OnSelect: `If(${isReachable}, ${self}.OnStepChange(${idx}))`, RadiusBottomLeft: "12", RadiusBottomRight: "12", RadiusTopLeft: "12", RadiusTopRight: "12", Size: "10", Text: `Text(${idx})`, Width: "24", X: "Parent.Width / 2 - 12", Y: "0" } },
       { name: "lblStepLabel", control: "ModernText@1.0.0", properties: { Align: "Align.Center", FontWeight: `If(${idx} = ${self}.CurrentStep, FontWeight.Bold, FontWeight.Normal)`, Height: "16", Size: "8", Text: `${row}.Label`, Width: "Parent.Width", X: "0", Y: "28" } }
     ]
   };
 
-  const galSteps = { name: "galSteps", control: "Gallery@2.15.0", variant: "Vertical", properties: { Height: "48", Items: `Sequence(CountRows(${self}.Steps))`, TemplateSize: `(Parent.Width - 16) / CountRows(${self}.Steps)`, Width: "Parent.Width - 16", WrapCount: `CountRows(${self}.Steps)`, X: "8", Y: "8" }, children: [cntStep] };
+  const galSteps = { name: "galSteps", control: "Gallery@2.15.0", variant: "Vertical", properties: { Height: "48", Items: `Sequence(CountRows(${self}.Steps))`, TemplateSize: `(Parent.Width - 16) / Max(CountRows(${self}.Steps), 1)`, Width: "Parent.Width - 16", WrapCount: `Max(CountRows(${self}.Steps), 1)`, X: "8", Y: "8" }, children: [cntStep] };
 
   const cntRail = { name: "cntRail", control: "GroupContainer@1.5.0", variant: "ManualLayout", properties: { BorderStyle: "BorderStyle.None", Fill: "RGBA(226, 232, 240, 1)", Height: "2", Width: "Parent.Width - 60", X: "30", Y: "20" } };
 
@@ -2364,7 +2391,7 @@ function routeMap(pascal) {
   const idx = "ThisItem.Value";
   const row = `Index(${sorted}, ${idx})`;
   const outCount = `CountRows(Filter(${self}.Connections, From = ${row}.Order))`;
-  const statusColor = `Switch(${row}.Status, "Complete", "#2E7D32", "Active", "#168326", "Blocked", "#C62828", "#94A3B8")`;
+  const statusColor = `ColorValue(Switch(${row}.Status, "Complete", "#2E7D32", "Active", "#168326", "Blocked", "#C62828", "#94A3B8"))`;
 
   const cntNode = {
     name: "cntNode",
@@ -2381,7 +2408,7 @@ function routeMap(pascal) {
 
   const cntRail = { name: "cntRail", control: "GroupContainer@1.5.0", variant: "ManualLayout", properties: { BorderStyle: "BorderStyle.None", Fill: "RGBA(226, 232, 240, 1)", Height: `If(${isVertical}, Parent.Height - 20, 2)`, Width: `If(${isVertical}, 2, Parent.Width - 40)`, X: `If(${isVertical}, 9, 20)`, Y: `If(${isVertical}, 10, Parent.Height / 2 - 1)` } };
 
-  const galNodes = { name: "galNodes", control: "Gallery@2.15.0", variant: "Vertical", properties: { Height: `If(${isVertical}, Parent.Height, 60)`, Items: `Sequence(CountRows(${self}.Nodes))`, TemplateSize: `If(${isVertical}, 60, (Parent.Width - 40) / CountRows(${self}.Nodes))`, Width: `If(${isVertical}, Parent.Width, Parent.Width - 40)`, WrapCount: `If(${isVertical}, 1, CountRows(${self}.Nodes))`, X: `If(${isVertical}, 0, 20)`, Y: "0" }, children: [cntNode] };
+  const galNodes = { name: "galNodes", control: "Gallery@2.15.0", variant: "Vertical", properties: { Height: `If(${isVertical}, Parent.Height, 60)`, Items: `Sequence(CountRows(${self}.Nodes))`, TemplateSize: `If(${isVertical}, 60, (Parent.Width - 40) / Max(CountRows(${self}.Nodes), 1))`, Width: `If(${isVertical}, Parent.Width, Parent.Width - 40)`, WrapCount: `If(${isVertical}, 1, Max(CountRows(${self}.Nodes), 1))`, X: `If(${isVertical}, 0, 20)`, Y: "0" }, children: [cntNode] };
 
   return {
     properties: { Fill: "Color.Transparent", Height: `If(${isVertical}, 320, 60)`, Width: `If(${isVertical}, 200, 480)` },
@@ -2408,7 +2435,7 @@ function loadingScreen(pascal) {
     variant: "ManualLayout",
     properties: { BorderStyle: "BorderStyle.None", Fill: "Color.White", Height: "Parent.Height", Visible: `!${self}.HasError`, Width: "Parent.Width" },
     children: [
-      { name: "imgLogo", control: "Image@2.2.3", properties: { AltText: '"Logo"', Height: "48", Image: `${self}.LogoUrl`, Visible: `${self}.LogoUrl <> ""`, Width: "48", X: "Parent.Width / 2 - 24", Y: "40" } },
+      { name: "imgLogo", control: "Image@2.2.3", properties: { Height: "48", Image: `${self}.LogoUrl`, Visible: `${self}.LogoUrl <> ""`, Width: "48", X: "Parent.Width / 2 - 24", Y: "40" } },
       { name: "lblTitle", control: "ModernText@1.0.0", properties: { Align: "Align.Center", FontWeight: "FontWeight.Bold", Height: "24", Size: "14", Text: `${self}.Title`, Width: "Parent.Width", X: "0", Y: `If(${self}.LogoUrl <> "", 100, 60)` } },
       {
         name: "cntProgressTrack", control: "GroupContainer@1.5.0", variant: "ManualLayout",
@@ -2416,7 +2443,7 @@ function loadingScreen(pascal) {
         children: [{ name: "cntProgressFill", control: "GroupContainer@1.5.0", variant: "ManualLayout", properties: { BorderStyle: "BorderStyle.None", Fill: "RGBA(22, 131, 38, 1)", Height: "6", RadiusBottomLeft: "3", RadiusBottomRight: "3", RadiusTopLeft: "3", RadiusTopRight: "3", Width: `Min(1, ${self}.Progress / 100) * Parent.Width` } }]
       },
       { name: "tmrPulse", control: "Timer@2.1.0", properties: { AutoPause: "false", AutoStart: isSpinner, Duration: "900", Height: "1", Repeat: "true", Start: isSpinner, Visible: "false", Width: "1" } },
-      { name: "btnPulseDot", control: "Classic/Button@2.2.0", properties: { BorderStyle: "BorderStyle.None", Fill: "RGBA(22, 131, 38, 1)", Height: "10", Opacity: "0.3 + 0.7 * Abs(1 - 2 * (tmrPulse.Value / tmrPulse.Duration))", RadiusBottomLeft: "5", RadiusBottomRight: "5", RadiusTopLeft: "5", RadiusTopRight: "5", Text: '""', Visible: isSpinner, Width: "10", X: "Parent.Width / 2 - 5", Y: `If(${self}.LogoUrl <> "", 132, 92)` } },
+      { name: "btnPulseDot", control: "Classic/Button@2.2.0", properties: { BorderStyle: "BorderStyle.None", Fill: "RGBA(22, 131, 38, 0.3 + 0.7 * Abs(1 - 2 * (tmrPulse.Value / tmrPulse.Duration)))", Height: "10", RadiusBottomLeft: "5", RadiusBottomRight: "5", RadiusTopLeft: "5", RadiusTopRight: "5", Text: '""', Visible: isSpinner, Width: "10", X: "Parent.Width / 2 - 5", Y: `If(${self}.LogoUrl <> "", 132, 92)` } },
       { name: "lblProgressPct", control: "ModernText@1.0.0", properties: { Align: "Align.Center", Color: "RGBA(100, 116, 139, 1)", Height: "16", Size: "10", Text: `Text(${self}.Progress) & "%" & If(${self}.EstimatedSecondsRemaining > 0, " - About " & ${self}.EstimatedSecondsRemaining & "s left", "")`, Visible: `!${isSpinner}`, Width: "Parent.Width", X: "0", Y: `If(${self}.LogoUrl <> "", 148, 108)` } },
       { name: "btnCancel", control: "Classic/Button@2.2.0", properties: { BorderColor: "RGBA(226, 232, 240, 1)", BorderStyle: "BorderStyle.Solid", BorderThickness: "1", Fill: "Color.White", FontWeight: "FontWeight.Bold", Height: "30", OnSelect: `${self}.OnCancel()`, RadiusBottomLeft: "15", RadiusBottomRight: "15", RadiusTopLeft: "15", RadiusTopRight: "15", Size: "10", Text: '"Cancel"', Visible: `${self}.CanCancel`, Width: "80", X: "Parent.Width / 2 - 40", Y: "180" } }
     ]
@@ -2459,7 +2486,7 @@ function rangeSlider(pascal) {
   const trackLen = `Switch(${self}.Size, "Small", 160, "Large", 280, 220)`;
   const segments = 10;
 
-  const zoneColorAt = valExpr => `LookUp(SortByColumns(${self}.Zones, "UpTo", SortOrder.Ascending), UpTo >= ${valExpr}).Color`;
+  const zoneColorAt = valExpr => `Coalesce(LookUp(SortByColumns(${self}.Zones, "UpTo", SortOrder.Ascending), UpTo >= ${valExpr}).Color, Last(${self}.Zones).Color)`;
   const zoneLabelAt = valExpr => `Coalesce(LookUp(SortByColumns(${self}.Zones, "UpTo", SortOrder.Ascending), UpTo >= ${valExpr}).Label, Last(${self}.Zones).Label)`;
 
   {
@@ -2485,9 +2512,9 @@ function rangeSlider(pascal) {
           properties: {
             BorderStyle: "BorderStyle.None",
             Fill: zoneColorAt(`${self}.Min + (ThisItem.Value / ${segments}) * (${self}.Max - ${self}.Min)`),
-            Height: "Self.Height",
+            Height: isVertical ? segTemplateSize : "6",
             OnSelect: `${self}.OnChange(Round(${self}.Min + (ThisItem.Value / ${segments}) * (${self}.Max - ${self}.Min), 0)); If(${zoneLabelAt(`${self}.Min + (ThisItem.Value / ${segments}) * (${self}.Max - ${self}.Min)`)} <> ${zoneLabelAt(`${self}.Default`)}, ${self}.OnThresholdCross(${zoneLabelAt(`${self}.Min + (ThisItem.Value / ${segments}) * (${self}.Max - ${self}.Min)`)}))`,
-            Width: "Self.Width"
+            Width: isVertical ? "6" : segTemplateSize
           }
         }
       ]
@@ -2599,7 +2626,7 @@ function detailPanel(pascal) {
 function toast(pascal) {
   const self = `cmp${pascal}`;
   const isTop = `${self}.Position = "Top"`;
-  const toneColor = `Switch(${self}.NotificationType, "Error", "#C62828", "Success", "#2E7D32", "Warning", "#BF360C", "#1565C0")`;
+  const toneColor = `ColorValue(Switch(${self}.NotificationType, "Error", "#C62828", "Success", "#2E7D32", "Warning", "#BF360C", "#1565C0"))`;
 
   const tmrAuto = { name: "tmrAutoDismiss", control: "Timer@2.1.0", properties: { AutoPause: "false", AutoStart: `${self}.AutoDismiss`, Duration: `${self}.Timeout`, Height: "1", OnTimerEnd: `${self}.OnDismiss("auto")`, Repeat: "false", Start: `${self}.AutoDismiss`, Visible: "false", Width: "1" } };
 

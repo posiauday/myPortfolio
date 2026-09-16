@@ -71,12 +71,25 @@ function powerFxTextLiteral(value) {
    catalog property added without a matching entry there fails loudly
    (via the `components.forEach` assertion in buildComponentYaml/
    buildScreenControlYaml below) instead of shipping quietly broken. */
+/* A DateTime ("DateAndTime") property's catalog `def` is either a real
+   Power Fx date-producing call already ("Today()", "Now()") or blank-ish
+   prose ("Blank"). Neither belongs behind powerFxTextLiteral: a real
+   Studio paste confirmed `="Today()"` (the call wrapped as a quoted
+   9-character TEXT literal) fails outright — "The value 'Today()'
+   cannot be converted to a date or time value" — since a DateAndTime
+   property needs a real formula, not text that merely looks like one.
+   Prose defaults get a real `Blank()` call instead of quoted text for
+   the same reason. */
 function formatFormulaValue(rawValue, dataType, realFormula) {
   if (realFormula !== undefined) return { expression: realFormula, multiline: needsMultiline(realFormula) };
   const value = String(rawValue);
   const isNumericLiteral = dataType === "Number" && /^-?\d+(\.\d+)?$/.test(value.trim());
   const isBooleanLiteral = dataType === "Boolean" && (value === "true" || value === "false");
-  const expression = isNumericLiteral || isBooleanLiteral ? value : powerFxTextLiteral(value);
+  const isDateTimeCall = dataType === "DateAndTime" && /^(Today|Now|Blank|Date|DateAdd|DateTime)\s*\(/.test(value.trim());
+  let expression;
+  if (isNumericLiteral || isBooleanLiteral || isDateTimeCall) expression = value;
+  else if (dataType === "DateAndTime") expression = "Blank()";
+  else expression = powerFxTextLiteral(value);
   return { expression, multiline: needsMultiline(expression) };
 }
 

@@ -69,6 +69,12 @@ function assertLiteralMatchesDataType(expr, dataType, context) {
     if (!expr.startsWith("{")) fail(context, `DataType Record but Default "${expr}" isn't a real {...} record literal`);
   } else if (dataType === "Color") {
     if (!/^RGBA\(/.test(expr)) fail(context, `DataType Color but Default "${expr}" isn't a real RGBA(...) literal`);
+  } else if (dataType === "DateAndTime") {
+    // CONFIRMED via a real Studio paste error: a DateAndTime Default
+    // wrapped as quoted text (="Today()") fails outright — "The value
+    // 'Today()' cannot be converted to a date or time value" — so this
+    // needs a real date-producing formula, not a text literal.
+    if (isQuoted || !/^(Today|Now|Blank|Date|DateAdd|DateTime)\(/.test(expr)) fail(context, `DataType DateAndTime but Default "${expr}" isn't a real date-producing formula`);
   } else if (!isQuoted) {
     fail(context, `DataType ${dataType} but Default "${expr}" isn't a quoted text literal`);
   }
@@ -155,7 +161,12 @@ const KNOWN_INVALID_CONTROL_PROPERTIES = {
   // that reference describes the platform generally, not every specific
   // versioned control. Classic/Button@2.2.0's own real accessible name is
   // its Text property; it has no separate AccessibleLabel.
-  "Classic/Button": ["AccessibleLabel"]
+  "Classic/Button": ["AccessibleLabel"],
+  // CONFIRMED via a real Studio PA2108 paste error on Responsive Line
+  // Chart: "Unknown property 'AltText'"/"'Opacity'" for Image@2.2.3.
+  // Accessible text and fade-in need to be baked into the SVG data URI
+  // itself (a <title> element, a root opacity attribute) instead.
+  Image: ["AltText", "Opacity"]
 };
 
 /* A component listed in CHILDREN_BUILDERS claims a real, pasteable
