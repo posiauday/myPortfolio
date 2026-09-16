@@ -1561,6 +1561,117 @@ function calendar(pascal) {
   };
 }
 
+/* Accordion List — real expand/collapse state via Collect()/Remove()
+   on a component-local context variable (locExpandedKeys, a real
+   {Key:Number} table) rather than the original contract's read-only
+   ExpandedGroupKey/IsExpandAll/GroupCount/ItemCount/ActionKey/
+   ActionRowType/SelectedItemKey properties. This project's own
+   componentDocs.js emits every CustomProperty as `PropertyKind:
+   Input` unconditionally (checked directly, not assumed) — there is
+   no real mechanism here for a property the component itself sets and
+   a host only reads, so those seven properties could never have
+   actually worked as documented. Replaced with real event Parameters
+   instead (schema-confirmed, and this project's own generator already
+   supports them via eventParameters below) — OnSelectGroup/OnSelectItem/
+   OnMoveUp/OnMoveDown/OnEdit/OnDelete/OnSelectionChange/OnPageChange
+   all now carry their own payload directly, which is both more useful
+   to a host and something this generator can actually produce. See
+   componentLibrary.js's own updated Properties/Events text for the
+   user-facing side of this fix.
+
+   One flat Gallery over Groups (not a Groups+Items union — Power Fx
+   has no verified simple two-table-union function, and Ungroup()'s
+   exact real shape wasn't worth the research time against this
+   catalog's remaining build list). Each group's template reserves 6
+   fixed item slots (the same "avoid a nested Gallery control" technique
+   Calendar's own day-cell chips already use), individually Visible on
+   both the group's own expanded state and whether that slot's index is
+   within the group's real child count — real, but every group's
+   template row shares one fixed height (sized for the expanded case)
+   rather than shrinking when collapsed, a disclosed tradeoff instead
+   of the dynamic per-row height a live nested Gallery can't reliably
+   report anyway (the same height-measuring problem this component's
+   own architecture note already describes). */
+function accordionList(pascal) {
+  const self = `cmp${pascal}`;
+  const isCompact = `${self}.Style = "Compact"`;
+  const itemsForGroup = `Filter(${self}.Items, GroupKey = ThisItem.GroupKey)`;
+  const isExpanded = "CountRows(Filter(locExpandedKeys, Key = ThisItem.GroupKey)) > 0";
+  const toneColor = `Switch(ThisItem.Tone, "Positive", "#2E7D32", "Negative", "#C62828", "#BF360C")`;
+  const rowH = `If(${isCompact}, 24, 30)`;
+  const maxSlots = 6;
+
+  const itemSlot = n => ({
+    name: `cntItem${n}`,
+    control: "GroupContainer@1.5.0",
+    variant: "ManualLayout",
+    properties: {
+      BorderStyle: "BorderStyle.None",
+      Fill: "Color.Transparent",
+      Height: rowH,
+      Visible: `And(${isExpanded}, ${n} <= CountRows(${itemsForGroup}))`,
+      Width: "Parent.Width - 24",
+      X: "24",
+      Y: `40 + (${n} - 1) * ${rowH}`
+    },
+    children: [
+      { name: "lblItemLine", control: "ModernText@1.0.0", properties: { Height: "Parent.Height", Size: "10", Text: `Index(${itemsForGroup}, ${n}).Line`, Width: "Parent.Width - 70", X: "0", Y: "0" } },
+      { name: "lblItemTag", control: "ModernText@1.0.0", properties: { Color: `Switch(Index(${itemsForGroup}, ${n}).Tone, "Positive", "#2E7D32", "Negative", "#C62828", "#BF360C")`, FontWeight: "FontWeight.Bold", Height: "Parent.Height", Size: "9", Text: `Index(${itemsForGroup}, ${n}).Tag`, Visible: `${self}.Config.ShowTags`, Width: "60", X: "Parent.Width - 60", Y: "0" } },
+      { name: "btnItemTap", control: "Classic/Button@2.2.0", properties: { BorderStyle: "BorderStyle.None", Fill: "Color.Transparent", Height: "Parent.Height", OnSelect: `${self}.OnSelectItem(Index(${itemsForGroup}, ${n}).ItemKey)`, Text: '""', Width: "Parent.Width - 60" } }
+    ]
+  });
+
+  const cntGroup = {
+    name: "cntGroup",
+    control: "GroupContainer@1.5.0",
+    variant: "ManualLayout",
+    properties: { BorderColor: "RGBA(226, 232, 240, 1)", BorderStyle: "BorderStyle.Solid", BorderThickness: "1", Fill: "Color.White", Height: "Parent.Height", RadiusBottomLeft: "10", RadiusBottomRight: "10", RadiusTopLeft: "10", RadiusTopRight: "10", Width: "Parent.Width" },
+    children: [
+      { name: "lblChevron", control: "ModernText@1.0.0", properties: { FontWeight: "FontWeight.Bold", Height: "20", Size: "10", Text: `If(${isExpanded}, "v", ">")`, Width: "16", X: "8", Y: "10" } },
+      { name: "lblGroupTitle", control: "ModernText@1.0.0", properties: { FontWeight: "FontWeight.Bold", Height: "20", Size: "11", Text: "ThisItem.Title", Width: "Parent.Width - 160", X: "28", Y: "10" } },
+      { name: "lblGroupTag", control: "ModernText@1.0.0", properties: { Color: toneColor, FontWeight: "FontWeight.Bold", Height: "16", Size: "9", Text: "ThisItem.Tag", Visible: `${self}.Config.ShowTags`, Width: "80", X: "Parent.Width - 140", Y: "12" } },
+      { name: "lblGroupMeta", control: "ModernText@1.0.0", properties: { Color: "RGBA(100, 116, 139, 1)", Height: "16", Size: "9", Text: `Coalesce(ThisItem.Meta, CountRows(${itemsForGroup}) & " items")`, Visible: `${self}.Config.ShowMeta`, Width: "60", X: "Parent.Width - 60", Y: "12" } },
+      { name: "btnGroupHeader", control: "Classic/Button@2.2.0", properties: { BorderStyle: "BorderStyle.None", Fill: "Color.Transparent", Height: "36", OnSelect: `If(${isExpanded}, Remove(locExpandedKeys, LookUp(locExpandedKeys, Key = ThisItem.GroupKey)), Collect(locExpandedKeys, {Key: ThisItem.GroupKey})); ${self}.OnSelectGroup(ThisItem.GroupKey)`, Text: '""', Width: "Parent.Width" } },
+      itemSlot(1), itemSlot(2), itemSlot(3), itemSlot(4), itemSlot(5), itemSlot(6)
+    ]
+  };
+
+  const galGroups = {
+    name: "galGroups",
+    control: "Gallery@2.15.0",
+    variant: "Vertical",
+    properties: { Height: `CountRows(${self}.Groups) * (40 + ${maxSlots} * ${rowH})`, Items: `${self}.Groups`, TemplateSize: `40 + ${maxSlots} * ${rowH}`, Width: "Parent.Width - 40", WrapCount: "1", X: "20", Y: "48" },
+    children: [cntGroup]
+  };
+
+  const cntRoot = {
+    name: "cntRoot",
+    control: "GroupContainer@1.5.0",
+    variant: "ManualLayout",
+    properties: { BorderStyle: "BorderStyle.None", Fill: "RGBA(248, 250, 252, 1)", Height: "Parent.Height", RadiusBottomLeft: "16", RadiusBottomRight: "16", RadiusTopLeft: "16", RadiusTopRight: "16", Width: "Parent.Width" },
+    children: [
+      { name: "lblTitle", control: "ModernText@1.0.0", properties: { FontWeight: "FontWeight.Bold", Height: "22", Size: "15", Text: `${self}.Title`, Visible: `${self}.Config.ShowHeader`, Width: "220", X: "20", Y: "14" } },
+      { name: "btnExpandAll", control: "Classic/Button@2.2.0", properties: { BorderStyle: "BorderStyle.None", Fill: "RGBA(241, 245, 249, 1)", FontWeight: "FontWeight.Bold", Height: "26", OnSelect: `If(CountRows(locExpandedKeys) >= CountRows(${self}.Groups), Clear(locExpandedKeys), Collect(locExpandedKeys, ForAll(${self}.Groups, {Key: GroupKey})))`, RadiusBottomLeft: "13", RadiusBottomRight: "13", RadiusTopLeft: "13", RadiusTopRight: "13", Size: "9", Text: `If(CountRows(locExpandedKeys) >= CountRows(${self}.Groups), "Collapse all", "Expand all")`, Visible: `${self}.Config.ShowExpandAll`, Width: "88", X: "Parent.Width - 108", Y: "14" } },
+      galGroups
+    ]
+  };
+
+  return {
+    properties: { Height: `48 + CountRows(${self}.Groups) * (40 + ${maxSlots} * ${rowH})`, Width: "380" },
+    children: [cntRoot],
+    eventParameters: {
+      OnSelectGroup: [{ name: "GroupKey", dataType: "Number", defaultFormula: "0" }],
+      OnSelectItem: [{ name: "ItemKey", dataType: "Number", defaultFormula: "0" }],
+      OnMoveUp: [{ name: "RowKey", dataType: "Number", defaultFormula: "0" }, { name: "RowType", dataType: "Text", defaultFormula: '"group"' }],
+      OnMoveDown: [{ name: "RowKey", dataType: "Number", defaultFormula: "0" }, { name: "RowType", dataType: "Text", defaultFormula: '"group"' }],
+      OnEdit: [{ name: "RowKey", dataType: "Number", defaultFormula: "0" }, { name: "RowType", dataType: "Text", defaultFormula: '"group"' }],
+      OnDelete: [{ name: "RowKey", dataType: "Number", defaultFormula: "0" }, { name: "RowType", dataType: "Text", defaultFormula: '"group"' }],
+      OnSelectionChange: [{ name: "SelectedCount", dataType: "Number", defaultFormula: "0" }],
+      OnPageChange: [{ name: "PageNumber", dataType: "Number", defaultFormula: "1" }]
+    }
+  };
+}
+
 export const CHILDREN_BUILDERS = {
   "KPI Card": kpiCard,
   "Notification Badge": notificationBadge,
@@ -1574,5 +1685,6 @@ export const CHILDREN_BUILDERS = {
   "Decision Log": decisionLog,
   "Deadline Tracker": deadlineTracker,
   "Activity Timeline": activityTimeline,
-  "Calendar": calendar
+  "Calendar": calendar,
+  "Accordion List": accordionList
 };

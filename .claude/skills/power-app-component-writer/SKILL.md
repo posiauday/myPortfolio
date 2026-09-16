@@ -181,6 +181,25 @@ immediately, in the same commit as the fix.
   will actually receive), same rules as any other typed `Default`. Call it inside a
   control with `cmp<Name>.OnEventName(argExpression)` — e.g.
   `cmpKPI.OnCardClick(ThisItem)`.
+  **In this project specifically**, wire this up by returning an `eventParameters`
+  key alongside `properties`/`children` from a `CHILDREN_BUILDERS` function —
+  `{ EventName: [{ name, dataType, defaultFormula }, ...] }` —
+  `buildComponentYaml` in `componentDocs.js` reads it and emits the real
+  `Parameters:` block automatically (verified: inspect the generated YAML for
+  the event name after adding one, the same way Accordion List's `OnSelectGroup`
+  was confirmed to emit a real `GroupKey: DataType: Number` parameter). Reach
+  for this whenever a component's own docs describe an event that "returns" or
+  "carries" something — it's a real, already-wired mechanism, not something to
+  invent a workaround for. The reverse mistake already happened once: Accordion
+  List's original contract described several properties as "read-only,
+  component-sets-this" (`ExpandedGroupKey`, `ActionKey`, ...) — but this
+  project's `buildComponentYaml` emits every `CustomProperty` as
+  `PropertyKind: Input` unconditionally, with no Output-property mechanism at
+  all, so those could never actually have worked as documented. Fixed by
+  replacing them with real event Parameters instead. Before documenting a
+  property as host-readable-but-component-set, check `componentDocs.js` for
+  actual Output-property support — don't assume Studio's general property-kind
+  vocabulary applies just because it's real Power Apps terminology.
 
 ## Real Studio behavior notes (paste-time quirks, not properties)
 
