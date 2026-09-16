@@ -1147,6 +1147,167 @@ function riskMatrix(pascal) {
   };
 }
 
+/* Project Health Summary — a real Gallery of the four fixed dimensions
+   (Scope/Schedule/Budget/Quality), each card's Tone driving the same
+   dark-text-on-light-surface palette this catalog already established.
+   No Style property existed for the four documented Variants — added
+   one (Trend stays TrendDirection-on-the-data, not a separate Style
+   value, since a dimension either has a real TrendDirection or it
+   doesn't; Style only toggles Compact's pill row vs the full card
+   grid, and Narrative's extra sentence). */
+function projectHealthSummary(pascal) {
+  const self = `cmp${pascal}`;
+  const isCompact = `${self}.Style = "Compact"`;
+  const isNarrative = `${self}.Style = "Narrative"`;
+  const toneColor = `Switch(ThisItem.Tone, "Green", "#2E7D32", "Red", "#C62828", "#BF360C")`;
+  const toneBg = `Switch(ThisItem.Tone, "Green", "#E8F5E9", "Red", "#FFEBEE", "#FFF3E0")`;
+  const trendGlyph = `Switch(ThisItem.TrendDirection, "Better", " ^", "Worse", " v", "")`;
+  const overallColor = `Switch(${self}.OverallTone, "Green", "#2E7D32", "Red", "#C62828", "#BF360C")`;
+
+  const cntDimCard = {
+    name: "cntDimCard",
+    control: "GroupContainer@1.5.0",
+    variant: "ManualLayout",
+    properties: { BorderStyle: "BorderStyle.None", Fill: toneBg, Height: "Parent.Height", RadiusBottomLeft: "12", RadiusBottomRight: "12", RadiusTopLeft: "12", RadiusTopRight: "12", Width: "Parent.Width" },
+    children: [
+      { name: "lblDimName", control: "ModernText@1.0.0", properties: { Color: toneColor, FontWeight: "FontWeight.Bold", Height: "16", Size: "11", Text: `ThisItem.Dimension & ${trendGlyph}`, Width: "Parent.Width - 16", X: "8", Y: "8" } },
+      { name: "lblDimNote", control: "ModernText@1.0.0", properties: { AutoHeight: "false", Color: toneColor, Height: `If(${isCompact}, 0, 40)`, Size: "10", Text: "ThisItem.Note", Visible: `!${isCompact}`, Width: "Parent.Width - 16", Wrap: "true", X: "8", Y: "26" } },
+      { name: "btnDimTap", control: "Classic/Button@2.2.0", properties: { BorderStyle: "BorderStyle.None", Fill: "Color.Transparent", Height: "Parent.Height", OnSelect: `${self}.OnDimensionSelect(ThisItem)`, Text: '""', Width: "Parent.Width" } }
+    ]
+  };
+
+  const cntCard = {
+    name: "cntCard",
+    control: "GroupContainer@1.5.0",
+    variant: "ManualLayout",
+    properties: { BorderStyle: "BorderStyle.None", DropShadow: "DropShadow.Regular", Fill: "Color.White", Height: "Parent.Height", RadiusBottomLeft: "20", RadiusBottomRight: "20", RadiusTopLeft: "20", RadiusTopRight: "20", Width: "Parent.Width" },
+    children: [
+      { name: "lblOverall", control: "ModernText@1.0.0", properties: { Color: overallColor, FontWeight: "FontWeight.Bold", Height: "20", Size: "14", Text: `"Overall: " & ${self}.OverallTone`, Width: "220", X: "20", Y: "16" } },
+      { name: "lblAsOf", control: "ModernText@1.0.0", properties: { Color: "RGBA(100, 116, 139, 1)", Height: "16", Size: "10", Text: `"As of " & Text(${self}.AsOfDate, DateTimeFormat.ShortDate, Coalesce(${self}.Language, Language()))`, Width: "180", X: "Parent.Width - 200", Y: "20" } },
+      {
+        name: "galDimensions",
+        control: "Gallery@2.15.0",
+        variant: "Vertical",
+        properties: { Height: `If(${isCompact}, 30, 80)`, Items: `${self}.Dimensions`, TemplateSize: `If(${isCompact}, (Parent.Width - 40) / 4, (Parent.Width - 52) / 4)`, Width: "Parent.Width - 40", WrapCount: "4", X: "20", Y: "48" },
+        children: [cntDimCard]
+      },
+      { name: "lblNarrative", control: "ModernText@1.0.0", properties: { AutoHeight: "false", Height: "36", Size: "11", Text: `${self}.NarrativeText`, Visible: `And(${isNarrative}, ${self}.NarrativeText <> "")`, Width: "Parent.Width - 40", Wrap: "true", X: "20", Y: `If(${isCompact}, 86, 136)` } }
+    ]
+  };
+
+  return {
+    properties: { Height: `If(${isCompact}, 86, If(And(${isNarrative}, ${self}.NarrativeText <> ""), 180, 136))`, Width: "360" },
+    children: [cntCard]
+  };
+}
+
+/* Milestone Tracker — horizontal and vertical orientations both use
+   the exact same Gallery-over-Milestones with just WrapCount switched
+   between CountRows(Milestones) (one row, real bars) and 1 (one
+   column) — the same Vertical-variant-plus-WrapCount technique this
+   file already uses for a single row/column elsewhere (Command Card's
+   bar chart, Risk Matrix's axis strips), rather than reaching for an
+   unverified "Horizontal" Gallery variant this file has no real
+   evidence for. */
+function milestoneTracker(pascal) {
+  const self = `cmp${pascal}`;
+  const isVertical = `${self}.Orientation = "vertical"`;
+  const isUpcoming = `${self}.Style = "Upcoming only"`;
+  const items = `If(${isUpcoming}, FirstN(Filter(${self}.Milestones, Status <> "Complete"), 4), ${self}.Milestones)`;
+  const statusColor = `Switch(ThisItem.Status, "Complete", "#2E7D32", "AtRisk", "#BF360C", "Missed", "#C62828", "#2563EB")`;
+  const dateText = `If(ThisItem.Status = "Complete" And !IsBlank(ThisItem.CompletedDate), Text(ThisItem.CompletedDate, DateTimeFormat.ShortDate, Coalesce(${self}.Language, Language())), Text(ThisItem.DueDate, DateTimeFormat.ShortDate, Coalesce(${self}.Language, Language())))`;
+
+  const cntMilestone = {
+    name: "cntMilestone",
+    control: "GroupContainer@1.5.0",
+    variant: "ManualLayout",
+    properties: { BorderStyle: "BorderStyle.None", Fill: "Color.Transparent", Height: "Parent.Height", Width: "Parent.Width" },
+    children: [
+      { name: "btnDot", control: "Classic/Button@2.2.0", properties: { BorderColor: "Color.White", BorderStyle: "BorderStyle.Solid", BorderThickness: "2", Fill: statusColor, Height: "16", OnSelect: `${self}.OnMilestoneSelect(ThisItem)`, RadiusBottomLeft: "8", RadiusBottomRight: "8", RadiusTopLeft: "8", RadiusTopRight: "8", Text: '""', Width: "16", X: `If(${isVertical}, 0, "Parent.Width / 2 - 8")`, Y: `If(${isVertical}, "Parent.Height / 2 - 8", 0)` } },
+      { name: "lblMilestoneName", control: "ModernText@1.0.0", properties: { FontWeight: "FontWeight.Bold", Height: "16", Size: "10", Text: "ThisItem.Name", Width: `If(${isVertical}, "Parent.Width - 28", "Parent.Width")`, X: `If(${isVertical}, 28, 0)`, Y: `If(${isVertical}, "Parent.Height / 2 - 8", 20)` } },
+      { name: "lblMilestoneDate", control: "ModernText@1.0.0", properties: { Color: "RGBA(100, 116, 139, 1)", Height: "14", Size: "9", Text: dateText, Visible: `${self}.ShowDates`, Width: `If(${isVertical}, "Parent.Width - 28", "Parent.Width")`, X: `If(${isVertical}, 28, 0)`, Y: `If(${isVertical}, "Parent.Height / 2 + 8", 36)` } }
+    ]
+  };
+
+  const cntRail = { name: "cntRail", control: "GroupContainer@1.5.0", variant: "ManualLayout", properties: { BorderStyle: "BorderStyle.None", Fill: "RGBA(226, 232, 240, 1)", Height: `If(${isVertical}, "Parent.Height - 20", 2)`, Width: `If(${isVertical}, 2, "Parent.Width - 40")`, X: `If(${isVertical}, 7, 20)`, Y: `If(${isVertical}, 10, "Parent.Height / 2 - 1")` } };
+
+  const galMilestones = {
+    name: "galMilestones",
+    control: "Gallery@2.15.0",
+    variant: "Vertical",
+    properties: {
+      Height: `If(${isVertical}, "Parent.Height", If(${self}.ShowDates, 60, 36))`,
+      Items: items,
+      TemplateSize: `If(${isVertical}, 48, "(Parent.Width - 40) / CountRows(" + items + ")")`,
+      Width: `If(${isVertical}, "Parent.Width", "Parent.Width - 40")`,
+      WrapCount: `If(${isVertical}, 1, CountRows(${items}))`,
+      X: `If(${isVertical}, 0, 20)`,
+      Y: `If(${isVertical}, 0, "Parent.Height / 2 - 18")`
+    },
+    children: [cntMilestone]
+  };
+
+  return {
+    properties: { Fill: "Color.Transparent", Height: `If(${isVertical}, 220, If(${self}.ShowDates, 60, 36))`, Width: `If(${isVertical}, 220, 360)` },
+    children: [cntRail, galMilestones]
+  };
+}
+
+/* Decision Log — a real, sorted Gallery over Decisions. Compact hides
+   Rationale entirely rather than the documented "hidden until tapped"
+   expand-in-place interaction — a real, disclosed simplification (a
+   per-row expanded/collapsed toggle needs per-row state this Gallery-
+   over-a-Table shape has no natural place to keep without a second,
+   host-owned collection, which is more machinery than a decision
+   register's own Compact view is worth). */
+function decisionLog(pascal) {
+  const self = `cmp${pascal}`;
+  const isCompact = `${self}.Style = "Compact"`;
+  const isPrint = `${self}.Style = "Print"`;
+  const statusColor = `Switch(ThisItem.Status, "Decided", "#2E7D32", "Superseded", "#475569", "#BF360C")`;
+  const sorted = `Sort(${self}.Decisions, Date, If(${self}.SortOrder = "Newest first", SortOrder.Descending, SortOrder.Ascending))`;
+  const dateText = `Text(ThisItem.Date, DateTimeFormat.ShortDate, Coalesce(${self}.Language, Language()))`;
+
+  const cntRow = {
+    name: "cntRow",
+    control: "GroupContainer@1.5.0",
+    variant: "ManualLayout",
+    properties: { BorderStyle: "BorderStyle.None", Fill: "Color.Transparent", Height: "Parent.Height", Width: "Parent.Width" },
+    children: [
+      { name: "lblDate", control: "ModernText@1.0.0", properties: { Color: "RGBA(100, 116, 139, 1)", Height: "14", Size: "9", Text: dateText, Width: "90", X: "0", Y: "8" } },
+      { name: "lblStatus", control: "ModernText@1.0.0", properties: { Color: statusColor, FontWeight: "FontWeight.Bold", Height: "14", Size: "9", Text: "ThisItem.Status", Width: "90", X: "Parent.Width - 90", Y: "8" } },
+      { name: "lblDecision", control: "ModernText@1.0.0", properties: { FontWeight: "FontWeight.Bold", Height: "18", Size: "12", Text: "ThisItem.Decision", Width: "Parent.Width - 180", X: "90", Y: "6" } },
+      { name: "lblOwner", control: "ModernText@1.0.0", properties: { Color: "RGBA(100, 116, 139, 1)", Height: "14", Size: "10", Text: "ThisItem.Owner", Width: "Parent.Width", X: "0", Y: "26" } },
+      { name: "lblRationale", control: "ModernText@1.0.0", properties: { AutoHeight: "false", Color: "RGBA(71, 85, 105, 1)", Height: "32", Size: "10", Text: "ThisItem.Rationale", Visible: `!${isCompact}`, Width: "Parent.Width", Wrap: "true", X: "0", Y: "44" } },
+      { name: "btnRowTap", control: "Classic/Button@2.2.0", properties: { BorderStyle: "BorderStyle.None", Fill: "Color.Transparent", Height: "Parent.Height", OnSelect: `${self}.OnDecisionSelect(ThisItem)`, Text: '""', Width: "Parent.Width" } }
+    ]
+  };
+
+  const cntCard = {
+    name: "cntCard",
+    control: "GroupContainer@1.5.0",
+    variant: "ManualLayout",
+    properties: { BorderStyle: "BorderStyle.None", DropShadow: `If(${isPrint}, "DropShadow.None", "DropShadow.Regular")`, Fill: "Color.White", Height: "Parent.Height", RadiusBottomLeft: `If(${isPrint}, 0, 20)`, RadiusBottomRight: `If(${isPrint}, 0, 20)`, RadiusTopLeft: `If(${isPrint}, 0, 20)`, RadiusTopRight: `If(${isPrint}, 0, 20)`, Width: "Parent.Width" },
+    children: [
+      { name: "lblHeading", control: "ModernText@1.0.0", properties: { FontWeight: "FontWeight.Bold", Height: "22", Size: "16", Text: '"Decision log"', Width: "220", X: "20", Y: "16" } },
+      { name: "btnAdd", control: "Classic/Button@2.2.0", properties: { BorderStyle: "BorderStyle.None", Color: "Color.White", Fill: "RGBA(22, 131, 38, 1)", FontWeight: "FontWeight.Bold", Height: "30", OnSelect: `${self}.OnAddDecision()`, RadiusBottomLeft: "15", RadiusBottomRight: "15", RadiusTopLeft: "15", RadiusTopRight: "15", Size: "10", Text: '"Log a decision"', Visible: `And(${self}.AllowAdd, !${isPrint})`, Width: "120", X: "Parent.Width - 220", Y: "14" } },
+      { name: "btnExport", control: "Classic/Button@2.2.0", properties: { BorderStyle: "BorderStyle.None", Fill: "RGBA(241, 245, 249, 1)", FontWeight: "FontWeight.Bold", Height: "30", OnSelect: `${self}.OnExport(${sorted})`, RadiusBottomLeft: "15", RadiusBottomRight: "15", RadiusTopLeft: "15", RadiusTopRight: "15", Size: "10", Text: '"Export"', Visible: `!${isPrint}`, Width: "88", X: "Parent.Width - 96", Y: "14" } },
+      {
+        name: "galDecisions",
+        control: "Gallery@2.15.0",
+        variant: "Vertical",
+        properties: { Height: `CountRows(${self}.Decisions) * If(${isCompact}, 44, 76)`, Items: sorted, TemplateSize: `If(${isCompact}, 44, 76)`, Width: "Parent.Width - 40", WrapCount: "1", X: "20", Y: "56" },
+        children: [cntRow]
+      }
+    ]
+  };
+
+  return {
+    properties: { Height: `56 + CountRows(${self}.Decisions) * If(${isCompact}, 44, 76) + 20`, Width: "420" },
+    children: [cntCard]
+  };
+}
+
 export const CHILDREN_BUILDERS = {
   "KPI Card": kpiCard,
   "Notification Badge": notificationBadge,
@@ -1154,5 +1315,8 @@ export const CHILDREN_BUILDERS = {
   "Command Card": commandCard,
   "Program Scorecard": programScorecard,
   "Operational Status Banner": operationalStatusBanner,
-  "Risk Matrix": riskMatrix
+  "Risk Matrix": riskMatrix,
+  "Project Health Summary": projectHealthSummary,
+  "Milestone Tracker": milestoneTracker,
+  "Decision Log": decisionLog
 };
