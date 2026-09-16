@@ -2183,6 +2183,60 @@ function ComponentPreview({ item, values = {}, interactive = true, variant = nul
     );
   }
 
+  if (item.title === "Heatmap") {
+    // Real day x time grid — not the generic status-list fallback below,
+    // which is what this rendered as before this block existed (no
+    // "Heatmap" case here at all, unlike every other component). Uses
+    // the same sample ChartData/TimeLabels as sampleFormulas.js and the
+    // same BaseColor-driven opacity ramp the real component's generated
+    // SVG uses (0.15 at the lowest non-zero value up to 1.0 at the
+    // data's own max), not a fixed palette that ignores BaseColor.
+    const chartData = [
+      { DayOfWeek: 0, Hour: 6, Value: 2 }, { DayOfWeek: 1, Hour: 6, Value: 3 },
+      { DayOfWeek: 0, Hour: 10, Value: 5 }, { DayOfWeek: 1, Hour: 10, Value: 4 }, { DayOfWeek: 2, Hour: 10, Value: 8 }, { DayOfWeek: 4, Hour: 10, Value: 7 },
+      { DayOfWeek: 0, Hour: 12, Value: 6 }, { DayOfWeek: 2, Hour: 12, Value: 7 }, { DayOfWeek: 3, Hour: 12, Value: 9 }, { DayOfWeek: 4, Hour: 12, Value: 12 },
+      { DayOfWeek: 0, Hour: 17, Value: 10 }, { DayOfWeek: 1, Hour: 17, Value: 15 }, { DayOfWeek: 2, Hour: 17, Value: 11 }, { DayOfWeek: 3, Hour: 17, Value: 18 }, { DayOfWeek: 4, Hour: 17, Value: 20 },
+      { DayOfWeek: 6, Hour: 20, Value: 14 }
+    ];
+    const timeLabels = [{ Hour: 6, Label: "6am" }, { Hour: 10, Label: "10am" }, { Hour: 12, Label: "12pm" }, { Hour: 17, Label: "5pm" }, { Hour: 20, Label: "8pm" }];
+    const dayLabels = String(values.DayLabels ?? "M,T,W,T,F,S,S").split(",");
+    const baseColor = values.BaseColor || item.color || "#6366F1";
+    const emptyColorLight = values.EmptyColor || "#E0E7FF";
+    const showTitle = variant !== "No title" && values.ShowTitle !== "false";
+    const chartTitle = values.ChartTitle || "Issues opening time";
+    const isDarkVariant = variant === "Dark theme";
+    const vMax = Math.max(...chartData.map(r => r.Value));
+    const cellValueAt = (dow, hour) => chartData.find(r => r.DayOfWeek === dow && r.Hour === hour)?.Value ?? 0;
+    const titleClass = isDarkVariant ? "text-white" : "text-slate-900 dark:text-white";
+    const labelClass = isDarkVariant ? "text-slate-400" : "text-slate-500 dark:text-slate-400";
+    const emptyColor = isDarkVariant ? "#374151" : emptyColorLight;
+    return (
+      <div className={`rounded-2xl p-4 ${isDarkVariant ? "bg-slate-900" : "bg-white dark:bg-white/5"}`}>
+        {showTitle && <b className={`block text-sm ${titleClass}`}>{chartTitle}</b>}
+        <div className={showTitle ? "mt-3 space-y-1.5" : "space-y-1.5"}>
+          <div className="flex gap-1.5 pl-8">
+            {dayLabels.map((d, i) => <span key={i} className={`flex-1 text-center text-[9px] font-bold ${labelClass}`}>{d}</span>)}
+          </div>
+          {timeLabels.map(t => (
+            <div key={t.Hour} className="flex items-center gap-1.5">
+              <span className={`w-7 shrink-0 text-right text-[9px] ${labelClass}`}>{t.Label}</span>
+              {dayLabels.map((_, ci) => {
+                const value = cellValueAt(ci, t.Hour);
+                const opacity = value <= 0 ? 1 : 0.15 + (value / vMax) * 0.85;
+                return <div key={ci} className="aspect-square flex-1 rounded-md" style={{ background: value <= 0 ? emptyColor : baseColor, opacity }} />;
+              })}
+            </div>
+          ))}
+        </div>
+        <div className="mt-3 flex items-center justify-end gap-1.5 text-[9px]">
+          <span className={labelClass}>Less</span>
+          {[0, 1, 2, 3, 4].map(i => <div key={i} className="h-2.5 w-2.5 rounded" style={{ background: baseColor, opacity: 0.15 + (i / 4) * 0.85 }} />)}
+          <span className={labelClass}>More</span>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-3">
       {["Submitted", "In review", "Approved", "Operational"].map((x, i) => (
