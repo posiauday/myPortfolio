@@ -706,7 +706,108 @@ function notificationBadge(pascal) {
   };
 }
 
+/* Responsive Line Chart — one Image control, exactly as its own
+   architecture bullet already promised ("The whole chart is one Image
+   control rendering an inline SVG"). ChartData is a real Table
+   (x/y/label columns, auto-sorted by x via Sort()), not the comma-
+   separated Text string KPI Card's own sparkline reads — this is a
+   full chart, not a decorative trend glyph, so it gets its own real
+   data-driven axis: the earlier hand-authored preview mockup drew
+   fixed "Jan/Apr/Jul/Oct/Dec" text baked into the JSX, but a real
+   Children tree has no excuse for that when ChartData already carries
+   a real per-row `label` column — three of those (first/middle/last)
+   render as real axis text pulled from the data instead.
+
+   Smooth reuses the sparkline's polyline technique for the straight
+   case, and for the curved case threads a standard hand-rolled
+   "M -> Q -> repeated T -> L" quadratic-through-midpoints curve rather
+   than a full Catmull-Rom-to-cubic-Bezier conversion — real, and it
+   only ever needs each point's immediate neighbor (one ForAll over
+   adjacent pairs), not a four-point lookback/lookahead window, so it
+   stays a single pass over Sequence(cnt - 1) like the straight case.
+
+   Animate ("staggered draw-in") is a real Timer-driven Image.Opacity
+   fade-in (the same Timer.Value/Timer.Duration-in-a-sibling-formula
+   pattern as Notification Badge's pulse ring) rather than a literal
+   per-point reveal timeline, which raw Power Fx over one static Image
+   has no way to express — a deliberate, disclosed simplification, not
+   an oversight. */
+function responsiveLineChart(pascal) {
+  const self = `cmp${pascal}`;
+  const w = 320, h = 140, pad = 10, axisH = 22, viewH = h + axisH;
+
+  const straightSegments = `Concat(Sequence(cnt - 1), " L " & Text(Round(Index(nums, Value + 1).px, 1)) & "," & Text(Round(Index(nums, Value + 1).py, 1)), "")`;
+  const smoothSegments = `" Q " & Text(Round(Index(nums, 1).px, 1)) & "," & Text(Round(Index(nums, 1).py, 1)) & " " & Concat(Sequence(cnt - 1), Text(Round((Index(nums, Value).px + Index(nums, Value + 1).px) / 2, 1)) & "," & Text(Round((Index(nums, Value).py + Index(nums, Value + 1).py) / 2, 1)) & If(Value < cnt - 1, " T ", ""), "") & " L " & Text(Round(Index(nums, cnt).px, 1)) & "," & Text(Round(Index(nums, cnt).py, 1))`;
+  const linePath = `"M " & Text(Round(Index(nums, 1).px, 1)) & "," & Text(Round(Index(nums, 1).py, 1)) & If(${self}.Smooth, ${smoothSegments}, ${straightSegments})`;
+
+  const markersLayer = `If(${self}.Markers, Concat(Sequence(cnt), "<circle cx='" & Text(Round(Index(nums, Value).px, 1)) & "' cy='" & Text(Round(Index(nums, Value).py, 1)) & "' r='2.5' fill='" & ${self}.LineColor & "'/><text x='" & Text(Round(Index(nums, Value).px, 1)) & "' y='" & Text(Max(9, Round(Index(nums, Value).py, 1) - 8)) & "' text-anchor='middle' font-size='9' font-weight='700' fill='" & ${self}.LineColor & "'>" & Text(Round(Index(nums, Value).n, 0)) & Coalesce(${self}.MarkerSuffix, "") & "</text>", ""), "")`;
+  const axisLabels = `Concat(Sequence(cnt), If(Value = 1 Or Value = RoundUp(cnt / 2, 0) Or Value = cnt, "<text x='" & Text(Round(Index(nums, Value).px, 1)) & "' y='" & ${h + 16} & "' text-anchor='middle' font-size='9' font-weight='700' fill='#94A3B8'>" & Index(nums, Value).lbl & "</text>", ""), "")`;
+
+  // Built across multiple lines here purely for human readability —
+  // collapsed to one line before use, since the YAML emitter's block
+  // scalar only ever indents the single line it's handed (pushRawFormula
+  // in componentDocs.js), not a formula's own embedded newlines. None of
+  // the pieces above contain a real newline inside a quoted string, so
+  // collapsing whitespace around line breaks can't corrupt any literal.
+  const svgUri = `With(
+    {sorted: Sort(${self}.ChartData, x), cnt: CountRows(${self}.ChartData)},
+    If(cnt < 2, Blank(),
+      With(
+        {maxY: Max(If(${self}.YAxisMax > 0, ${self}.YAxisMax, RoundUp(Max(sorted, y) * 1.15, -1)), 1)},
+        With(
+          {nums: ForAll(Sequence(cnt), {n: Index(sorted, Value).y, lbl: Index(sorted, Value).label, px: ${pad} + (Value - 1) * (${w} - ${pad * 2}) / (cnt - 1), py: ${h - pad} - (Index(sorted, Value).y / maxY) * ${h - pad * 2}})},
+          "data:image/svg+xml;utf8," & EncodeUrl(
+            "<svg viewBox='0 0 ${w} ${viewH}' xmlns='http://www.w3.org/2000/svg'><defs><linearGradient id='lc' x1='0' y1='0' x2='0' y2='1'><stop offset='0%' stop-color='" & ${self}.LineColor & "' stop-opacity='0.35'/><stop offset='100%' stop-color='" & ${self}.LineColor & "' stop-opacity='0'/></linearGradient></defs><path d='" &
+            ${linePath} & " L " & Text(Round(Index(nums, cnt).px, 1)) & "," & ${h - pad} & " L " & Text(Round(Index(nums, 1).px, 1)) & "," & ${h - pad} & " Z' fill='url(#lc)'/><path d='" &
+            ${linePath} &
+            "' fill='none' stroke='" & ${self}.LineColor & "' stroke-width='2.5' stroke-linecap='round'/>" &
+            ${markersLayer} &
+            ${axisLabels} &
+            "</svg>"
+          )
+        )
+      )
+    )
+  )`.replace(/\s*\n\s*/g, " ");
+
+  const tmrAnimate = {
+    name: "tmrChartAnimate",
+    control: "Timer@2.1.0",
+    properties: {
+      AutoPause: "false",
+      AutoStart: `${self}.Animate`,
+      Duration: "600",
+      Height: "1",
+      Repeat: "false",
+      Start: `${self}.Animate`,
+      Visible: "false",
+      Width: "1"
+    }
+  };
+
+  const imgChart = {
+    name: "imgChart",
+    control: "Image@2.2.3",
+    properties: {
+      AltText: `"Line chart, " & CountRows(${self}.ChartData) & " points, " & ${self}.LineColor & " line"`,
+      Height: "Parent.Height",
+      Image: svgUri,
+      ImagePosition: "ImagePosition.Fit",
+      Opacity: `If(${self}.Animate, Min(tmrChartAnimate.Value / tmrChartAnimate.Duration, 1), 1)`,
+      Width: "Parent.Width",
+      X: "0",
+      Y: "0"
+    }
+  };
+
+  return {
+    properties: { Fill: "Color.Transparent", Height: `${viewH}`, Width: `${w}` },
+    children: [tmrAnimate, imgChart]
+  };
+}
+
 export const CHILDREN_BUILDERS = {
   "KPI Card": kpiCard,
-  "Notification Badge": notificationBadge
+  "Notification Badge": notificationBadge,
+  "Responsive Line Chart": responsiveLineChart
 };
