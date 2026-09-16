@@ -205,6 +205,20 @@ immediately, in the same commit as the fix.
   that merely looks like one. `componentDocs.js`'s `formatFormulaValue` special-
   cases `dataType === "DateAndTime"` for exactly this reason; `validate-yaml.mjs`
   enforces it the same way it enforces Number/Boolean/Table/Record/Color.
+- A `Text`-typed property whose catalog `def` is the prose placeholder `"Blank"`
+  (documentation shorthand for "no value set" — used throughout for `Language`,
+  `TimeZone`, `NarrativeText`, etc.) needs a real empty string `=""`, not the
+  literal 5-character text `="Blank"`. `CONFIRMED` — a real Studio error on this
+  catalog's own Calendar: `Coalesce(cmpCalendar.Language, Language())` returned
+  the non-blank string `"Blank"` instead of falling through to `Language()`,
+  and Studio rejected it outright as an unsupported language code ("Language
+  code 'Blank' not supported"). This is the exact same family of mistake as the
+  `DateAndTime` rule above — a documentation placeholder taken literally instead
+  of being recognized as "this property is meant to be empty" — just for `Text`
+  instead of `DateAndTime`. `formatFormulaValue` special-cases `value.trim() ===
+  "Blank"` for `dataType === "Text"` the same way it special-cases `DateAndTime`;
+  it fixed 33 properties catalog-wide in one change, since this placeholder
+  convention is used everywhere, not just on the one component that got caught.
 - **A `Text` value assigned to a `Color`-typed control property (`Fill`, `Color`,
   `BorderColor`, ...) needs `ColorValue(...)` around it — a hex string like
   `"#2E7D32"` is not itself a Color, even though `RGBA(...)` and `Color.White` are.**
@@ -259,6 +273,62 @@ immediately, in the same commit as the fix.
   property as host-readable-but-component-set, check `componentDocs.js` for
   actual Output-property support — don't assume Studio's general property-kind
   vocabulary applies just because it's real Power Apps terminology.
+  **`CONFIRMED` this `eventParameters` step is not optional busywork — skipping
+  it is a real Studio paste-time compiler error, not just an undocumented
+  behavior.** A real Studio error on this catalog's own Calendar —
+  `cmpCalendar.OnSelectEvent(Index(...))`: "Invalid number of arguments:
+  received 1, expected 0" — proved it: the Children tree called the event
+  *with* an argument, but `calendar()`'s own return object never declared an
+  `eventParameters` entry for it, so `buildComponentYaml` emitted that event
+  with zero `Parameters:`, and Studio's real compiler rejected the mismatch on
+  paste. This same gap turned out to affect nearly every value-returning event
+  across the whole catalog — 19 components, ~30 events — because writing the
+  `Children:` tree's `OnSelect: cmp<Name>.OnX(ThisItem)` call and remembering
+  the separate `eventParameters` return-object entry are two different edits
+  in two different places, and it's easy to do one without the other. **After
+  writing any `cmp<Name>.OnEventName(...)` call anywhere in a `CHILDREN_BUILDERS`
+  function, grep that same function for `eventParameters` and confirm that
+  event name has a matching entry** — `scripts/validate-yaml.mjs`'s
+  `validateEventArgCounts` now catches a missing one automatically (added after
+  this real error), so `npm run test:yaml` should always be trusted as the last
+  word here, but don't rely on it as the *only* check — the same class of typo
+  (a param name in `eventParameters` that doesn't match what the Children tree
+  actually calls) is still possible and won't be caught by anything but a real
+  paste. Also watch for the reverse trap Mega Menu hit: the *same* event called
+  from two different places with two *differently shaped* records (a
+  `MenuItems` row vs. a `DropdownItems` row) — a single `Parameters:` entry can
+  only honestly describe one shape, so both call sites need to construct the
+  *same* synthesized record (e.g. `{Label: ..., Link: ...}`) rather than
+  passing two genuinely different table rows through the same parameter.
+- **`Index(table, N)` inside a control's own data property (`Text`, `Fill`,
+  `Color`, `Image`, `Height`, ...) needs its own guard against `N` exceeding
+  that table's real row count — a sibling control's `Visible` property being
+  correctly guarded does NOT protect it.** `CONFIRMED` via a real Studio error
+  on this catalog's own Sidebar: `Index(Filter(cmpSidebar.Items, ParentId =
+  ThisItem.Id), 4).Label` — "The 'Index' function cannot be called with an
+  empty table" — even though that exact control's own `Visible` property was
+  already correctly guarded with `CountRows(...) >= 4`. Power Apps evaluates a
+  control's data-property formulas continuously regardless of that control's
+  own `Visible` state (`Visible` only gates rendering, not formula evaluation),
+  and it evaluates a *child* control's own properties regardless of an
+  *ancestor* container's `Visible` too — so a fixed-slot pattern (`n` physical
+  controls standing in for a variable-length table, this file's standard
+  technique for avoiding a nested Gallery) needs every property that calls
+  `Index(table, n)` to guard itself, not just rely on some other property in
+  the tree already being guarded. The fix is always the same shape:
+  `If(CountRows(table) >= n, Index(table, n).Field, <safe fallback>)` (or wrap
+  a larger expression, e.g. a `With(...)` building a data-URI `Image`, in that
+  same `If`). An `OnSelect`/behavior formula calling `Index(table, n)` is safe
+  *without* its own guard as long as the control's own `Visible` is correctly
+  guarded, since a behavior formula only evaluates when the user actually
+  triggers it, and an invisible control can't be tapped — the risk is specific
+  to data properties, which Studio evaluates proactively for every control in
+  the tree whether or not anything about it is currently visible. No script
+  catches this one (it needs a real Power Fx interpreter to know a table's
+  actual row count, which none of `test:yaml`/lint/build have) — after writing
+  any fixed-slot pattern, grep the finished component for `Index(` and check
+  every match sits inside an `If(CountRows(...) >= n, ...)` (or equivalent)
+  unless it's genuinely inside an `OnSelect`/`OnChange`/other behavior property.
 
 ## Real Studio behavior notes (paste-time quirks, not properties)
 
