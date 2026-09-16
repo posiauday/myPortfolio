@@ -1,6 +1,5 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { ArrowLeft, ArrowRight, Check, CheckCircle2, Code2, Copy, Sparkles, X } from "lucide-react";
-import { icons } from "../data/componentLibrary.js";
+import { ArrowLeft, ArrowRight, Check, CheckCircle2, Code2, Copy, X } from "lucide-react";
 import { pascalCase, buildComponentYaml, buildScreenControlYaml, buildComponentDocs } from "../lib/componentDocs.js";
 import { darken, lighten } from "../lib/color.js";
 import useCopyFeedback from "../hooks/useCopyFeedback.js";
@@ -29,7 +28,6 @@ function Detail({ item, items, dark, onBack, onSwitch }) {
   const [overrides, setOverrides] = useState({});
   const [copied, copy] = useCopyFeedback();
   const tabs = ["Preview", "Variants", "Properties", "Events", "Architecture", "Examples", "Accessibility", "Limitations"];
-  const Icon = icons[item.category] || Sparkles;
   const pascal = useMemo(() => pascalCase(item.title), [item.title]);
   const yamlText = useMemo(() => buildComponentYaml(item, overrides), [item, overrides]);
   const controlYamlText = useMemo(() => buildScreenControlYaml(item, overrides), [item, overrides]);
@@ -79,29 +77,15 @@ function Detail({ item, items, dark, onBack, onSwitch }) {
             </div>
 
             {previewView === "mock" ? (
-              <div className="mt-5 grid gap-5 rounded-[32px] bg-slate-100 p-5 dark:bg-white/5 lg:grid-cols-[1.3fr_.7fr]">
-                <div className="grid min-h-[430px] place-items-center rounded-[26px] bg-[#EAF0F5] p-5 dark:bg-[#101816]">
+              <div className="mt-5 grid gap-5 rounded-[32px] bg-slate-100 p-5 dark:bg-white/5 lg:grid-cols-[1.5fr_.5fr] lg:items-start">
+                <div className="grid min-h-[360px] place-items-center rounded-[26px] bg-[#EAF0F5] p-6 dark:bg-[#101816]">
                   <article className="w-full max-w-md rounded-[28px] bg-white p-7 shadow-2xl dark:bg-[#17201B]">
-                    <div className="mb-7 flex items-center justify-between">
-                      <div><span className="text-[10px] font-black uppercase tracking-widest text-slate-600 dark:text-slate-300">Live preview</span><h2 className="mt-2 text-2xl font-black">{item.title}</h2></div>
-                      <Icon style={{ color: item.color }} />
-                    </div>
                     <ComponentPreview item={item} values={previewValues} />
                   </article>
                 </div>
                 <aside className="rounded-[26px] bg-white p-6 dark:bg-[#17201B]">
-                  <h3 className="font-black">Component contract</h3>
-                  <p className="mt-3 text-sm leading-6 text-slate-600 dark:text-slate-300">{item.summary}</p>
-                  <div
-                    className="mt-5 rounded-2xl p-4 text-sm"
-                    style={{ background: `${item.color}14`, "--badge-light": darken(item.color), "--badge-dark": lighten(item.color) }}
-                  >
-                    <b className="text-[color:var(--badge-light)] dark:text-[color:var(--badge-dark)]">{item.maturity}</b>
-                    <span className="mt-1 block text-slate-600 dark:text-slate-300">{item.yamlStatus}</span>
-                  </div>
-
-                  <div className="mt-7 flex items-center justify-between">
-                    <h3 className="font-black">Configure</h3>
+                  <div className="flex items-center justify-between">
+                    <h2 className="font-black">Configure</h2>
                     <button onClick={() => setOverrides({})} className="text-xs font-bold text-slate-600 hover:text-slate-700 dark:text-slate-300 dark:hover:text-slate-100">
                       Reset to defaults
                     </button>
@@ -284,7 +268,7 @@ function Detail({ item, items, dark, onBack, onSwitch }) {
   return (
     <main className={dark ? "dark min-h-screen bg-[#0B1110] text-white" : "min-h-screen bg-[#FBFDFB] text-[#17201B]"}>
       <header className="sticky top-0 z-20 border-b border-slate-200 bg-white/95 backdrop-blur dark:border-white/10 dark:bg-[#101816]/95">
-        <div className="mx-auto flex h-16 max-w-7xl items-center justify-between gap-2 px-5">
+        <div className="mx-auto flex h-16 max-w-5xl items-center justify-between gap-2 px-5">
           <button onClick={onBack} className="flex shrink-0 items-center gap-2 font-bold"><ArrowLeft size={18} /> Components</button>
           <b className="hidden truncate sm:block">{item.title}</b>
           <div className="flex shrink-0 items-center gap-1">
@@ -307,7 +291,7 @@ function Detail({ item, items, dark, onBack, onSwitch }) {
         </div>
       </header>
 
-      <div className="mx-auto max-w-7xl px-5 py-10">
+      <div className="mx-auto max-w-5xl px-5 py-10">
         <div className="flex flex-wrap gap-2">
           <span
             className="rounded-full px-3 py-1 text-xs font-black text-[color:var(--badge-light)] dark:text-[color:var(--badge-dark)]"

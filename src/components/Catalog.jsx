@@ -92,13 +92,13 @@ function Catalog({ dark, onSelect, onBack }) {
             which on a narrow screen (where "All components" itself was
             already hidden) meant two identical, unlabeled-looking exits
             and nothing recognizable between them. */}
-        <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-5">
+        <div className="mx-auto flex h-16 max-w-[96rem] items-center justify-between px-5">
           <button onClick={onBack} className="flex items-center gap-2 font-bold"><ArrowLeft size={18} /> Home</button>
           <b>All components</b>
         </div>
       </header>
 
-      <div className="mx-auto max-w-7xl px-5 py-10">
+      <div className="mx-auto max-w-[96rem] px-5 py-10">
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div>
             <p className="text-xs font-black uppercase tracking-[.2em] text-[#168326] dark:text-[#4ADE80]">Design system</p>
@@ -165,7 +165,7 @@ function Catalog({ dark, onSelect, onBack }) {
                 onClick={() => setMaturity(m)}
                 className={`rounded-md px-3 py-1.5 text-xs font-bold transition-colors ${maturity === m ? "bg-[#17201B] text-white dark:bg-white dark:text-[#0B1110]" : "bg-slate-100 text-slate-600 hover:bg-slate-200 dark:bg-white/10 dark:text-slate-300 dark:hover:bg-white/15"}`}
               >
-                {m} <span className="opacity-60">{count}</span>
+                {m} <span className={maturity === m ? "opacity-80" : ""}>{count}</span>
               </button>
             );
           })}
