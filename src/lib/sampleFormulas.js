@@ -36,6 +36,17 @@ export const SAMPLE_FORMULAS = {
   // WCAG-1.4.3-checked (4.5:1+) combination already used elsewhere in
   // this file, not a fresh, unverified color choice.
   "KPI Card::StyleConfig": '{colors:{cardBg:ColorValue("#FFFFFF"),border:ColorValue("#E5E7EB"),text:ColorValue("#111827"),textMuted:ColorValue("#6B7280"),positive:ColorValue("#22C55E"),negative:ColorValue("#EF4444"),neutral:ColorValue("#9E9E9E"),skeletonBase:ColorValue("#E5E7EB"),skeletonShine:ColorValue("#F3F4F6")},space:{xs:4,sm:8,md:12,lg:16,xl:24},radius:{md:8,lg:12},type:{value:{size:32,sizeCompact:20},label:{size:12},body:{size:12}},heights:{statsCardMax:190,statsCardCompact:88},abbreviateThreshold:10000,tones:{positive:{bg:"#E8F5E9",fg:"#2E7D32"},warning:{bg:"#FFF3E0",fg:"#BF360C"},negative:{bg:"#FFEBEE",fg:"#C62828"},neutral:{bg:"#F1F5F9",fg:"#475569"},info:{bg:"#EBF5FF",fg:"#1565C0"}}}',
+  // Every tone is a background the count circle's own white text sits
+  // directly on (Fill: ColorValue(tone), Color: RGBA(255,255,255,1)) —
+  // picked to clear WCAG 1.4.3 (4.5:1) for that exact pairing, verified
+  // via the same real relative-luminance calculation this catalog's KPI
+  // Card fix used, not eyeballed. A first pass reused KPI Card's own
+  // lighter positive/warning swatches (#16A34A/#D97706) meant for text
+  // on a light tint, not white text on the swatch itself — both failed
+  // (3.30:1 and 3.19:1) once actually computed for this pairing, hence
+  // the darker positive/warning values below.
+  "Notification Badge::StyleConfig": '{tones:{negative:"#DC2626",warning:"#92400E",positive:"#15803D",neutral:"#6B7280",info:"#2563EB"}}',
+  "Notification Badge::Icons": "Table({Name:\"Bell\",SVG:\"<svg viewBox='0 0 24 24' width='24' height='24' xmlns='http://www.w3.org/2000/svg' fill='none' stroke='COLOR' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><path d='M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9'/><path d='M10.3 21a1.94 1.94 0 0 0 3.4 0'/></svg>\"},{Name:\"Mail\",SVG:\"<svg viewBox='0 0 24 24' width='24' height='24' xmlns='http://www.w3.org/2000/svg' fill='none' stroke='COLOR' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><rect x='2' y='4' width='20' height='16' rx='2'/><path d='m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7'/></svg>\"},{Name:\"MessageCircle\",SVG:\"<svg viewBox='0 0 24 24' width='24' height='24' xmlns='http://www.w3.org/2000/svg' fill='none' stroke='COLOR' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><path d='M7.9 20A9 9 0 1 0 4 16.1L2 22Z'/></svg>\"},{Name:\"AlertTriangle\",SVG:\"<svg viewBox='0 0 24 24' width='24' height='24' xmlns='http://www.w3.org/2000/svg' fill='none' stroke='COLOR' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><path d='M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z'/><line x1='12' y1='9' x2='12' y2='13'/><line x1='12' y1='17' x2='12.01' y2='17'/></svg>\"})",
   "Responsive Line Chart::ChartData": 'Table({x:1,y:42,label:"Jan"},{x:2,y:48,label:"Feb"},{x:3,y:45,label:"Mar"},{x:4,y:58,label:"Apr"})',
   "Command Card::Metrics": 'Table({Label:"Health",Value:"74%",Tone:"Positive"},{Label:"Active",Value:"32",Tone:"Neutral"},{Label:"At risk",Value:"06",Tone:"Negative"})',
   "Command Card::ChartData": "Table({x:1,y:12},{x:2,y:18},{x:3,y:15},{x:4,y:22},{x:5,y:19},{x:6,y:25},{x:7,y:21},{x:8,y:28})",

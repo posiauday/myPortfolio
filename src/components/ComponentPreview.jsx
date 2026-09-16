@@ -2107,6 +2107,82 @@ function ComponentPreview({ item, values = {}, interactive = true, variant = nul
     );
   }
 
+  if (item.title === "Notification Badge") {
+    // One small overlay indicator, not a list — matches the real
+    // component's own single-instance shape. TONES mirrors
+    // sampleFormulas.js's own Notification Badge::StyleConfig values
+    // exactly (white-count-text-on-tone-background pairs, each
+    // individually checked to clear WCAG 1.4.3), and the pulse ring
+    // reuses Tailwind's own built-in animate-ping utility rather than
+    // a hand-rolled keyframe, since this is a documentation mockup,
+    // not the real Timer-driven animation the actual component uses.
+    const TONES = { Negative: "#DC2626", Warning: "#92400E", Positive: "#15803D", Neutral: "#6B7280", Info: "#2563EB" };
+    const bellPath = "M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9 M10.3 21a1.94 1.94 0 0 0 3.4 0";
+    const Bell = ({ color, size = 22 }) => (
+      <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+        {bellPath.split(" M").map((seg, i) => <path key={i} d={i === 0 ? seg : `M${seg}`} />)}
+      </svg>
+    );
+    const Badge = ({ count = 5, maxCount = 99, pulse = true, tone = "Negative", theme = "Light", dot = false }) => {
+      const color = TONES[tone] || TONES.Negative;
+      const iconBg = theme === "Dark" ? "#1F2937" : "#F3F4F6";
+      const iconBorder = theme === "Dark" ? "#374151" : "#E5E7EB";
+      const iconColor = theme === "Dark" ? "#FFFFFF" : "#111827";
+      const label = count > maxCount ? `${maxCount}+` : count > 0 ? String(count) : "";
+      const badgeHeight = dot ? 12 : Math.min(20, 44 * 0.45);
+      const badgeWidth = dot ? 12 : count > maxCount ? 26 : count > 9 ? 22 : badgeHeight;
+      return (
+        <div className="relative shrink-0" style={{ width: 44, height: 44 }}>
+          <div className="grid h-full w-full place-items-center rounded-[10px] border" style={{ background: iconBg, borderColor: iconBorder }}>
+            <Bell color={iconColor} />
+          </div>
+          {(dot || count > 0) && (
+            <>
+              {pulse && (
+                <span className="absolute animate-ping rounded-full" style={{ width: badgeHeight, height: badgeHeight, top: 2, right: 2, background: color, opacity: 0.5 }} />
+              )}
+              <span
+                className="absolute grid place-items-center rounded-full border-2 border-white text-[10px] font-black leading-none text-white dark:border-[#17201B]"
+                style={{ width: badgeWidth, height: badgeHeight, top: 2, right: 2, background: color }}
+              >
+                {label}
+              </span>
+            </>
+          )}
+        </div>
+      );
+    };
+
+    if (variant === "99+ cap") return (
+      <div className="flex items-center gap-6">
+        <Badge count={140} maxCount={99} />
+        <p className="text-sm leading-6 text-slate-600 dark:text-slate-300">Count above MaxCount renders as <b>99+</b> instead of an ever-widening number.</p>
+      </div>
+    );
+
+    if (variant === "Pulse dot") return (
+      <div className="flex items-center gap-6">
+        <Badge count={0} dot pulse tone="Info" />
+        <p className="text-sm leading-6 text-slate-600 dark:text-slate-300">HasNotifications with Count at 0 — a plain pulsing dot, no number, for &quot;something happened&quot; without a count attached.</p>
+      </div>
+    );
+
+    if (variant === "Dark theme") return (
+      <div className="flex items-center gap-6 rounded-2xl bg-slate-900 p-6">
+        <Badge count={5} theme="Dark" />
+        <p className="text-sm leading-6 text-slate-300">Theme: Dark inverts the icon container&apos;s own background/border and IconColor&apos;s Auto fallback, for a dark toolbar or nav rail.</p>
+      </div>
+    );
+
+    // Count (default)
+    return (
+      <div className="flex items-center gap-6">
+        <Badge count={5} tone="Negative" />
+        <p className="text-sm leading-6 text-slate-600 dark:text-slate-300">A numbered circle over the icon, with a Timer-driven pulse ring behind it — placed on or beside whatever it decorates, one instance per spot.</p>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-3">
       {["Submitted", "In review", "Approved", "Operational"].map((x, i) => (

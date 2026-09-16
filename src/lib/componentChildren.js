@@ -508,6 +508,205 @@ function kpiCard(pascal) {
   };
 }
 
+/* Notification Badge — one small overlay indicator, placed on or beside
+   the icon/button it decorates. Same failure-mode-3 shape check KPI
+   Card went through: "Badge" is one thing (you place one per spot,
+   same as a real notification dot on a bell or app icon), never a
+   list — so no Data/Table property or Gallery here either, matching
+   the real Badge reference the user shared (which was already
+   correctly single-instance; the shape question here was easy).
+
+   Real techniques kept from that reference — a Timer-driven pulse
+   animation reading Timer.Value/Timer.Duration directly inside a
+   sibling control's own formula (CONFIRMED real via Timer@2.1.0's own
+   documented properties and STRONG EVIDENCE from real shipped
+   .pa.yaml files using this exact pattern), an SVG bell icon — rebuilt
+   around this catalog's own established patterns instead of copied
+   verbatim: the same Tone/StyleConfig.tones dynamic-color-by-kind
+   design KPI Card uses (rather than a single fixed BadgeColor), the
+   same SVG-icon-library-with-COLOR-placeholder technique, and a real,
+   composed AccessibleLabel on the bell Image (CONFIRMED via Image@2.2.3's
+   own dedicated docs page and real .pa.yaml files setting it on this
+   exact control version) instead of the legacy Text@0.0.51/
+   'TextCanvas.Align'.Center syntax the reference used, which this
+   catalog has no way to independently verify and doesn't need —
+   ModernText@1.0.0 (already STRONG EVIDENCE elsewhere in this file)
+   covers the count text just as well.
+
+   AccessibleLabel was NOT attempted on the overlay button — a real
+   PA2108 paste error already confirmed Classic/Button@2.2.0 has no
+   such property (see this file's KPI Card section and the skill file's
+   control-property table); the bell Image's own AccessibleLabel is
+   this component's real, disclosed mitigation instead (see
+   componentLibrary.js's Accessibility/Limitations for the honest
+   account of what that does and doesn't cover). */
+function notificationBadge(pascal) {
+  const self = `cmp${pascal}`;
+
+  const hasBadge = `Or(${self}.HasNotifications, ${self}.Count > 0)`;
+
+  // Same resolved-color-everywhere pattern as KPI Card's own
+  // resolvedIconBg/resolvedIconColor: every control below reads this,
+  // never Tone or BadgeColor directly, so the two can never disagree.
+  const resolvedBadgeColor = `Switch(Lower(Coalesce(${self}.Tone, "custom")), "negative", ${self}.StyleConfig.tones.negative, "warning", ${self}.StyleConfig.tones.warning, "positive", ${self}.StyleConfig.tones.positive, "neutral", ${self}.StyleConfig.tones.neutral, "info", ${self}.StyleConfig.tones.info, ${self}.BadgeColor)`;
+
+  const resolvedIconColor = `If(!IsBlank(${self}.IconColor) And ${self}.IconColor <> "" And ${self}.IconColor <> "Auto", ${self}.IconColor, If(${self}.Theme = "Dark", "#FFFFFF", "#111827"))`;
+
+  const iconImage = `"data:image/svg+xml;utf8," & EncodeUrl(Substitute(LookUp(${self}.Icons, Name = ${self}.Icon, SVG), "COLOR", ${resolvedIconColor}))`;
+
+  const countText = `If(${self}.Count > ${self}.MaxCount, Text(${self}.MaxCount) & "+", If(${self}.Count > 0, Text(${self}.Count), ""))`;
+
+  // Real, composed announcement for the bell Image's own AccessibleLabel
+  // — the actual unread state, not just "bell icon".
+  const badgeAnnouncement = `"Notifications" & If(${self}.Count > 0, ", " & ${countText} & " unread", If(${self}.HasNotifications, ", new activity", ", none unread"))`;
+
+  const cntIconContainer = {
+    name: "cntIconContainer",
+    control: "GroupContainer@1.5.0",
+    variant: "ManualLayout",
+    properties: {
+      BorderColor: `If(${self}.Theme = "Dark", RGBA(55, 65, 81, 1), RGBA(229, 231, 235, 1))`,
+      BorderThickness: "1",
+      DropShadow: "DropShadow.None",
+      Fill: `If(${self}.Theme = "Dark", RGBA(31, 41, 55, 1), RGBA(243, 244, 246, 1))`,
+      Height: "Parent.Height",
+      RadiusTopLeft: `${self}.Size * 0.22`,
+      RadiusTopRight: `${self}.Size * 0.22`,
+      RadiusBottomLeft: `${self}.Size * 0.22`,
+      RadiusBottomRight: `${self}.Size * 0.22`,
+      Width: "Parent.Width",
+      X: "0",
+      Y: "0"
+    },
+    children: [
+      {
+        name: "imgIcon",
+        control: "Image@2.2.3",
+        properties: {
+          AccessibleLabel: badgeAnnouncement,
+          BorderStyle: "BorderStyle.None",
+          Height: "Parent.Height",
+          Image: iconImage,
+          PaddingBottom: "Parent.Height * 0.15",
+          PaddingLeft: "Parent.Width * 0.15",
+          PaddingRight: "Parent.Width * 0.15",
+          PaddingTop: "Parent.Height * 0.15",
+          Width: "Parent.Width",
+          X: "0",
+          Y: "0"
+        }
+      }
+    ]
+  };
+
+  // Real technique (Timer@2.1.0's own Value/Duration read directly
+  // inside a sibling GroupContainer's Height/Fill formulas — STRONG
+  // EVIDENCE from a real shipped pnp/powerplatform-snippets component
+  // using this identical pattern). Hex2Dec(Mid(hex, N, 2)) pulls real
+  // R/G/B components from the same resolved Tone hex string the badge
+  // circle itself uses, so the ring fades the *same* color rather than
+  // a second, separately-authored one.
+  const cntPulseRing = {
+    name: "cntPulseRing",
+    control: "GroupContainer@1.5.0",
+    variant: "ManualLayout",
+    properties: {
+      BorderStyle: "BorderStyle.None",
+      DropShadow: "DropShadow.None",
+      Fill: `With({hex: ${resolvedBadgeColor}}, RGBA(Hex2Dec(Mid(hex, 2, 2)), Hex2Dec(Mid(hex, 4, 2)), Hex2Dec(Mid(hex, 6, 2)), Max(0, 0.35 * (1 - (tmrPulse.Value / tmrPulse.Duration)))))`,
+      Height: "cntCountBadge.Height + 14 * Power(tmrPulse.Value / tmrPulse.Duration, 0.6)",
+      RadiusTopLeft: "Self.Height / 2",
+      RadiusTopRight: "Self.Height / 2",
+      RadiusBottomLeft: "Self.Height / 2",
+      RadiusBottomRight: "Self.Height / 2",
+      Visible: `And(${self}.Pulse, ${hasBadge})`,
+      Width: "Self.Height",
+      X: "cntCountBadge.X + cntCountBadge.Width / 2 - Self.Width / 2",
+      Y: "cntCountBadge.Y + cntCountBadge.Height / 2 - Self.Height / 2"
+    },
+    children: [
+      {
+        name: "tmrPulse",
+        control: "Timer@2.1.0",
+        properties: {
+          AutoPause: "false",
+          AutoStart: "true",
+          Duration: "1400",
+          Height: "1",
+          Repeat: "true",
+          Start: `And(${self}.Pulse, ${hasBadge})`,
+          Visible: "false",
+          Width: "1"
+        }
+      }
+    ]
+  };
+
+  const cntCountBadge = {
+    name: "cntCountBadge",
+    control: "GroupContainer@1.5.0",
+    variant: "ManualLayout",
+    properties: {
+      BorderColor: "RGBA(255, 255, 255, 1)",
+      BorderThickness: "2",
+      DropShadow: "DropShadow.None",
+      Fill: `ColorValue(${resolvedBadgeColor})`,
+      Height: `If(${self}.Count > 0, Min(20, ${self}.Size * 0.45), 12)`,
+      RadiusTopLeft: "Self.Height / 2",
+      RadiusTopRight: "Self.Height / 2",
+      RadiusBottomLeft: "Self.Height / 2",
+      RadiusBottomRight: "Self.Height / 2",
+      Visible: hasBadge,
+      Width: `If(${self}.Count > 0, Max(Self.Height, If(${self}.Count > ${self}.MaxCount, 26, If(${self}.Count > 9, 22, Self.Height))), 12)`,
+      X: "Parent.Width - Self.Width - 2",
+      Y: "2"
+    },
+    children: [
+      {
+        name: "txtCount",
+        control: "ModernText@1.0.0",
+        properties: {
+          AutoHeight: "false",
+          Color: "RGBA(255, 255, 255, 1)",
+          FontWeight: "FontWeight.Bold",
+          Height: "Parent.Height",
+          Size: "Max(7, Parent.Height * 0.5)",
+          Text: countText,
+          VerticalAlign: "VerticalAlign.Middle",
+          Visible: `${self}.Count > 0`,
+          Width: "Parent.Width",
+          Wrap: "false",
+          X: "0",
+          Y: "0"
+        }
+      }
+    ]
+  };
+
+  const btnOverlay = {
+    name: "btnOverlay",
+    control: "Classic/Button@2.2.0",
+    properties: {
+      BorderStyle: "BorderStyle.None",
+      Fill: "Color.Transparent",
+      HoverFill: `If(${self}.Theme = "Dark", RGBA(255, 255, 255, 0.08), RGBA(0, 0, 0, 0.05))`,
+      Height: "Parent.Height",
+      Width: "Parent.Width",
+      Text: '""',
+      OnSelect: `${self}.OnSelect()`
+    }
+  };
+
+  return {
+    // A square, fixed by Size alone — the icon container, badge and
+    // pulse ring are all sized proportionally from this one property,
+    // matching the real reference's own Height/Width: Badge.Size.
+    properties: { Fill: "Color.Transparent", Height: `${self}.Size`, Width: `${self}.Size` },
+    children: [cntIconContainer, cntPulseRing, cntCountBadge, btnOverlay]
+  };
+}
+
 export const CHILDREN_BUILDERS = {
-  "KPI Card": kpiCard
+  "KPI Card": kpiCard,
+  "Notification Badge": notificationBadge
 };

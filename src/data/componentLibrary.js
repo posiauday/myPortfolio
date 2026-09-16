@@ -57,7 +57,8 @@ const raw = [
   ["Loading Screen", "Utilities", "Original"],
   ["Range Slider", "Forms", "Verified"],
   ["Detail Panel", "Forms", "Verified"],
-  ["Toast", "Utilities", "Verified"]
+  ["Toast", "Utilities", "Verified"],
+  ["Notification Badge", "Utilities", "Verified"]
 ];
 
 // Generic starting point for any component in a category that has no
@@ -658,6 +659,56 @@ const overrides = {
       ["Persistent warning", "AutoDismiss false, NotificationType Warning — stays on screen until the visitor actually dismisses it."],
       ["Top-positioned", "Position Top, matching Notify()'s own real anchor instead of the Material Design bottom convention."]
     ]
+  },
+  "notification-badge": {
+    summary: "A single small overlay indicator — one instance placed on or beside the icon/button it decorates — with an unread count (99+ capped), a Tone-driven color, and a real Timer-animated pulse ring, not a list of notifications.",
+    properties: [
+      ["Count", "Number", "5", "Unread count; 0 shows no count (falls back to HasNotifications' plain dot) — capped for display at MaxCount"],
+      ["MaxCount", "Number", "99", "The count shown becomes \"N+\" once Count exceeds this — host-configurable instead of a fixed 99"],
+      ["HasNotifications", "Boolean", "true", "True shows a plain dot when Count is 0 (\"something happened, no number to show\"); ignored once Count > 0, since the count circle already conveys that"],
+      ["Pulse", "Boolean", "true", "Animates a fading, expanding ring behind whichever indicator (dot or count circle) is currently visible, via a real Timer control — false shows a static indicator with no animation"],
+      ["Tone", "Text", "Negative", "Custom, Negative, Warning, Positive, Neutral or Info — anything but Custom resolves the badge/ring color from StyleConfig.tones instead of BadgeColor, the same dynamic-color-by-kind pattern this catalog's KPI Card uses"],
+      ["BadgeColor", "Text", "#DC2626", "Hex color for the badge circle and pulse ring when Tone is Custom"],
+      ["Icon", "Text", "Bell", "A name matching a row in Icons"],
+      ["IconColor", "Text", "Auto", "Hex stroke for the icon SVG; \"Auto\" (or blank) follows Theme (white on Dark, near-black on Light) instead of a fixed color"],
+      ["Theme", "Text", "Light", "Light or Dark — governs the icon container's own background/border and IconColor's Auto fallback"],
+      ["Size", "Number", "44", "The component's own width and height in pixels; the icon container, badge and pulse ring are all sized proportionally from this one value"],
+      ["StyleConfig", "Record", "Default tone tokens", "tones: negative/warning/positive/neutral/info hex values for Tone — centralized the same way this catalog's KPI Card centralizes its own StyleConfig.tones"],
+      ["Icons", "Table", "4 built-in icons", "Name/SVG rows; each SVG string carries the literal placeholder text COLOR where a stroke value goes, substituted at render time with this badge's own resolved icon color"]
+    ],
+    events: [["OnSelect", "Fires when the badge (icon, count, or ring) is tapped — no parameters, since a single-instance overlay never needs to say which one was pressed"]],
+    architecture: [
+      "One instance is one overlay indicator — place it on or beside the icon/button it decorates, the same way a real notification dot sits on a bell or app icon; it never renders a list of individual notifications itself",
+      "Tone resolves the badge/ring color from StyleConfig.tones through one Switch(), the same resolved-color-everywhere pattern this catalog's KPI Card already established, so Tone and a manually-set BadgeColor can never disagree with what's actually drawn",
+      "The pulse ring is a real Timer@2.1.0-driven animation — CONFIRMED real via Timer's own documented Duration/Repeat/Start/Value properties and STRONG EVIDENCE from real shipped .pa.yaml files (including one using Timer.Value/Timer.Duration directly inside a sibling control's own Height formula, the exact technique used here) — not a CSS-style transition, since canvas components have no such thing",
+      "The ring's color is computed from the same resolved Tone/BadgeColor hex string via Hex2Dec(Mid(hex, N, 2)) to pull real R/G/B components, then RGBA(r, g, b, fadingAlpha) — real, standard Power Fx functions, not a second color property to keep in sync with the badge's own color",
+      "The ring is centered on the count badge's own X/Y/Width/Height (a sibling-control reference, resolved regardless of Children: list order) rather than a fixed offset, so it stays visually centered whether the badge is showing a plain dot or a wide \"99+\" pill",
+      "The icon library is the same SVG-with-COLOR-placeholder Table technique as KPI Card's own Icons property — one shared asset set, recolored per instance via Substitute(), not per-color icon variants",
+      "MaxCount replaces a hardcoded 99+ cap with a host-configurable threshold — a badge for, say, a 5-item cart doesn't need the same cap as an inbox counting into the thousands"
+    ],
+    examples: [
+      ["Bell icon with unread count", "cmpNotificationBadge.Count: =12, Icon: =\"Bell\", Tone: =\"Negative\" — placed at the top-right of a header icon button, no collection involved."],
+      ["Dynamic tone by severity", "cmpNotificationBadge.Tone: =If(varCriticalAlerts > 0, \"Negative\", varCriticalAlerts + varWarnings > 0, \"Warning\", \"Neutral\"), Count: =varCriticalAlerts + varWarnings — the badge recolors itself as the underlying alert mix changes, no hex value in the formula."],
+      ["Quiet activity dot", "cmpNotificationBadge.Count: =0, HasNotifications: =varHasUnread, Pulse: =varHasUnread — a plain pulsing dot for \"something changed\" without a number attached, the same real-world pattern a chat app's own unread indicator uses."],
+      ["Static, no animation", "cmpNotificationBadge.Pulse: =false — for a screen with several badges at once, where a dozen pulsing rings would be visual noise rather than a meaningful signal."]
+    ],
+    accessibility: [
+      "The bell/icon Image carries a real, composed AccessibleLabel (\"Notifications, 12 unread\") — CONFIRMED real via Image@2.2.3's own dedicated control reference page and multiple real shipped .pa.yaml files setting AccessibleLabel on this exact control version — so a screen reader visitor browsing the screen hears the actual unread state, not just a decorative bell glyph",
+      "btnOverlay (the tap target) has no accessible name of its own — a real Studio PA2108 paste error already confirmed Classic/Button@2.2.0 has no AccessibleLabel property (see this catalog's KPI Card and the skill file's control-property table) — so the icon's own AccessibleLabel is this component's real, if imperfect, mitigation; place the badge immediately beside the control it decorates so the two are naturally read together",
+      "The count and its color are never the only signal — Count's own digits render as real text inside the circle, not a bare colored dot with no number for anyone who needs one",
+      "Pulse is purely decorative animation layered behind the real indicator; turning it off (Pulse: false) removes no information, since the count/dot and its color are unaffected either way"
+    ],
+    limitations: [
+      "This component renders one indicator; a badge showing several distinct categories (e.g. mentions vs. general activity) needs one instance per category, positioned by the host, not a single instance with multiple counts",
+      "txtCount's horizontal centering relies on ModernText@1.0.0's own default text alignment — a real Align property wasn't independently confirmed for this control in this catalog yet, so a very wide \"99+\" render may need a follow-up adjustment once verified against a real Studio paste",
+      "The pulse ring's Timer keeps running (Repeat: true) for as long as Pulse and the badge are both true, even off-screen — a screen with many simultaneously pulsing badges should weigh that against Pulse: false for all but the one or two indicators that actually need the extra attention"
+    ],
+    variants: [
+      ["Count", "A numbered circle over the icon — the default, as shown in Preview."],
+      ["99+ cap", "Count above MaxCount renders as \"99+\" (or whatever MaxCount is set to) instead of an ever-widening number."],
+      ["Pulse dot", "Count at 0 with HasNotifications true — a plain pulsing dot, no number, for \"something happened\" without a count attached."],
+      ["Dark theme", "Theme: Dark — the icon container's own background/border and IconColor's Auto fallback both invert for a dark toolbar or nav rail."]
+    ]
   }
 };
 
@@ -712,7 +763,7 @@ const components = raw.map(([title, category, maturity], i) => {
     // yamlStatus says exactly that instead of the same disclaimer every
     // other still-contract-only component carries.
     yamlStatus: CHILDREN_BUILDERS[title]
-      ? "Property/event contract plus a real visual control tree (GroupContainer/ModernText/Image/Classic-Button) — pastes as an actual visible component, not just the property scaffold"
+      ? "Property/event contract plus a real visual control tree (GroupContainer/ModernText/Image/Classic-Button, plus Timer for an animated pulse) — pastes as an actual visible component, not just the property scaffold"
       : maturity === "Verified"
       ? "Property and event contract cross-checked against a published reference component; this project's own YAML source is drafted but not yet Studio-tested"
       : "Design specification only; executable YAML not yet built or verified"
