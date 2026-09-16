@@ -806,8 +806,243 @@ function responsiveLineChart(pascal) {
   };
 }
 
+/* Command Card — the same three-tile-plus-bar-chart executive summary
+   this site's own hero section renders (see componentLibrary.js's own
+   architecture note). No Style property existed in the original
+   contract even though Variants documented four real states
+   (Standard/Metrics only/Chart only/Compact) — added one here, the
+   same single-Children-tree-plus-Switch pattern every other
+   multi-variant component in this file already uses, rather than
+   leaving those four variants as illustration-only text with nothing
+   real behind them.
+
+   The bar chart is a real data-driven Gallery of Classic/Button bars
+   (each one individually selectable, firing OnChartSelect with its own
+   ChartData row), not a static SVG Image — a Gallery already gives
+   real per-bar interactivity for free, which a rasterized SVG inside
+   one Image control cannot. ChartData's own `x` column doubles as each
+   bar's stable identity for HighlightIndex to match against, since a
+   Gallery template has no built-in zero-based index property to read. */
+function commandCard(pascal) {
+  const self = `cmp${pascal}`;
+  const isCompact = `${self}.Style = "Compact"`;
+  const showMetrics = `Or(${self}.Style = "Standard", ${self}.Style = "Metrics only", ${isCompact})`;
+  const showChart = `Or(${self}.Style = "Standard", ${self}.Style = "Chart only")`;
+  const cardHeight = `Switch(${self}.Style, "Metrics only", 176, "Chart only", 168, "Compact", 132, 300)`;
+  const toneColor = `Switch(ThisItem.Tone, "Positive", "#2E7D32", "Negative", "#C62828", "#475569")`;
+
+  const cntCard = {
+    name: "cntCard",
+    control: "GroupContainer@1.5.0",
+    variant: "ManualLayout",
+    properties: {
+      BorderStyle: "BorderStyle.None",
+      DropShadow: "DropShadow.Regular",
+      Fill: "Color.White",
+      Height: "Parent.Height",
+      RadiusBottomLeft: "20", RadiusBottomRight: "20", RadiusTopLeft: "20", RadiusTopRight: "20",
+      Width: "Parent.Width"
+    },
+    children: [
+      { name: "lblEyebrow", control: "ModernText@1.0.0", properties: { AutoHeight: "false", Color: "RGBA(100, 116, 139, 1)", FontWeight: "FontWeight.Bold", Height: "14", Size: "10", Text: `Upper(${self}.Eyebrow)`, Width: "Parent.Width - 40", X: "20", Y: "18" } },
+      { name: "lblTitle", control: "ModernText@1.0.0", properties: { AutoHeight: "false", FontWeight: "FontWeight.Bold", Height: "28", Size: "20", Text: `${self}.Title`, Width: "Parent.Width - 40", X: "20", Y: "36" } },
+      {
+        name: "galMetrics",
+        control: "Gallery@2.15.0",
+        variant: "Vertical",
+        properties: {
+          Height: "76",
+          Items: `If(${isCompact}, FirstN(${self}.Metrics, 2), ${self}.Metrics)`,
+          TemplateSize: `If(${isCompact}, 150, 100)`,
+          Visible: showMetrics,
+          Width: "Parent.Width - 40",
+          WrapCount: `If(${isCompact}, 2, 3)`,
+          X: "20",
+          Y: "72"
+        },
+        children: [
+          {
+            name: "cntTile",
+            control: "GroupContainer@1.5.0",
+            variant: "ManualLayout",
+            properties: { BorderStyle: "BorderStyle.None", Fill: "Color.Transparent", Height: "60", Width: "88" },
+            children: [
+              { name: "lblTileLabel", control: "ModernText@1.0.0", properties: { Color: "RGBA(100, 116, 139, 1)", Height: "16", Size: "11", Text: "ThisItem.Label", Width: "88", X: "0", Y: "0" } },
+              { name: "lblTileValue", control: "ModernText@1.0.0", properties: { Color: toneColor, FontWeight: "FontWeight.Bold", Height: "26", Size: "18", Text: "ThisItem.Value", Width: "88", X: "0", Y: "18" } },
+              { name: "btnTileTap", control: "Classic/Button@2.2.0", properties: { BorderStyle: "BorderStyle.None", Fill: "Color.Transparent", Height: "60", OnSelect: `${self}.OnMetricSelect(ThisItem)`, Text: '""', Width: "88" } }
+            ]
+          }
+        ]
+      },
+      {
+        name: "galChart",
+        control: "Gallery@2.15.0",
+        variant: "Vertical",
+        properties: {
+          Height: "70",
+          Items: `${self}.ChartData`,
+          TemplateSize: "30",
+          Visible: showChart,
+          Width: "Parent.Width - 40",
+          WrapCount: `CountRows(${self}.ChartData)`,
+          X: "20",
+          Y: `If(${showMetrics}, 158, 76)`
+        },
+        children: [
+          {
+            name: "btnBar",
+            control: "Classic/Button@2.2.0",
+            properties: {
+              BorderStyle: "BorderStyle.None",
+              Fill: `If(ThisItem.x = ${self}.HighlightIndex, "#168326", "#CBD5E1")`,
+              Height: `Max(4, ThisItem.y / Max(${self}.ChartData, y) * 60)`,
+              OnSelect: `${self}.OnChartSelect(ThisItem.x, ThisItem.y)`,
+              RadiusBottomLeft: "2", RadiusBottomRight: "2", RadiusTopLeft: "2", RadiusTopRight: "2",
+              Text: '""',
+              Width: "16",
+              Y: "70 - Self.Height"
+            }
+          }
+        ]
+      }
+    ]
+  };
+
+  return {
+    properties: { Height: cardHeight, Width: "340" },
+    children: [cntCard]
+  };
+}
+
+/* Program Scorecard — a real Gallery of RAG cards, each metric's Tone
+   colored the same dark-text-on-light-surface palette this catalog's
+   own KPI Card tones already established (a safe reuse: same role,
+   text on a near-white surface, not the tint-vs-solid role switch that
+   broke Notification Badge's first attempt — see the skill file's
+   failure mode 4). ShowTrend needed a real per-metric series to draw
+   from that the original Metrics contract didn't have (Name/Value/
+   Target/Tone only) — added a Trend column (the same comma-separated-
+   numbers shape KPI Card's own SparklineData uses) rather than leaving
+   a documented, host-facing property with no real data behind it. */
+function programScorecard(pascal) {
+  const self = `cmp${pascal}`;
+  const toneColor = `Switch(ThisItem.Tone, "Green", "#2E7D32", "Red", "#C62828", "#BF360C")`;
+  const toneStatus = `Switch(ThisItem.Tone, "Green", "On target", "Red", "Off track", "At risk")`;
+  const isCompact = `${self}.Style = "Compact"`;
+  const isPrint = `${self}.Style = "Print"`;
+
+  const sparkline = `If(${self}.ShowTrend, With({raw: Coalesce(ThisItem.Trend, "")}, If(raw = "", Blank(), With({nums: ForAll(MatchAll(raw, "-?\\d+\\.?\\d*"), {n: Value(FullMatch)})}, With({lo: Min(nums, n), hi: Max(nums, n), cnt: CountRows(nums)}, With({rng: Max(hi - lo, 1)}, "data:image/svg+xml;utf8," & EncodeUrl("<svg viewBox='0 0 100 24' xmlns='http://www.w3.org/2000/svg' preserveAspectRatio='none'><polyline fill='none' stroke='" & ${toneColor} & "' stroke-width='2' stroke-linecap='round' stroke-linejoin='round' points='" & Concat(Sequence(cnt), Text(Round((Value - 1) / Max(cnt - 1, 1) * 100, 1)) & "," & Text(Round(22 - (Index(nums, Value).n - lo) / rng * 20, 1)), " ") & "'/></svg>")))))))`;
+
+  const cntMetricCard = {
+    name: "cntMetricCard",
+    control: "GroupContainer@1.5.0",
+    variant: "ManualLayout",
+    properties: { BorderColor: "RGBA(226, 232, 240, 1)", BorderStyle: "BorderStyle.Solid", BorderThickness: "1", Fill: "Color.White", Height: `If(${self}.ShowTrend, 130, 100)`, RadiusBottomLeft: "14", RadiusBottomRight: "14", RadiusTopLeft: "14", RadiusTopRight: "14", Width: "170" },
+    children: [
+      { name: "lblName", control: "ModernText@1.0.0", properties: { FontWeight: "FontWeight.Bold", Height: "18", Size: "12", Text: "ThisItem.Name", Width: "140", X: "16", Y: "14" } },
+      { name: "lblValue", control: "ModernText@1.0.0", properties: { Color: toneColor, FontWeight: "FontWeight.Bold", Height: "28", Size: "20", Text: `Text(ThisItem.Value) & " / " & Text(ThisItem.Target)`, Width: "140", X: "16", Y: "34" } },
+      { name: "lblStatus", control: "ModernText@1.0.0", properties: { Color: toneColor, FontWeight: "FontWeight.Semibold", Height: "16", Size: "10", Text: toneStatus, Width: "140", X: "16", Y: "62" } },
+      { name: "cntThresholdTrack", control: "GroupContainer@1.5.0", variant: "ManualLayout", properties: { BorderStyle: "BorderStyle.None", Fill: "RGBA(226, 232, 240, 1)", Height: "5", RadiusBottomLeft: "2.5", RadiusBottomRight: "2.5", RadiusTopLeft: "2.5", RadiusTopRight: "2.5", Visible: `${self}.ShowThresholds`, Width: "140", X: "16", Y: "82" },
+        children: [
+          { name: "cntThresholdFill", control: "GroupContainer@1.5.0", variant: "ManualLayout", properties: { BorderStyle: "BorderStyle.None", Fill: toneColor, Height: "5", RadiusBottomLeft: "2.5", RadiusBottomRight: "2.5", RadiusTopLeft: "2.5", RadiusTopRight: "2.5", Width: "Min(1, ThisItem.Value / Max(ThisItem.Value, ThisItem.Target, 1)) * Parent.Width" } },
+          { name: "btnThresholdTick", control: "Classic/Button@2.2.0", properties: { BorderStyle: "BorderStyle.None", Fill: "RGBA(71, 85, 105, 1)", Height: "9", Text: '""', Width: "2", X: "Min(1, ThisItem.Target / Max(ThisItem.Value, ThisItem.Target, 1)) * Parent.Width - 1", Y: "-2" } }
+        ]
+      },
+      { name: "imgTrend", control: "Image@2.2.3", properties: { Height: "24", Image: sparkline, Visible: `${self}.ShowTrend`, Width: "140", X: "16", Y: "96" } },
+      { name: "btnMetricTap", control: "Classic/Button@2.2.0", properties: { BorderStyle: "BorderStyle.None", Fill: "Color.Transparent", Height: "Parent.Height", OnSelect: `${self}.OnMetricSelect(ThisItem)`, Text: '""', Width: "Parent.Width" } }
+    ]
+  };
+
+  const cntCard = {
+    name: "cntCard",
+    control: "GroupContainer@1.5.0",
+    variant: "ManualLayout",
+    properties: { BorderStyle: "BorderStyle.None", DropShadow: "DropShadow.Regular", Fill: "RGBA(248, 250, 252, 1)", Height: "Parent.Height", RadiusBottomLeft: "20", RadiusBottomRight: "20", RadiusTopLeft: "20", RadiusTopRight: "20", Width: "Parent.Width" },
+    children: [
+      { name: "lblHeading", control: "ModernText@1.0.0", properties: { FontWeight: "FontWeight.Bold", Height: "24", Size: "18", Text: '"Scorecard"', Width: "300", X: "20", Y: "18" } },
+      { name: "lblPeriod", control: "ModernText@1.0.0", properties: { Color: "RGBA(100, 116, 139, 1)", Height: "16", Size: "11", Text: `${self}.Period`, Width: "220", X: "20", Y: "44" } },
+      { name: "btnExport", control: "Classic/Button@2.2.0", properties: { BorderStyle: "BorderStyle.None", Fill: "RGBA(23, 32, 27, 1)", FontWeight: "FontWeight.Bold", Height: "32", OnSelect: `${self}.OnExport(${self}.Metrics, ${self}.Period, ${self}.ExportFormat)`, RadiusBottomLeft: "16", RadiusBottomRight: "16", RadiusTopLeft: "16", RadiusTopRight: "16", Size: "11", Text: `"Export " & ${self}.ExportFormat`, Color: "Color.White", Width: "110", X: "Parent.Width - 130", Y: "18" } },
+      {
+        name: "galMetrics",
+        control: "Gallery@2.15.0",
+        variant: "Vertical",
+        properties: {
+          Height: `If(${isCompact}, CountRows(${self}.Metrics) * 106, RoundUp(CountRows(${self}.Metrics) / If(${isPrint}, 1, 3), 0) * If(${self}.ShowTrend, 140, 110))`,
+          Items: `${self}.Metrics`,
+          TemplateSize: `If(${isCompact}, 106, If(${self}.ShowTrend, 140, 110))`,
+          Width: "Parent.Width - 40",
+          WrapCount: `If(Or(${isCompact}, ${isPrint}), 1, 3)`,
+          X: "20",
+          Y: "72"
+        },
+        children: [cntMetricCard]
+      }
+    ]
+  };
+
+  return {
+    properties: { Height: `72 + If(${isCompact}, CountRows(${self}.Metrics) * 106, RoundUp(CountRows(${self}.Metrics) / If(${isPrint}, 1, 3), 0) * If(${self}.ShowTrend, 140, 110)) + 20`, Width: "380" },
+    children: [cntCard]
+  };
+}
+
+/* Operational Status Banner — a real, full-width strip whose relative-
+   time phrasing ("Updated 4 minutes ago") is computed here with
+   DateDiff, not the host-side Text()-formatting pass-through pattern
+   every other Language property in this catalog uses; this component's
+   own architecture already documented that difference explicitly
+   ("vor 4 Minuten" for de-DE), so the formula below actually branches
+   on Language for real (English/German/Spanish) rather than leaving
+   that claim undelivered — the same standard this skill exists to
+   hold every other claim in this catalog to. */
+function operationalStatusBanner(pascal) {
+  const self = `cmp${pascal}`;
+  const toneBg = `Switch(${self}.Status, "Degraded", "#FFF3E0", "Outage", "#FFEBEE", "Maintenance", "#EBF5FF", "#E8F5E9")`;
+  const toneFg = `Switch(${self}.Status, "Degraded", "#BF360C", "Outage", "#C62828", "Maintenance", "#1565C0", "#2E7D32")`;
+  const showAffected = `Or(${self}.Status = "Degraded", ${self}.Status = "Outage")`;
+
+  const relativeTime = `With(
+    {mins: DateDiff(${self}.LastUpdated, Now(), TimeUnit.Minutes), lang: Left(Coalesce(${self}.Language, Language()), 2)},
+    Switch(lang,
+      "de", If(mins < 1, "Gerade eben", If(mins < 60, "Vor " & mins & " Minute" & If(mins <> 1, "n", "") & " aktualisiert", If(mins < 1440, "Vor " & RoundDown(mins / 60, 0) & " Stunde" & If(RoundDown(mins / 60, 0) <> 1, "n", "") & " aktualisiert", "Vor " & RoundDown(mins / 1440, 0) & " Tag" & If(RoundDown(mins / 1440, 0) <> 1, "en", "") & " aktualisiert"))),
+      "es", If(mins < 1, "Justo ahora", If(mins < 60, "Actualizado hace " & mins & " minuto" & If(mins <> 1, "s", ""), If(mins < 1440, "Actualizado hace " & RoundDown(mins / 60, 0) & " hora" & If(RoundDown(mins / 60, 0) <> 1, "s", ""), "Actualizado hace " & RoundDown(mins / 1440, 0) & " dia" & If(RoundDown(mins / 1440, 0) <> 1, "s", "")))),
+      If(mins < 1, "Just now", If(mins < 60, "Updated " & mins & " minute" & If(mins <> 1, "s", "") & " ago", If(mins < 1440, "Updated " & RoundDown(mins / 60, 0) & " hour" & If(RoundDown(mins / 60, 0) <> 1, "s", "") & " ago", "Updated " & RoundDown(mins / 1440, 0) & " day" & If(RoundDown(mins / 1440, 0) <> 1, "s", "") & " ago")))
+    )
+  )`.replace(/\s*\n\s*/g, " ");
+
+  const cntBanner = {
+    name: "cntBanner",
+    control: "GroupContainer@1.5.0",
+    variant: "ManualLayout",
+    properties: { BorderStyle: "BorderStyle.None", Fill: toneBg, Height: "Parent.Height", RadiusBottomLeft: "0", RadiusBottomRight: "0", RadiusTopLeft: "0", RadiusTopRight: "0", Width: "Parent.Width" },
+    children: [
+      { name: "lblMessage", control: "ModernText@1.0.0", properties: { Color: toneFg, FontWeight: "FontWeight.Bold", Height: "20", Size: "13", Text: `${self}.Message`, Width: "Parent.Width - 220", X: "20", Y: "10" } },
+      { name: "lblLastUpdated", control: "ModernText@1.0.0", properties: { Color: toneFg, Height: "16", Size: "10", Text: relativeTime, Width: "Parent.Width - 220", X: "20", Y: "30" } },
+      {
+        name: "galAffected",
+        control: "Gallery@2.15.0",
+        variant: "Vertical",
+        properties: { Height: "22", Items: `${self}.AffectedSystems`, TemplateSize: "110", Visible: showAffected, Width: "Parent.Width - 40", WrapCount: `CountRows(${self}.AffectedSystems)`, X: "20", Y: "50" },
+        children: [
+          { name: "btnSystemChip", control: "Classic/Button@2.2.0", properties: { BorderStyle: "BorderStyle.None", Color: toneFg, Fill: "RGBA(255, 255, 255, 0.6)", Height: "20", OnSelect: `${self}.OnDetailsSelect(ThisItem)`, RadiusBottomLeft: "10", RadiusBottomRight: "10", RadiusTopLeft: "10", RadiusTopRight: "10", Size: "10", Text: "ThisItem.Name", Width: "104" } }
+        ]
+      },
+      { name: "btnDetails", control: "Classic/Button@2.2.0", properties: { BorderStyle: "BorderStyle.None", Fill: "Color.Transparent", Height: "40", OnSelect: `${self}.OnDetailsSelect(Blank())`, Text: '""', Width: "Parent.Width - 220", X: "0", Y: "0" } },
+      { name: "btnDismiss", control: "Classic/Button@2.2.0", properties: { BorderStyle: "BorderStyle.None", Color: toneFg, Fill: "Color.Transparent", FontWeight: "FontWeight.Bold", Height: "32", OnSelect: `${self}.OnDismiss()`, Size: "16", Text: '"x"', Visible: `${self}.Dismissible`, Width: "32", X: "Parent.Width - 52", Y: "10" } }
+    ]
+  };
+
+  return {
+    properties: { Height: `If(${showAffected}, 82, 58)`, Width: "640" },
+    children: [cntBanner]
+  };
+}
+
 export const CHILDREN_BUILDERS = {
   "KPI Card": kpiCard,
   "Notification Badge": notificationBadge,
-  "Responsive Line Chart": responsiveLineChart
+  "Responsive Line Chart": responsiveLineChart,
+  "Command Card": commandCard,
+  "Program Scorecard": programScorecard,
+  "Operational Status Banner": operationalStatusBanner
 };
