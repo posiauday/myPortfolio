@@ -1308,6 +1308,153 @@ function decisionLog(pascal) {
   };
 }
 
+/* Deadline Tracker — the due date is a real computed value, not a
+   plain StartDate + Days add: a bounded candidate window
+   (Min(Days,400) * 2 + 20 calendar days — generous headroom over the
+   worst case of 400 business days needing roughly 560 calendar days)
+   is generated with Sequence/AddColumns, weekends and Holidays rows
+   are filtered out with Weekday(d, StartOfWeek.Monday) <= 5 and a
+   LookUp against Holidays, and the Nth remaining row is indexed out —
+   the same "generate candidates, search, don't solve analytically"
+   technique the component's own architecture already documented.
+   TimeZone is accepted but not used for real conversion math here —
+   Power Fx has no verified callable timezone-conversion function this
+   catalog could point to, so StartDate is trusted as already being in
+   the right zone, the same disclosed simplification as the breakdown
+   sentence staying English-only (see componentLibrary.js's own
+   Limitations for both). */
+function deadlineTracker(pascal) {
+  const self = `cmp${pascal}`;
+  const isBadge = `${self}.Style = "Badge"`;
+  const isCompact = `${self}.Config.Compact`;
+  const isComplete = `!IsBlank(${self}.CompletedDate)`;
+
+  const dueDate = `With({window: Sequence(Min(${self}.Days, 400) * 2 + 20)}, With({cand: AddColumns(window, "d", DateAdd(${self}.StartDate, Value, TimeUnit.Days))}, With({biz: Filter(cand, Weekday(d, StartOfWeek.Monday) <= 5 And IsBlank(LookUp(${self}.Holidays, HolidayDate = d)))}, Index(biz, Min(${self}.Days, CountRows(biz))).d)))`.replace(/\s*\n\s*/g, " ");
+  const daysLeft = `DateDiff(Today(), ${dueDate}, TimeUnit.Days)`;
+  const status = `If(${isComplete}, "Complete", If(${daysLeft} < 0, "Overdue", If(${daysLeft} <= ${self}.ReminderThreshold, "DueSoon", "OnTrack")))`;
+  const statusColor = `Switch(${status}, "Complete", "#2E7D32", "Overdue", "#C62828", "DueSoon", "#BF360C", "#1565C0")`;
+  const statusLabel = `Switch(${status}, "Complete", "Complete", "Overdue", "Overdue", "DueSoon", "Due soon", "On track")`;
+  const holidayCount = `CountRows(${self}.Holidays)`;
+  const breakdown = `"Weekends" & If(${holidayCount} > 0, " and " & ${holidayCount} & " observed holiday" & If(${holidayCount} <> 1, "s", ""), "") & " already excluded. Due " & Text(${dueDate}, DateTimeFormat.LongDate, Coalesce(${self}.Language, Language()))`;
+
+  const cntCard = {
+    name: "cntCard",
+    control: "GroupContainer@1.5.0",
+    variant: "ManualLayout",
+    properties: { BorderStyle: "BorderStyle.None", DropShadow: "DropShadow.Regular", Fill: "Color.White", Height: "Parent.Height", RadiusBottomLeft: "18", RadiusBottomRight: "18", RadiusTopLeft: "18", RadiusTopRight: "18", Visible: `!${isBadge}`, Width: "Parent.Width" },
+    children: [
+      { name: "btnStatusDot", control: "Classic/Button@2.2.0", properties: { BorderStyle: "BorderStyle.None", Fill: statusColor, Height: "10", RadiusBottomLeft: "5", RadiusBottomRight: "5", RadiusTopLeft: "5", RadiusTopRight: "5", Text: '""', Width: "10", X: "20", Y: "20" } },
+      { name: "lblStatusLabel", control: "ModernText@1.0.0", properties: { Color: statusColor, FontWeight: "FontWeight.Bold", Height: "16", Size: "10", Text: statusLabel, Width: "180", X: "38", Y: "16" } },
+      { name: "lblCount", control: "ModernText@1.0.0", properties: { FontWeight: "FontWeight.Bold", Height: "40", Size: "32", Text: `Text(Abs(${daysLeft})) & If(${status} = "Overdue", "d over", "d left")`, Width: "260", X: "20", Y: "38" } },
+      { name: "lblBreakdown", control: "ModernText@1.0.0", properties: { AutoHeight: "false", Color: "RGBA(100, 116, 139, 1)", Height: "32", Size: "10", Text: breakdown, Visible: `!${isCompact}`, Width: "260", Wrap: "true", X: "20", Y: "82" } }
+    ]
+  };
+
+  const cntBadge = {
+    name: "cntBadge",
+    control: "GroupContainer@1.5.0",
+    variant: "ManualLayout",
+    properties: { BorderStyle: "BorderStyle.None", Fill: statusColor, Height: "26", RadiusBottomLeft: "13", RadiusBottomRight: "13", RadiusTopLeft: "13", RadiusTopRight: "13", Visible: isBadge, Width: "Parent.Width" },
+    children: [
+      { name: "lblBadgeText", control: "ModernText@1.0.0", properties: { Align: "Align.Center", Color: "Color.White", FontWeight: "FontWeight.Bold", Height: "Parent.Height", Size: "10", Text: `Text(Abs(${daysLeft})) & If(${status} = "Overdue", "d over", "d left")`, Width: "Parent.Width" } }
+    ]
+  };
+
+  const btnTap = { name: "btnTap", control: "Classic/Button@2.2.0", properties: { BorderStyle: "BorderStyle.None", Fill: "Color.Transparent", Height: "Parent.Height", OnSelect: `${self}.OnSelect()`, Text: '""', Width: "Parent.Width" } };
+
+  return {
+    properties: { Height: `If(${isBadge}, 26, If(${isCompact}, 74, 122))`, Width: "300" },
+    children: [cntCard, cntBadge, btnTap]
+  };
+}
+
+/* Activity Timeline — a real Gallery over Items, sorted by
+   SortDirection with PinnedIds always sorted ahead of everything else
+   (the same precedence the real Dynamics 365 Timeline control's own
+   pin feature uses), paged to RecordsToLoad with a real Load more
+   affordance, category color/icon resolved through IconMap. IsLoading
+   swaps in a Sequence(4)-driven skeleton gallery (the same technique
+   KPI Card's own skeleton state uses) and HasLoadError swaps in a
+   retry state, as two distinct sibling containers rather than one
+   flag reused for both. Grouped by date is accepted as a documented
+   Style value with no distinct visual yet — see componentLibrary.js's
+   own disclosed Limitations. */
+function activityTimeline(pascal) {
+  const self = `cmp${pascal}`;
+  const isCompact = `${self}.Style = "Compact"`;
+  const sorted = `SortByColumns(AddColumns(${self}.Items, "IsPinned", CountRows(Filter(${self}.PinnedIds, Id = Title)) > 0), "IsPinned", SortOrder.Descending, "Timestamp", If(${self}.SortDirection = "Newest first", SortOrder.Descending, SortOrder.Ascending))`;
+  const shown = `FirstN(${sorted}, ${self}.RecordsToLoad)`;
+  const iconColor = `Coalesce(LookUp(${self}.IconMap, Category = ThisItem.Category).Color, RGBA(100, 116, 139, 1))`;
+
+  const cntEntry = {
+    name: "cntEntry",
+    control: "GroupContainer@1.5.0",
+    variant: "ManualLayout",
+    properties: { BorderStyle: "BorderStyle.None", Fill: "Color.Transparent", Height: "Parent.Height", Width: "Parent.Width" },
+    children: [
+      { name: "btnDot", control: "Classic/Button@2.2.0", properties: { BorderColor: "Color.White", BorderStyle: "BorderStyle.Solid", BorderThickness: "2", Fill: iconColor, Height: "12", RadiusBottomLeft: "6", RadiusBottomRight: "6", RadiusTopLeft: "6", RadiusTopRight: "6", Text: '""', Width: "12", X: "0", Y: "4" } },
+      { name: "cntRail", control: "GroupContainer@1.5.0", variant: "ManualLayout", properties: { BorderStyle: "BorderStyle.None", Fill: "RGBA(226, 232, 240, 1)", Height: "Parent.Height - 16", Width: "2", X: "5", Y: "20" } },
+      { name: "lblTitle", control: "ModernText@1.0.0", properties: { FontWeight: "FontWeight.Bold", Height: "16", Size: "11", Text: `ThisItem.Title & If(CountRows(Filter(${self}.PinnedIds, Id = ThisItem.Title)) > 0, " - Pinned", "")`, Width: "Parent.Width - 24", X: "24", Y: "0" } },
+      { name: "lblDescription", control: "ModernText@1.0.0", properties: { AutoHeight: "false", Color: "RGBA(71, 85, 105, 1)", Height: `If(${isCompact}, 0, 32)`, Size: "10", Text: "ThisItem.Description", Visible: `!${isCompact}`, Width: "Parent.Width - 24", Wrap: "true", X: "24", Y: "18" } },
+      { name: "lblMeta", control: "ModernText@1.0.0", properties: { Color: "RGBA(148, 163, 184, 1)", Height: "14", Size: "9", Text: `ThisItem.Author & " - " & Text(ThisItem.Timestamp, DateTimeFormat.ShortDateTime, Coalesce(${self}.Language, Language()))`, Width: "Parent.Width - 24", X: "24", Y: `If(${isCompact}, 18, 52)` } },
+      { name: "btnEntryTap", control: "Classic/Button@2.2.0", properties: { BorderStyle: "BorderStyle.None", Fill: "Color.Transparent", Height: "Parent.Height", OnSelect: `${self}.OnItemSelect(ThisItem)`, Text: '""', Width: "Parent.Width" } }
+    ]
+  };
+
+  const galItems = {
+    name: "galItems",
+    control: "Gallery@2.15.0",
+    variant: "Vertical",
+    properties: { Height: `CountRows(${shown}) * If(${isCompact}, 36, ${self}.CardHeight)`, Items: shown, TemplateSize: `If(${isCompact}, 36, ${self}.CardHeight)`, Visible: `And(!${self}.IsLoading, !${self}.HasLoadError)`, Width: "Parent.Width - 40", WrapCount: "1", X: "20", Y: "8" },
+    children: [cntEntry]
+  };
+
+  const galSkeleton = {
+    name: "galSkeleton",
+    control: "Gallery@2.15.0",
+    variant: "Vertical",
+    properties: { Height: `4 * ${self}.CardHeight`, Items: "Sequence(4)", TemplateSize: `${self}.CardHeight`, Visible: self + ".IsLoading", Width: "Parent.Width - 40", WrapCount: "1", X: "20", Y: "8" },
+    children: [
+      { name: "btnSkeletonLine1", control: "Classic/Button@2.2.0", properties: { BorderStyle: "BorderStyle.None", Fill: "RGBA(226, 232, 240, 1)", Height: "12", RadiusBottomLeft: "6", RadiusBottomRight: "6", RadiusTopLeft: "6", RadiusTopRight: "6", Text: '""', Width: "160", X: "24", Y: "10" } },
+      { name: "btnSkeletonLine2", control: "Classic/Button@2.2.0", properties: { BorderStyle: "BorderStyle.None", Fill: "RGBA(241, 245, 249, 1)", Height: "10", RadiusBottomLeft: "5", RadiusBottomRight: "5", RadiusTopLeft: "5", RadiusTopRight: "5", Text: '""', Width: "220", X: "24", Y: "30" } }
+    ]
+  };
+
+  const cntError = {
+    name: "cntError",
+    control: "GroupContainer@1.5.0",
+    variant: "ManualLayout",
+    properties: { BorderStyle: "BorderStyle.None", Fill: "RGBA(255, 235, 238, 1)", Height: "80", Visible: self + ".HasLoadError", Width: "Parent.Width - 40", X: "20", Y: "8" },
+    children: [
+      { name: "lblErrorMessage", control: "ModernText@1.0.0", properties: { Color: "RGBA(198, 40, 40, 1)", FontWeight: "FontWeight.Bold", Height: "20", Size: "11", Text: '"Couldn\'t load more activity"', Width: "Parent.Width - 20", X: "16", Y: "14" } },
+      { name: "btnRetry", control: "Classic/Button@2.2.0", properties: { BorderStyle: "BorderStyle.None", Color: "Color.White", Fill: "RGBA(198, 40, 40, 1)", FontWeight: "FontWeight.Bold", Height: "28", OnSelect: `${self}.OnLoadMore()`, RadiusBottomLeft: "14", RadiusBottomRight: "14", RadiusTopLeft: "14", RadiusTopRight: "14", Size: "10", Text: '"Retry"', Width: "80", X: "16", Y: "40" } }
+    ]
+  };
+
+  const btnLoadMore = {
+    name: "btnLoadMore",
+    control: "Classic/Button@2.2.0",
+    properties: {
+      BorderColor: "RGBA(226, 232, 240, 1)", BorderStyle: "BorderStyle.Solid", BorderThickness: "1",
+      Fill: "Color.White",
+      Height: "34",
+      OnSelect: `${self}.OnLoadMore()`,
+      RadiusBottomLeft: "17", RadiusBottomRight: "17", RadiusTopLeft: "17", RadiusTopRight: "17",
+      Size: "10",
+      Text: '"Load more"',
+      Visible: `And(!${self}.IsLoading, !${self}.HasLoadError, CountRows(${self}.Items) > ${self}.RecordsToLoad)`,
+      Width: "120",
+      X: "20",
+      Y: `16 + CountRows(${shown}) * If(${isCompact}, 36, ${self}.CardHeight)`
+    }
+  };
+
+  return {
+    properties: { Fill: "Color.White", Height: `56 + CountRows(${shown}) * If(${isCompact}, 36, ${self}.CardHeight)`, Width: "360" },
+    children: [galItems, galSkeleton, cntError, btnLoadMore]
+  };
+}
+
 export const CHILDREN_BUILDERS = {
   "KPI Card": kpiCard,
   "Notification Badge": notificationBadge,
@@ -1318,5 +1465,7 @@ export const CHILDREN_BUILDERS = {
   "Risk Matrix": riskMatrix,
   "Project Health Summary": projectHealthSummary,
   "Milestone Tracker": milestoneTracker,
-  "Decision Log": decisionLog
+  "Decision Log": decisionLog,
+  "Deadline Tracker": deadlineTracker,
+  "Activity Timeline": activityTimeline
 };
