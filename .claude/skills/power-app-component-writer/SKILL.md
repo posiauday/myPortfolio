@@ -134,7 +134,8 @@ discovered after.
 | `Label@2.5.1` | Not checked (no Radius attempted). | `CONFIRMED` safe for `Text/Color/Font/Size/FontWeight/X/Y/Width/Height/Align` (this catalog's real paste test). Older/classic text control. |
 | `ModernText@1.0.0` | Not checked. | `STRONG EVIDENCE` real and current. Adds `AutoHeight`, `FillPortions` (for use inside an `AutoLayout` `GroupContainer`, flex-grow style), `VerticalAlign`, `Wrap`. Prefer this over `Label` for anything inside an `AutoLayout` container. |
 | `Gallery@2.15.0` | n/a | `STRONG EVIDENCE`, extremely common (hundreds of real examples). Real properties: `Items`, `TemplateSize`, `TemplatePadding`, `WrapCount`, `Transition` (`Transition.Pop/Push/None`), `ShowScrollbar`, `LayoutMaxHeight/LayoutMaxWidth`. `Variant: Vertical` for a wrapping grid (`WrapCount` columns per row). This is how one component definition renders *any number* of data-driven cards — don't hand-author N near-duplicate children for "up to N items"; use a Gallery bound to a real `Table`-typed property instead. |
-| `Image@2.2.3` | n/a | Real. `Image` property accepts a literal `data:image/svg+xml,<url-encoded-svg>` string — a real, standard technique for a dependency-free chart/icon with no external asset. Build it with `EncodeUrl(...)`, never raw string concatenation (unescaped `<`, `#`, quotes inside the SVG would break the URI or the YAML). |
+| `Image@2.2.3` | n/a | Real. `Image` property accepts a literal `data:image/svg+xml,<url-encoded-svg>` string — a real, standard technique for a dependency-free chart/icon with no external asset. Build it with `EncodeUrl(...)`, never raw string concatenation (unescaped `<`, `#`, quotes inside the SVG would break the URI or the YAML). `AccessibleLabel` — `STRONG EVIDENCE` real on this exact control version (multiple real `.pa.yaml` files, plus Image's own dedicated docs page lists it under "Additional properties"), unlike `Classic/Button@2.2.0` above — see the "never assume parity across controls" rule in failure mode 1. |
+| `Timer@2.1.0` | n/a | `STRONG EVIDENCE`, confirmed via 20+ real shipped `.pa.yaml` files (`pnp/powerplatform-snippets` and two separate `microsoft/*` sample repos). Real properties: `Duration` (ms), `Repeat`, `AutoStart`, `AutoPause`, `Start` (a live boolean formula, not just a literal — any other control's own formula can toggle it), `OnTimerStart`, `OnTimerEnd`, and a read-only `Value` (elapsed ms since the current cycle started). **`Value`/`Duration` can be read directly inside a *sibling* control's own formula** — not only inside the Timer's own `OnTimerEnd` — for a live, continuously-animating value with no `UpdateContext`/`Set()` polling. Real example: `pnp/powerplatform-snippets`'s `animated-accordions` reads `tmrAccordionTimer.Value / tmrAccordionTimer.Duration` directly inside another control's own `Height` formula — the exact pattern this catalog's Notification Badge reuses for its pulse ring's `Height`/`Width`/alpha. |
 
 **When in doubt about a property this table doesn't cover:** search GitHub for
 `"Control: <Type>@<version>"` plus the property name, prefer results from
@@ -180,6 +181,25 @@ immediately, in the same commit as the fix.
   control with `cmp<Name>.OnEventName(argExpression)` — e.g.
   `cmpKPI.OnCardClick(ThisItem)`.
 
+## Real Studio behavior notes (paste-time quirks, not properties)
+
+- **F5 to preview, not just paste.** Studio's own editor doesn't fully evaluate a
+  nested `Gallery` template inside a just-pasted component until a preview cycle
+  (F5) runs — a pasted instance with a `Gallery` inside it can look empty or
+  incomplete in the tree view/canvas right up until then. This is standard behavior
+  for any YAML-imported component containing a `Gallery`, not a sign the paste
+  failed. (Already surfaced in the Detail page's own "Copy YAML"/"Copy as screen
+  control" caption; recorded here too so it isn't lost behind that one piece of UI
+  copy.)
+- **A `Record`-typed property's own authored `Default` does not carry onto a pasted
+  screen instance** the way it does for a `Text` or `Number` property — Power Apps
+  only applies a Record-typed `Default` inside the component's own definition (and
+  this project's own preview/generated YAML), never automatically onto an instance
+  you paste onto a screen. Set every one of that Record's keys explicitly on the
+  instance instead of relying on the default showing up (`StyleConfig` is the real
+  example here — see the Detail page's own per-component caption when a component
+  has one).
+
 ## Real patterns worth reusing
 
 **Dynamic, data-driven cards instead of N fixed children.** Don't build "Card 1",
@@ -200,6 +220,36 @@ type sizes) in one `StyleConfig: Record` property so every control references
 `cmp<Name>.StyleConfig.colors.text` etc. instead of repeating literal `RGBA(...)`
 everywhere — one place to retheme, and it matches how this catalog's own real
 enterprise KPI Card example (the one this file's authored against) does it.
+
+**Tone-driven color, not two raw color properties.** Instead of exposing something like
+`IconBg`/`IconColor` as the *only* way to theme an instance, add a `Tone: Text`
+property (`"Positive"`/`"Warning"`/`"Negative"`/`"Neutral"`/`"Info"`/`"Custom"`) that,
+when not `"Custom"`, overrides the raw color properties by resolving through
+`StyleConfig.tones.<tone>` via `Switch`: `Switch(cmp<Name>.Tone, "Positive",
+cmp<Name>.StyleConfig.tones.positive, "Warning", ..., cmp<Name>.IconColor)` (falling
+through to the raw property when `Tone = "Custom"`). This gives a caller a one-word
+semantic choice ("this metric is bad news — make it read that way") instead of
+hand-picking a hex, while `"Custom"` still lets an advanced caller override
+completely. Used on both KPI Card (`Tone` resolving `IconBg`/`IconColor`) and
+Notification Badge (`Tone` resolving the badge/pulse color) — real, reusable pattern
+for "color follows the kind of data," not "color is whatever hex the caller picked."
+**Each tone's own hex still needs its own contrast check per failure mode 4 above** —
+a tone resolving cleanly doesn't mean the resulting color passes contrast in *this*
+component's specific text/background role; Notification Badge's tones needed darker
+values than KPI Card's own tones precisely because the two components use the same
+tone names against different roles (tint-with-dark-text vs. solid-with-white-text).
+
+**Deriving a variable-alpha color from an already-resolved hex string.** When a
+resolved color (from `Tone`, `IconColor`, or any other `Text`-typed hex property)
+needs to be reused at a *different, animating* alpha — a fading pulse ring behind a
+solid badge, for example — decompose it with core Power Fx rather than hardcoding a
+second color: `RGBA(Hex2Dec(Mid(hex, 2, 2)), Hex2Dec(Mid(hex, 4, 2)), Hex2Dec(Mid(hex,
+6, 2)), alphaFormula)` (assuming a leading `#` — `Mid(hex, 1, 1) = "#"`, so the red
+channel starts at position 2). `Hex2Dec`/`Mid`/`RGBA` are all core, unversioned Power
+Fx functions (safe per failure mode 1's language-vs-property distinction above) —
+this is standard, not a workaround. Notification Badge's pulse ring uses this to fade
+the *same* color the badge itself resolved to, instead of a second, independently
+picked (and separately contrast-checked) color.
 
 **Responsive columns via `App.SizeBreakpoints`.** A real responsive grid reads the
 host app's own `App.SizeBreakpoints` (Mobile/Tablet/Desktop widths), not a hardcoded
@@ -255,6 +305,66 @@ paraphrase, when documenting a component's own Examples):
    SparklineData: ""})`. The component itself never contains a SharePoint/Dataverse
    reference — only the screen-level binding does, which is exactly what makes the
    same component reusable across totally different data sources.
+
+## Adding a new component to this catalog: the checklist
+
+In this order, every time:
+
+1. **`componentLibrary.js`'s `raw` array** — add `["Title", "Category", "Verified" |
+   "Original"]` (see Maturity below). This alone makes the component appear in the
+   catalog and route.
+2. **`componentLibrary.js`'s `overrides` object** — add a matching key (kebab-case of
+   the title) with all seven sections: `summary`, `properties`, `events`,
+   `architecture`, `examples`, `accessibility`, `limitations`, plus `variants` (the
+   Detail page's Variants tab reads this). **A `raw` entry with no matching
+   `overrides` key does not error** — it silently falls back to
+   `baseByCategory[category]`'s generic content and `GENERIC_VARIANTS`, and `npm run
+   test:yaml` has no way to catch this since the fallback content is still
+   schema-valid. Check this by eye every time: open the new component's Detail page
+   and confirm the Properties/Examples/etc. actually describe *this* component, not
+   generic placeholder text.
+3. **`sampleFormulas.js`** — one entry per `Table`/`Record`/`Color`-typed property,
+   keyed `"Title::PropName"`, a real structural literal (see Real syntax rules
+   above) — this is what `buildComponentYaml` substitutes into the generated
+   `Default:`.
+4. **`componentChildren.js`** — if the component is getting a real `Children:` tree
+   (not just a Properties/Events contract), write the builder function and add it to
+   `CHILDREN_BUILDERS` at the bottom of the file. This registration is what makes
+   `npm run test:yaml` actually recurse into and validate the `Children:` tree;
+   without it, the tree is invisible to the validator even though the rest of the
+   component still gets schema-checked.
+5. **`ComponentPreview.jsx`** — add a bespoke `if (item.title === "Title")` block
+   rendering a real, illustrative mockup, plus one render branch per entry in the
+   component's own `variants` list (the Detail page's Variants tab passes each
+   variant name through this same component). A component with no bespoke block
+   here falls through to the generic fallback mockup at the bottom of the file —
+   visually obvious on the page, unlike the silent `overrides` fallback above.
+6. **The shared `yamlStatus` string** (used by every `CHILDREN_BUILDERS` component) —
+   update its wording only if the new component adds a genuinely new technique (e.g.
+   "plus Timer for an animated pulse") worth calling out; read what's already there
+   first, since it's shared across every `CHILDREN_BUILDERS` component, not owned by
+   any single one of them.
+7. **Run the full verification discipline below** before calling the component done
+   — a new component is exactly the case that discipline exists for.
+
+## Maturity: "Verified" vs "Original"
+
+- **`Verified`** — the component's contract (its properties, and its `Children:`
+  tree if it has one) has been cross-checked against something real: a real
+  reference implementation the user shared, real GitHub `.pa.yaml` examples for
+  every control/property involved, or a real Studio paste test. KPI Card and
+  Notification Badge are both `Verified` — KPI Card against the user's own
+  "enterprise" reference, Notification Badge against the Timer/Image research plus
+  the user's own reference Badge YAML.
+- **`Original`** — a design specification this catalog invented itself, with no real
+  external reference to check the *shape* against, even when every individual
+  property/control it uses is independently `CONFIRMED`/`STRONG EVIDENCE`. Most of
+  the catalog is currently `Original` — a real, honest label, not a lesser one; it
+  means "no real prior art was cross-checked," not "built less carefully."
+- Don't default to `Verified` just because the YAML passes `test:yaml` — that only
+  proves syntax, not that the shape or contract was checked against anything real
+  (see failure mode 3 above). Maturity answers "was this checked against something
+  outside this file," a question a passing test suite doesn't answer on its own.
 
 ## Verification discipline (non-negotiable, in this order)
 
