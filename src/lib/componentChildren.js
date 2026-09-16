@@ -1384,7 +1384,7 @@ function activityTimeline(pascal) {
   const isCompact = `${self}.Style = "Compact"`;
   const sorted = `SortByColumns(AddColumns(${self}.Items, "IsPinned", CountRows(Filter(${self}.PinnedIds, Id = Title)) > 0), "IsPinned", SortOrder.Descending, "Timestamp", If(${self}.SortDirection = "Newest first", SortOrder.Descending, SortOrder.Ascending))`;
   const shown = `FirstN(${sorted}, ${self}.RecordsToLoad)`;
-  const iconColor = `Coalesce(LookUp(${self}.IconMap, Category = ThisItem.Category).Color, RGBA(100, 116, 139, 1))`;
+  const iconColor = `ColorValue(Coalesce(LookUp(${self}.IconMap, Category = ThisItem.Category).Color, "#64748B"))`;
 
   const cntEntry = {
     name: "cntEntry",
@@ -1455,6 +1455,112 @@ function activityTimeline(pascal) {
   };
 }
 
+/* Calendar — Month view only (see componentLibrary.js's own disclosed
+   Limitations for the real scope cut: Week/Agenda/Compact mini all
+   render this same grid today rather than their own distinct layout).
+   A real 42-cell (6-week) grid computed from FocusDate: gridStart
+   backs up from the 1st of the month to Config.FirstDayOfWeek (0 =
+   Sunday .. 6 = Saturday) using Weekday(monthStart, StartOfWeek.Sunday)
+   and Mod arithmetic, then each of the 42 Gallery cells (bound to
+   Sequence(42), read via ThisItem.Value the same way Risk Matrix's own
+   Sequence-bound grid is) derives its own date with
+   DateAdd(gridStart, ThisItem.Value - 1, TimeUnit.Days) — a real
+   generated grid, never a hardcoded 5x7 layout.
+
+   Never a nested Gallery-in-Gallery for a day's chips — this
+   component's own architecture already rules that out ("never
+   nested"), the same real reason Accordion List's own comment gives
+   (nested flexible-height galleries fight Power Apps' own height
+   measuring). Instead each day cell gets 3 fixed, individually
+   positioned chip slots (Index(dayEvents, N)), each one additionally
+   gated on N <= Config.ChipSlots so a host can hide down from that
+   built-in ceiling — a real, disclosed constraint of any fixed
+   Children tree, not a bug.
+
+   Month/weekday names use Text()'s own "mmmm yyyy"/"ddd" custom format
+   codes with a real Language argument — core, safe, and does the
+   actual per-language generation this component's own architecture
+   promises, rather than a hand-rolled month-name lookup table. */
+function calendar(pascal) {
+  const self = `cmp${pascal}`;
+  const lang = `Coalesce(${self}.Language, Language())`;
+  const monthStart = `Date(Year(${self}.FocusDate), Month(${self}.FocusDate), 1)`;
+  const gridStart = `DateAdd(${monthStart}, -Mod(Weekday(${monthStart}, StartOfWeek.Sunday) - 1 - ${self}.Config.FirstDayOfWeek + 7, 7), TimeUnit.Days)`;
+  const cellDate = `DateAdd(${gridStart}, ThisItem.Value - 1, TimeUnit.Days)`;
+  const dayEvents = `Filter(${self}.Events, Date = ${cellDate})`;
+  const isCurrentMonth = `Month(${cellDate}) = Month(${self}.FocusDate)`;
+  const isToday = `${cellDate} = Today()`;
+  const holidayMatch = `LookUp(${self}.Holidays, Date = ${cellDate})`;
+
+  const chipSlot = n => ({
+    name: `imgChip${n}`,
+    control: "Image@2.2.3",
+    properties: {
+      AltText: `Index(${dayEvents}, ${n}).Title`,
+      Height: "14",
+      Image: `With({ev: Index(${dayEvents}, ${n}), ch: LookUp(${self}.Channels, Key = Index(${dayEvents}, ${n}).Channel)}, "data:image/svg+xml;utf8," & EncodeUrl("<svg xmlns='http://www.w3.org/2000/svg' width='100' height='14'><rect width='100' height='14' rx='3' fill='" & Coalesce(ch.Color, "#64748B") & "'/><text x='4' y='10' font-size='8' fill='white'>" & Left(ev.Title, 10) & "</text></svg>"))`.replace(/\s*\n\s*/g, " "),
+      OnSelect: `${self}.OnSelectEvent(Index(${dayEvents}, ${n}))`,
+      Visible: `And(CountRows(${dayEvents}) >= ${n}, ${n} <= ${self}.Config.ChipSlots)`,
+      Width: "Parent.Width - 8",
+      X: "4",
+      Y: `16 + (${n} - 1) * 15`
+    }
+  });
+
+  const cntDayCell = {
+    name: "cntDayCell",
+    control: "GroupContainer@1.5.0",
+    variant: "ManualLayout",
+    properties: {
+      BorderColor: "RGBA(226, 232, 240, 1)", BorderStyle: "BorderStyle.Solid", BorderThickness: "1",
+      Fill: `If(${self}.Config.ShowHolidayTint, If(!IsBlank(${holidayMatch}), "#FFF3E0", If(${isToday}, "#EBF5FF", If(${isCurrentMonth}, "Color.White", "#F8FAFC"))), If(${isToday}, "#EBF5FF", If(${isCurrentMonth}, "Color.White", "#F8FAFC")))`,
+      Height: `${self}.Config.RowHeight`,
+      Width: "76"
+    },
+    children: [
+      { name: "lblDayNumber", control: "ModernText@1.0.0", properties: { Color: `If(${isCurrentMonth}, "RGBA(23, 32, 27, 1)", "RGBA(148, 163, 184, 1)")`, FontWeight: `If(${isToday}, "FontWeight.Bold", "FontWeight.Normal")`, Height: "14", Size: "9", Text: `Text(Day(${cellDate}))`, Width: "Parent.Width - 8", X: "4", Y: "2" } },
+      { name: "lblHolidayName", control: "ModernText@1.0.0", properties: { Color: "RGBA(191, 54, 12, 1)", Height: "10", Size: "6", Text: `${holidayMatch}.Name`, Visible: `And(${self}.Config.ShowHolidayTint, !IsBlank(${holidayMatch}))`, Width: "Parent.Width - 8", X: "4", Y: "14" } },
+      chipSlot(1), chipSlot(2), chipSlot(3),
+      { name: "lblOverflow", control: "ModernText@1.0.0", properties: { Color: "RGBA(100, 116, 139, 1)", Height: "12", Size: "7", Text: `"+" & (CountRows(${dayEvents}) - ${self}.Config.ChipSlots) & " more"`, Visible: `CountRows(${dayEvents}) > ${self}.Config.ChipSlots`, Width: "Parent.Width - 8", X: "4", Y: "61" } },
+      { name: "btnDayTap", control: "Classic/Button@2.2.0", properties: { BorderStyle: "BorderStyle.None", Fill: "Color.Transparent", Height: "Parent.Height", OnSelect: `${self}.OnSelectDay(${cellDate})`, Text: '""', Width: "Parent.Width" } }
+    ]
+  };
+
+  const galGrid = {
+    name: "galGrid",
+    control: "Gallery@2.15.0",
+    variant: "Vertical",
+    properties: { Height: `${self}.Config.RowHeight * 6`, Items: "Sequence(42)", TemplateSize: `${self}.Config.RowHeight`, Width: "532", WrapCount: "7", X: "0", Y: "56" },
+    children: [cntDayCell]
+  };
+
+  const dayHeaderSlot = n => ({
+    name: `lblWeekday${n}`,
+    control: "Label@2.5.1",
+    properties: { Align: "Align.Center", Color: "RGBA(100, 116, 139, 1)", FontWeight: "FontWeight.Bold", Height: "18", Size: "9", Text: `Text(DateAdd(${gridStart}, ${n} - 1, TimeUnit.Days), "ddd", ${lang})`, Width: "76", X: `(${n} - 1) * 76`, Y: "36" }
+  });
+
+  const cntRoot = {
+    name: "cntRoot",
+    control: "GroupContainer@1.5.0",
+    variant: "ManualLayout",
+    properties: { BorderStyle: "BorderStyle.None", Fill: "Color.White", Height: "Parent.Height", Width: "Parent.Width" },
+    children: [
+      { name: "lblMonthTitle", control: "ModernText@1.0.0", properties: { FontWeight: "FontWeight.Bold", Height: "24", Size: "16", Text: `Text(${monthStart}, "mmmm yyyy", ${lang})`, Width: "220", X: "20", Y: "8" } },
+      { name: "btnPrev", control: "Classic/Button@2.2.0", properties: { BorderStyle: "BorderStyle.None", Fill: "RGBA(241, 245, 249, 1)", FontWeight: "FontWeight.Bold", Height: "28", OnSelect: `${self}.OnRangeChange(DateAdd(${monthStart}, -1, TimeUnit.Months), DateAdd(${monthStart}, -1, TimeUnit.Days))`, RadiusBottomLeft: "14", RadiusBottomRight: "14", RadiusTopLeft: "14", RadiusTopRight: "14", Size: "12", Text: '"<"', Width: "28", X: "Parent.Width - 96", Y: "8" } },
+      { name: "btnToday", control: "Classic/Button@2.2.0", properties: { BorderStyle: "BorderStyle.None", Fill: "RGBA(241, 245, 249, 1)", FontWeight: "FontWeight.Bold", Height: "28", OnSelect: `${self}.OnRangeChange(Date(Year(Today()), Month(Today()), 1), DateAdd(DateAdd(Date(Year(Today()), Month(Today()), 1), 1, TimeUnit.Months), -1, TimeUnit.Days))`, Size: "9", Text: '"Today"', Width: "44", X: "Parent.Width - 64", Y: "8" } },
+      { name: "btnNext", control: "Classic/Button@2.2.0", properties: { BorderStyle: "BorderStyle.None", Fill: "RGBA(241, 245, 249, 1)", FontWeight: "FontWeight.Bold", Height: "28", OnSelect: `${self}.OnRangeChange(DateAdd(${monthStart}, 1, TimeUnit.Months), DateAdd(DateAdd(${monthStart}, 2, TimeUnit.Months), -1, TimeUnit.Days))`, RadiusBottomLeft: "14", RadiusBottomRight: "14", RadiusTopLeft: "14", RadiusTopRight: "14", Size: "12", Text: '">"', Width: "28", X: "Parent.Width - 32", Y: "8" } },
+      dayHeaderSlot(1), dayHeaderSlot(2), dayHeaderSlot(3), dayHeaderSlot(4), dayHeaderSlot(5), dayHeaderSlot(6), dayHeaderSlot(7),
+      galGrid
+    ]
+  };
+
+  return {
+    properties: { Height: `56 + ${self}.Config.RowHeight * 6`, Width: "532" },
+    children: [cntRoot]
+  };
+}
+
 export const CHILDREN_BUILDERS = {
   "KPI Card": kpiCard,
   "Notification Badge": notificationBadge,
@@ -1467,5 +1573,6 @@ export const CHILDREN_BUILDERS = {
   "Milestone Tracker": milestoneTracker,
   "Decision Log": decisionLog,
   "Deadline Tracker": deadlineTracker,
-  "Activity Timeline": activityTimeline
+  "Activity Timeline": activityTimeline,
+  "Calendar": calendar
 };
