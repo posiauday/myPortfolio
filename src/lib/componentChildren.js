@@ -2389,6 +2389,243 @@ function routeMap(pascal) {
   };
 }
 
+/* Loading Screen — HasError is a distinct sibling container from the
+   normal/spinner state (the same IsLoading/HasLoadError-are-distinct
+   pattern Activity Timeline's own Children tree already uses), Style
+   switches between a real Progress-driven bar and an indeterminate
+   Timer-driven pulsing dot cluster for Spinner, plus a Skeleton state
+   of plain placeholder bars. LogoUrl set renders the Branded-splash
+   look on top of whichever Style is active, matching this component's
+   own note that Branded splash isn't a separate Style value. */
+function loadingScreen(pascal) {
+  const self = `cmp${pascal}`;
+  const isSpinner = `${self}.Style = "Spinner"`;
+  const isSkeleton = `${self}.Style = "Skeleton"`;
+
+  const cntNormal = {
+    name: "cntNormal",
+    control: "GroupContainer@1.5.0",
+    variant: "ManualLayout",
+    properties: { BorderStyle: "BorderStyle.None", Fill: "Color.White", Height: "Parent.Height", Visible: `!${self}.HasError`, Width: "Parent.Width" },
+    children: [
+      { name: "imgLogo", control: "Image@2.2.3", properties: { AltText: '"Logo"', Height: "48", Image: `${self}.LogoUrl`, Visible: `${self}.LogoUrl <> ""`, Width: "48", X: "Parent.Width / 2 - 24", Y: "40" } },
+      { name: "lblTitle", control: "ModernText@1.0.0", properties: { Align: "Align.Center", FontWeight: "FontWeight.Bold", Height: "24", Size: "14", Text: `${self}.Title`, Width: "Parent.Width", X: "0", Y: `If(${self}.LogoUrl <> "", 100, 60)` } },
+      {
+        name: "cntProgressTrack", control: "GroupContainer@1.5.0", variant: "ManualLayout",
+        properties: { BorderStyle: "BorderStyle.None", Fill: "RGBA(226, 232, 240, 1)", Height: "6", RadiusBottomLeft: "3", RadiusBottomRight: "3", RadiusTopLeft: "3", RadiusTopRight: "3", Visible: `!${isSpinner}`, Width: "Parent.Width - 80", X: "40", Y: `If(${self}.LogoUrl <> "", 132, 92)` },
+        children: [{ name: "cntProgressFill", control: "GroupContainer@1.5.0", variant: "ManualLayout", properties: { BorderStyle: "BorderStyle.None", Fill: "RGBA(22, 131, 38, 1)", Height: "6", RadiusBottomLeft: "3", RadiusBottomRight: "3", RadiusTopLeft: "3", RadiusTopRight: "3", Width: `Min(1, ${self}.Progress / 100) * Parent.Width` } }]
+      },
+      { name: "tmrPulse", control: "Timer@2.1.0", properties: { AutoPause: "false", AutoStart: isSpinner, Duration: "900", Height: "1", Repeat: "true", Start: isSpinner, Visible: "false", Width: "1" } },
+      { name: "btnPulseDot", control: "Classic/Button@2.2.0", properties: { BorderStyle: "BorderStyle.None", Fill: "RGBA(22, 131, 38, 1)", Height: "10", Opacity: "0.3 + 0.7 * Abs(1 - 2 * (tmrPulse.Value / tmrPulse.Duration))", RadiusBottomLeft: "5", RadiusBottomRight: "5", RadiusTopLeft: "5", RadiusTopRight: "5", Text: '""', Visible: isSpinner, Width: "10", X: "Parent.Width / 2 - 5", Y: `If(${self}.LogoUrl <> "", 132, 92)` } },
+      { name: "lblProgressPct", control: "ModernText@1.0.0", properties: { Align: "Align.Center", Color: "RGBA(100, 116, 139, 1)", Height: "16", Size: "10", Text: `Text(${self}.Progress) & "%" & If(${self}.EstimatedSecondsRemaining > 0, " - About " & ${self}.EstimatedSecondsRemaining & "s left", "")`, Visible: `!${isSpinner}`, Width: "Parent.Width", X: "0", Y: `If(${self}.LogoUrl <> "", 148, 108)` } },
+      { name: "btnCancel", control: "Classic/Button@2.2.0", properties: { BorderColor: "RGBA(226, 232, 240, 1)", BorderStyle: "BorderStyle.Solid", BorderThickness: "1", Fill: "Color.White", FontWeight: "FontWeight.Bold", Height: "30", OnSelect: `${self}.OnCancel()`, RadiusBottomLeft: "15", RadiusBottomRight: "15", RadiusTopLeft: "15", RadiusTopRight: "15", Size: "10", Text: '"Cancel"', Visible: `${self}.CanCancel`, Width: "80", X: "Parent.Width / 2 - 40", Y: "180" } }
+    ]
+  };
+
+  const skeletonBar = (w, y) => ({ name: `btnSkeleton${y}`, control: "Classic/Button@2.2.0", properties: { BorderStyle: "BorderStyle.None", Fill: "RGBA(226, 232, 240, 1)", Height: "14", RadiusBottomLeft: "4", RadiusBottomRight: "4", RadiusTopLeft: "4", RadiusTopRight: "4", Text: '""', Visible: isSkeleton, Width: w, X: "40", Y: y } });
+
+  const cntError = {
+    name: "cntError",
+    control: "GroupContainer@1.5.0",
+    variant: "ManualLayout",
+    properties: { BorderStyle: "BorderStyle.None", Fill: "Color.White", Height: "Parent.Height", Visible: `${self}.HasError`, Width: "Parent.Width" },
+    children: [
+      { name: "lblErrorMessage", control: "ModernText@1.0.0", properties: { Align: "Align.Center", Color: "RGBA(198, 40, 40, 1)", FontWeight: "FontWeight.Bold", Height: "24", Size: "12", Text: `Coalesce(If(${self}.ErrorMessage = "", Blank(), ${self}.ErrorMessage), "Something went wrong")`, Width: "Parent.Width - 40", X: "20", Y: "90" } },
+      { name: "btnRetry", control: "Classic/Button@2.2.0", properties: { BorderStyle: "BorderStyle.None", Color: "Color.White", Fill: "RGBA(22, 131, 38, 1)", FontWeight: "FontWeight.Bold", Height: "32", OnSelect: `${self}.OnRetry()`, RadiusBottomLeft: "16", RadiusBottomRight: "16", RadiusTopLeft: "16", RadiusTopRight: "16", Size: "10", Text: '"Retry"', Width: "88", X: "Parent.Width / 2 - 44", Y: "130" } }
+    ]
+  };
+
+  return {
+    properties: { Fill: "Color.White", Height: "240", Width: "320" },
+    children: [cntNormal, skeletonBar(200, 100), skeletonBar(240, 124), skeletonBar(160, 148), cntError]
+  };
+}
+
+/* Range Slider — no verified real modern Slider control to wire true
+   drag-the-handle interaction up to (no CONFIRMED/STRONG-EVIDENCE
+   control researched for this pass), so position sets via tap across
+   a real fixed set of 10 discrete track segments instead of a
+   continuous drag gesture, disclosed in componentLibrary.js's own
+   Limitations. Zones' own Color column is a native Color value in
+   this catalog's sample data, used directly. OnThresholdCross reuses
+   the same "only fire when the computed thing actually changed from
+   the last render" idea Deadline Tracker's own OnApproachingDue and
+   Program Scorecard's own tick logic already establish, compared here
+   between adjacent tap segments rather than a stored previous value
+   this file has no real place to keep between renders. */
+function rangeSlider(pascal) {
+  const self = `cmp${pascal}`;
+  const isVertical = `${self}.LayoutDirection = "Vertical"`;
+  const trackLen = `Switch(${self}.Size, "Small", 160, "Large", 280, 220)`;
+  const segments = 10;
+
+  const zoneColorAt = valExpr => `LookUp(SortByColumns(${self}.Zones, "UpTo", SortOrder.Ascending), UpTo >= ${valExpr}).Color`;
+  const zoneLabelAt = valExpr => `Coalesce(LookUp(SortByColumns(${self}.Zones, "UpTo", SortOrder.Ascending), UpTo >= ${valExpr}).Label, Last(${self}.Zones).Label)`;
+
+  {
+    const fillFrac = `Min(1, (${self}.Default - ${self}.Min) / Max(${self}.Max - ${self}.Min, 1))`;
+    const segTemplateSize = `Round(${trackLen} / ${segments}, 0)`;
+
+    const galSegments = {
+      name: "galSegments",
+      control: "Gallery@2.15.0",
+      variant: "Vertical",
+      properties: {
+        Height: isVertical ? trackLen : "6",
+        Items: `Sequence(${segments})`,
+        TemplateSize: segTemplateSize,
+        Width: isVertical ? "6" : trackLen,
+        WrapCount: isVertical ? "1" : String(segments),
+        X: "0", Y: "0"
+      },
+      children: [
+        {
+          name: "btnSegment",
+          control: "Classic/Button@2.2.0",
+          properties: {
+            BorderStyle: "BorderStyle.None",
+            Fill: zoneColorAt(`${self}.Min + (ThisItem.Value / ${segments}) * (${self}.Max - ${self}.Min)`),
+            Height: "Self.Height",
+            OnSelect: `${self}.OnChange(Round(${self}.Min + (ThisItem.Value / ${segments}) * (${self}.Max - ${self}.Min), 0)); If(${zoneLabelAt(`${self}.Min + (ThisItem.Value / ${segments}) * (${self}.Max - ${self}.Min)`)} <> ${zoneLabelAt(`${self}.Default`)}, ${self}.OnThresholdCross(${zoneLabelAt(`${self}.Min + (ThisItem.Value / ${segments}) * (${self}.Max - ${self}.Min)`)}))`,
+            Width: "Self.Width"
+          }
+        }
+      ]
+    };
+
+    const cntHandle = { name: "cntHandle", control: "GroupContainer@1.5.0", variant: "ManualLayout", properties: {
+      BorderColor: "Color.White", BorderStyle: "BorderStyle.Solid", BorderThickness: "2",
+      Fill: zoneColorAt(`${self}.Default`),
+      Height: "16", RadiusBottomLeft: "8", RadiusBottomRight: "8", RadiusTopLeft: "8", RadiusTopRight: "8",
+      Width: "16",
+      X: isVertical ? "-5" : `${fillFrac} * ${trackLen} - 8`,
+      Y: isVertical ? `${fillFrac} * ${trackLen} - 8` : "-5"
+    } };
+
+    const cntRoot = {
+      name: "cntRoot",
+      control: "GroupContainer@1.5.0",
+      variant: "ManualLayout",
+      properties: { BorderStyle: "BorderStyle.None", Fill: "Color.Transparent", Height: "Parent.Height", Width: "Parent.Width" },
+      children: [
+        { name: "lblLabel", control: "ModernText@1.0.0", properties: { FontWeight: "FontWeight.Bold", Height: "18", Size: "11", Text: `${self}.Label`, Width: "Parent.Width - 60", X: "0", Y: "0" } },
+        { name: "lblValueReadout", control: "ModernText@1.0.0", properties: { Color: zoneColorAt(`${self}.Default`), FontWeight: "FontWeight.Bold", Height: "18", Size: "11", Text: `Text(${self}.Default)`, Visible: `${self}.ShowValue`, Width: "60", X: "Parent.Width - 60", Y: "0" } },
+        { name: "cntTrackArea", control: "GroupContainer@1.5.0", variant: "ManualLayout", properties: { BorderStyle: "BorderStyle.None", Fill: "Color.Transparent", Height: isVertical ? trackLen : "16", Width: isVertical ? "16" : trackLen, X: "4", Y: "24" },
+          children: [galSegments, cntHandle]
+        },
+        { name: "lblZoneName", control: "ModernText@1.0.0", properties: { Color: zoneColorAt(`${self}.Default`), Height: "16", Size: "9", Text: zoneLabelAt(`${self}.Default`), Width: "Parent.Width", X: "0", Y: isVertical ? `24 + ${trackLen} + 8` : "48" } }
+      ]
+    };
+
+    return {
+      properties: { Fill: "Color.Transparent", Height: isVertical ? `56 + ${trackLen}` : "80", Width: isVertical ? "160" : `${trackLen} + 24` },
+      children: [cntRoot],
+      eventParameters: {
+        OnChange: [{ name: "Value", dataType: "Number", defaultFormula: "0" }],
+        OnThresholdCross: [{ name: "ZoneLabel", dataType: "Text", defaultFormula: '""' }]
+      }
+    };
+  }
+}
+
+/* Detail Panel — modeled directly on the real Microsoft Creator Kit
+   Panel control per this component's own architecture note. Visible
+   is host-managed (never internal), matching that real reference's
+   own documented pattern. ContentX/Y/Width/Height render as a real,
+   visibly-bordered placeholder region at those exact coordinates
+   rather than pretending to host arbitrary content — a host's own
+   unbound container is what actually renders there, exactly as this
+   component's own Limitations already state. OnButtonSelect carries
+   its payload as real event parameters instead of a read-only
+   SelectedButton record — see the skill file's eventParameters note,
+   the same fix already applied to Accordion List and Range Slider. */
+function detailPanel(pascal) {
+  const self = `cmp${pascal}`;
+  const isLeft = `${self}.Position = "Left"`;
+
+  const buttonSlot = n => ({
+    name: `btnAction${n}`,
+    control: "Classic/Button@2.2.0",
+    properties: {
+      BorderColor: `If(Index(${self}.Buttons, ${n}).ButtonType = "Primary", Color.Transparent, RGBA(226, 232, 240, 1))`,
+      BorderStyle: "BorderStyle.Solid", BorderThickness: "1",
+      Color: `If(Index(${self}.Buttons, ${n}).ButtonType = "Primary", Color.White, RGBA(71, 85, 105, 1))`,
+      Fill: `If(Index(${self}.Buttons, ${n}).ButtonType = "Primary", RGBA(22, 131, 38, 1), Color.White)`,
+      FontWeight: "FontWeight.Bold",
+      Height: "34",
+      OnSelect: `${self}.OnButtonSelect(Index(${self}.Buttons, ${n}).Label, Index(${self}.Buttons, ${n}).ButtonType)`,
+      RadiusBottomLeft: "17", RadiusBottomRight: "17", RadiusTopLeft: "17", RadiusTopRight: "17",
+      Size: "11",
+      Text: `Index(${self}.Buttons, ${n}).Label`,
+      Visible: `CountRows(${self}.Buttons) >= ${n}`,
+      Width: "84",
+      X: `Parent.Width - ${n} * 92`
+    }
+  });
+
+  const cntBackdrop = { name: "cntBackdrop", control: "GroupContainer@1.5.0", variant: "ManualLayout", properties: { BorderStyle: "BorderStyle.None", Fill: `${self}.OverlayColor`, Height: "Parent.Height", Visible: `${self}.Visible`, Width: "Parent.Width" },
+    children: [{ name: "btnLightDismiss", control: "Classic/Button@2.2.0", properties: { BorderStyle: "BorderStyle.None", Fill: "Color.Transparent", Height: "Parent.Height", OnSelect: `If(${self}.IsLightDismiss, ${self}.OnCloseSelect())`, Text: '""', Width: "Parent.Width" } }]
+  };
+
+  const cntPanel = {
+    name: "cntPanel",
+    control: "GroupContainer@1.5.0",
+    variant: "ManualLayout",
+    properties: { BorderStyle: "BorderStyle.None", DropShadow: "DropShadow.Regular", Fill: "Color.White", Height: "Parent.Height", Visible: `${self}.Visible`, Width: `${self}.DialogWidth`, X: isLeft ? "0" : `Parent.Width - ${self}.DialogWidth` },
+    children: [
+      { name: "lblTitle", control: "ModernText@1.0.0", properties: { FontWeight: "FontWeight.Bold", Height: "24", Size: "16", Text: `${self}.Title`, Width: "Parent.Width - 64", X: "20", Y: "18" } },
+      { name: "lblSubtitle", control: "ModernText@1.0.0", properties: { Color: "RGBA(100, 116, 139, 1)", Height: "16", Size: "10", Text: `${self}.Subtitle`, Visible: `${self}.Subtitle <> ""`, Width: "Parent.Width - 64", X: "20", Y: "42" } },
+      { name: "btnClose", control: "Classic/Button@2.2.0", properties: { BorderStyle: "BorderStyle.None", Color: "RGBA(100, 116, 139, 1)", Fill: "Color.Transparent", FontWeight: "FontWeight.Bold", Height: "32", OnSelect: `${self}.OnCloseSelect()`, Size: "14", Text: '"x"', Width: "32", X: "Parent.Width - 44", Y: "12" } },
+      { name: "cntContentArea", control: "GroupContainer@1.5.0", variant: "ManualLayout", properties: { BorderColor: "RGBA(226, 232, 240, 1)", BorderStyle: "BorderStyle.Dashed", BorderThickness: "1", Fill: "Color.Transparent", Height: `${self}.ContentHeight`, Width: `${self}.ContentWidth`, X: `${self}.ContentX`, Y: `${self}.ContentY` } },
+      buttonSlot(1), buttonSlot(2), buttonSlot(3)
+    ]
+  };
+
+  return {
+    properties: { Fill: "Color.Transparent", Height: "560", Width: "800" },
+    children: [cntBackdrop, cntPanel],
+    eventParameters: {
+      OnButtonSelect: [{ name: "Label", dataType: "Text", defaultFormula: '""' }, { name: "ButtonType", dataType: "Text", defaultFormula: '"Standard"' }]
+    }
+  };
+}
+
+/* Toast — a real Timer drives AutoDismiss/Timeout, firing OnDismiss
+   with "auto" the same Timer.Value/Duration pattern this file uses
+   throughout (Notification Badge's pulse, Responsive Line Chart's
+   fade-in). DismissReason carries as a real OnDismiss event parameter
+   instead of a read-only property — see the skill file's
+   eventParameters note. */
+function toast(pascal) {
+  const self = `cmp${pascal}`;
+  const isTop = `${self}.Position = "Top"`;
+  const toneColor = `Switch(${self}.NotificationType, "Error", "#C62828", "Success", "#2E7D32", "Warning", "#BF360C", "#1565C0")`;
+
+  const tmrAuto = { name: "tmrAutoDismiss", control: "Timer@2.1.0", properties: { AutoPause: "false", AutoStart: `${self}.AutoDismiss`, Duration: `${self}.Timeout`, Height: "1", OnTimerEnd: `${self}.OnDismiss("auto")`, Repeat: "false", Start: `${self}.AutoDismiss`, Visible: "false", Width: "1" } };
+
+  const cntRoot = {
+    name: "cntRoot",
+    control: "GroupContainer@1.5.0",
+    variant: "ManualLayout",
+    properties: { BorderStyle: "BorderStyle.None", DropShadow: "DropShadow.Regular", Fill: "Color.White", Height: "Parent.Height", RadiusBottomLeft: "12", RadiusBottomRight: "12", RadiusTopLeft: "12", RadiusTopRight: "12", Width: "Parent.Width" },
+    children: [
+      { name: "cntToneBar", control: "GroupContainer@1.5.0", variant: "ManualLayout", properties: { BorderStyle: "BorderStyle.None", Fill: toneColor, Height: "Parent.Height", RadiusBottomLeft: "12", RadiusBottomRight: "0", RadiusTopLeft: "12", RadiusTopRight: "0", Width: "4" } },
+      { name: "lblMessage", control: "ModernText@1.0.0", properties: { AutoHeight: "false", FontWeight: "FontWeight.Bold", Height: "Parent.Height", Size: "10", Text: `${self}.Message`, Width: "Parent.Width - 96", Wrap: "true", X: "16", Y: "0" } },
+      { name: "btnAction", control: "Classic/Button@2.2.0", properties: { BorderStyle: "BorderStyle.None", Color: toneColor, Fill: "Color.Transparent", FontWeight: "FontWeight.Bold", Height: "Parent.Height", OnSelect: `${self}.OnAction(); ${self}.OnDismiss("action")`, Size: "10", Text: `${self}.ActionLabel`, Visible: `${self}.ActionLabel <> ""`, Width: "48", X: "Parent.Width - 76" } },
+      { name: "btnManualDismiss", control: "Classic/Button@2.2.0", properties: { BorderStyle: "BorderStyle.None", Color: "RGBA(100, 116, 139, 1)", Fill: "Color.Transparent", FontWeight: "FontWeight.Bold", Height: "Parent.Height", OnSelect: `${self}.OnDismiss("manual")`, Size: "12", Text: '"x"', Width: "28", X: "Parent.Width - 28" } },
+      tmrAuto
+    ]
+  };
+
+  return {
+    properties: { Fill: "Color.Transparent", Height: "48", Width: "320", Y: isTop ? "0" : "Parent.Height - 48" },
+    children: [cntRoot],
+    eventParameters: {
+      OnDismiss: [{ name: "Reason", dataType: "Text", defaultFormula: '"auto"' }]
+    }
+  };
+}
+
 export const CHILDREN_BUILDERS = {
   "KPI Card": kpiCard,
   "Notification Badge": notificationBadge,
@@ -2414,5 +2651,9 @@ export const CHILDREN_BUILDERS = {
   "Mega Menu": megaMenu,
   "Approval Journey": approvalJourney,
   "Process Stepper": processStepper,
-  "Route Map": routeMap
+  "Route Map": routeMap,
+  "Loading Screen": loadingScreen,
+  "Range Slider": rangeSlider,
+  "Detail Panel": detailPanel,
+  "Toast": toast
 };

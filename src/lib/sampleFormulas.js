@@ -90,6 +90,5 @@ export const SAMPLE_FORMULAS = {
   "Route Map::Connections": "Table({From:1,To:2},{From:2,To:3},{From:3,To:4},{From:3,To:5},{From:4,To:6},{From:5,To:6})",
   "Range Slider::Zones": 'Table({Label:"On track",UpTo:70,Color:RGBA(16,124,16,1)},{Label:"Watch",UpTo:90,Color:RGBA(202,140,16,1)},{Label:"Over",UpTo:100,Color:RGBA(197,58,58,1)})',
   "Detail Panel::Buttons": 'Table({Label:"Cancel",ButtonType:"Standard"},{Label:"Save",ButtonType:"Primary"})',
-  "Detail Panel::OverlayColor": "RGBA(0,0,0,0.4)",
-  "Detail Panel::SelectedButton": "{Label:Blank(),ButtonType:Blank()}"
+  "Detail Panel::OverlayColor": "RGBA(0,0,0,0.4)"
 };
