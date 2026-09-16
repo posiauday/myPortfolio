@@ -148,6 +148,39 @@ immediately, in the same commit as the fix.
 
 ## Real syntax rules
 
+- **Never wrap a formula reference or enum value in JS string quotes when it's a
+  *branch* inside a larger template-literal formula** — this is a real bug this
+  catalog shipped 56 times across 8 components (Calendar, Email Composer, Sidebar,
+  Responsive Breadcrumbs, Milestone Tracker, Dialog, Approval Journey, Route Map)
+  before it was caught, and none of `test:yaml`/lint/build caught any of them,
+  since all three only check syntax, never Power Fx semantics. The bug:
+  `` `If(${cond}, "RGBA(23, 32, 27, 1)", "RGBA(148, 163, 184, 1)")` `` — writing a
+  JS template literal for the *whole* property and then, inside it, wrapping a
+  *branch* like `RGBA(...)`, `Parent.Width - 28`, or `FontWeight.Bold` in literal
+  `"..."` characters. Those quote characters survive into the generated Power Fx
+  text verbatim, turning a real function call or enum reference into an inert
+  **text literal** — `Fill: =If(cond, "RGBA(23, 32, 27, 1)", ...)` sets the color
+  to the 20-character string "RGBA(23, 32, 27, 1)", not the color itself, and a
+  `Width`/`Height`/`X`/`Y` branch like `"Parent.Width - 28"` becomes literal text
+  mixed with a sibling branch that's a real Number — a genuine Power Fx type
+  error no amount of YAML-level checking catches, only real semantic reasoning
+  about what the generated formula text actually says. The fix is mechanical:
+  a value that's a bare standalone JS string (`Fill: "RGBA(23, 32, 27, 1)"`,
+  `Width: "Parent.Width"`) is correct and common throughout this file — the bug
+  is specific to that same fragment appearing *inside* a template literal that
+  already contains `${...}` interpolation, where any literal `"` around it needs
+  to be removed so the fragment is bare Power Fx syntax, not a text literal:
+  `` `If(${cond}, RGBA(23, 32, 27, 1), RGBA(148, 163, 184, 1))` ``. **After
+  writing any `If(...)`/`Switch(...)` with multiple branches inside a template
+  literal, grep the finished file for `, "` immediately followed by a
+  capitalized `Word.Word` pattern (`RGBA(`, `Parent.`, `Color.`, `FontWeight.`,
+  `Align.`, `BorderStyle.`, `DropShadow.`, `SortOrder.`, `TimeUnit.`,
+  `DateTimeFormat.`, or any other enum/function reference) — a real match is
+  this bug, not a coincidence.** Distinguish it from a genuine text value that
+  should stay quoted (`"Destructive"`, `"Ascending"`, visible UI text like
+  `"Post"`) by asking whether the fragment is a Power Fx *reference/enum/function
+  call* (never quoted) or actual *text content* (quoted) — the two look similar
+  in isolation but are never interchangeable.
 - Every formula value needs a leading `=`. A value containing `#` or `:` anywhere
   (even inside a quoted string) must use the `|-` block-scalar form instead of an
   inline `key: =value` — YAML itself would misread a bare `#`/`:` as a comment or a

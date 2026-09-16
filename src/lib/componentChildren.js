@@ -1223,26 +1223,26 @@ function milestoneTracker(pascal) {
     variant: "ManualLayout",
     properties: { BorderStyle: "BorderStyle.None", Fill: "Color.Transparent", Height: "Parent.Height", Width: "Parent.Width" },
     children: [
-      { name: "btnDot", control: "Classic/Button@2.2.0", properties: { BorderColor: "Color.White", BorderStyle: "BorderStyle.Solid", BorderThickness: "2", Fill: statusColor, Height: "16", OnSelect: `${self}.OnMilestoneSelect(ThisItem)`, RadiusBottomLeft: "8", RadiusBottomRight: "8", RadiusTopLeft: "8", RadiusTopRight: "8", Text: '""', Width: "16", X: `If(${isVertical}, 0, "Parent.Width / 2 - 8")`, Y: `If(${isVertical}, "Parent.Height / 2 - 8", 0)` } },
-      { name: "lblMilestoneName", control: "ModernText@1.0.0", properties: { FontWeight: "FontWeight.Bold", Height: "16", Size: "10", Text: "ThisItem.Name", Width: `If(${isVertical}, "Parent.Width - 28", "Parent.Width")`, X: `If(${isVertical}, 28, 0)`, Y: `If(${isVertical}, "Parent.Height / 2 - 8", 20)` } },
-      { name: "lblMilestoneDate", control: "ModernText@1.0.0", properties: { Color: "RGBA(100, 116, 139, 1)", Height: "14", Size: "9", Text: dateText, Visible: `${self}.ShowDates`, Width: `If(${isVertical}, "Parent.Width - 28", "Parent.Width")`, X: `If(${isVertical}, 28, 0)`, Y: `If(${isVertical}, "Parent.Height / 2 + 8", 36)` } }
+      { name: "btnDot", control: "Classic/Button@2.2.0", properties: { BorderColor: "Color.White", BorderStyle: "BorderStyle.Solid", BorderThickness: "2", Fill: statusColor, Height: "16", OnSelect: `${self}.OnMilestoneSelect(ThisItem)`, RadiusBottomLeft: "8", RadiusBottomRight: "8", RadiusTopLeft: "8", RadiusTopRight: "8", Text: '""', Width: "16", X: `If(${isVertical}, 0, Parent.Width / 2 - 8)`, Y: `If(${isVertical}, Parent.Height / 2 - 8, 0)` } },
+      { name: "lblMilestoneName", control: "ModernText@1.0.0", properties: { FontWeight: "FontWeight.Bold", Height: "16", Size: "10", Text: "ThisItem.Name", Width: `If(${isVertical}, Parent.Width - 28, Parent.Width)`, X: `If(${isVertical}, 28, 0)`, Y: `If(${isVertical}, Parent.Height / 2 - 8, 20)` } },
+      { name: "lblMilestoneDate", control: "ModernText@1.0.0", properties: { Color: "RGBA(100, 116, 139, 1)", Height: "14", Size: "9", Text: dateText, Visible: `${self}.ShowDates`, Width: `If(${isVertical}, Parent.Width - 28, Parent.Width)`, X: `If(${isVertical}, 28, 0)`, Y: `If(${isVertical}, Parent.Height / 2 + 8, 36)` } }
     ]
   };
 
-  const cntRail = { name: "cntRail", control: "GroupContainer@1.5.0", variant: "ManualLayout", properties: { BorderStyle: "BorderStyle.None", Fill: "RGBA(226, 232, 240, 1)", Height: `If(${isVertical}, "Parent.Height - 20", 2)`, Width: `If(${isVertical}, 2, "Parent.Width - 40")`, X: `If(${isVertical}, 7, 20)`, Y: `If(${isVertical}, 10, "Parent.Height / 2 - 1")` } };
+  const cntRail = { name: "cntRail", control: "GroupContainer@1.5.0", variant: "ManualLayout", properties: { BorderStyle: "BorderStyle.None", Fill: "RGBA(226, 232, 240, 1)", Height: `If(${isVertical}, Parent.Height - 20, 2)`, Width: `If(${isVertical}, 2, Parent.Width - 40)`, X: `If(${isVertical}, 7, 20)`, Y: `If(${isVertical}, 10, Parent.Height / 2 - 1)` } };
 
   const galMilestones = {
     name: "galMilestones",
     control: "Gallery@2.15.0",
     variant: "Vertical",
     properties: {
-      Height: `If(${isVertical}, "Parent.Height", If(${self}.ShowDates, 60, 36))`,
+      Height: `If(${isVertical}, Parent.Height, If(${self}.ShowDates, 60, 36))`,
       Items: items,
-      TemplateSize: `If(${isVertical}, 48, "(Parent.Width - 40) / CountRows(" + items + ")")`,
-      Width: `If(${isVertical}, "Parent.Width", "Parent.Width - 40")`,
+      TemplateSize: `If(${isVertical}, 48, (Parent.Width - 40) / CountRows(${items}))`,
+      Width: `If(${isVertical}, Parent.Width, Parent.Width - 40)`,
       WrapCount: `If(${isVertical}, 1, CountRows(${items}))`,
       X: `If(${isVertical}, 0, 20)`,
-      Y: `If(${isVertical}, 0, "Parent.Height / 2 - 18")`
+      Y: `If(${isVertical}, 0, Parent.Height / 2 - 18)`
     },
     children: [cntMilestone]
   };
@@ -1287,7 +1287,7 @@ function decisionLog(pascal) {
     name: "cntCard",
     control: "GroupContainer@1.5.0",
     variant: "ManualLayout",
-    properties: { BorderStyle: "BorderStyle.None", DropShadow: `If(${isPrint}, "DropShadow.None", "DropShadow.Regular")`, Fill: "Color.White", Height: "Parent.Height", RadiusBottomLeft: `If(${isPrint}, 0, 20)`, RadiusBottomRight: `If(${isPrint}, 0, 20)`, RadiusTopLeft: `If(${isPrint}, 0, 20)`, RadiusTopRight: `If(${isPrint}, 0, 20)`, Width: "Parent.Width" },
+    properties: { BorderStyle: "BorderStyle.None", DropShadow: `If(${isPrint}, DropShadow.None, DropShadow.Regular)`, Fill: "Color.White", Height: "Parent.Height", RadiusBottomLeft: `If(${isPrint}, 0, 20)`, RadiusBottomRight: `If(${isPrint}, 0, 20)`, RadiusTopLeft: `If(${isPrint}, 0, 20)`, RadiusTopRight: `If(${isPrint}, 0, 20)`, Width: "Parent.Width" },
     children: [
       { name: "lblHeading", control: "ModernText@1.0.0", properties: { FontWeight: "FontWeight.Bold", Height: "22", Size: "16", Text: '"Decision log"', Width: "220", X: "20", Y: "16" } },
       { name: "btnAdd", control: "Classic/Button@2.2.0", properties: { BorderStyle: "BorderStyle.None", Color: "Color.White", Fill: "RGBA(22, 131, 38, 1)", FontWeight: "FontWeight.Bold", Height: "30", OnSelect: `${self}.OnAddDecision()`, RadiusBottomLeft: "15", RadiusBottomRight: "15", RadiusTopLeft: "15", RadiusTopRight: "15", Size: "10", Text: '"Log a decision"', Visible: `And(${self}.AllowAdd, !${isPrint})`, Width: "120", X: "Parent.Width - 220", Y: "14" } },
@@ -1513,12 +1513,12 @@ function calendar(pascal) {
     variant: "ManualLayout",
     properties: {
       BorderColor: "RGBA(226, 232, 240, 1)", BorderStyle: "BorderStyle.Solid", BorderThickness: "1",
-      Fill: `If(${self}.Config.ShowHolidayTint, If(!IsBlank(${holidayMatch}), "#FFF3E0", If(${isToday}, "#EBF5FF", If(${isCurrentMonth}, "Color.White", "#F8FAFC"))), If(${isToday}, "#EBF5FF", If(${isCurrentMonth}, "Color.White", "#F8FAFC")))`,
+      Fill: `If(${self}.Config.ShowHolidayTint, If(!IsBlank(${holidayMatch}), "#FFF3E0", If(${isToday}, "#EBF5FF", If(${isCurrentMonth}, Color.White, "#F8FAFC"))), If(${isToday}, "#EBF5FF", If(${isCurrentMonth}, Color.White, "#F8FAFC")))`,
       Height: `${self}.Config.RowHeight`,
       Width: "76"
     },
     children: [
-      { name: "lblDayNumber", control: "ModernText@1.0.0", properties: { Color: `If(${isCurrentMonth}, "RGBA(23, 32, 27, 1)", "RGBA(148, 163, 184, 1)")`, FontWeight: `If(${isToday}, "FontWeight.Bold", "FontWeight.Normal")`, Height: "14", Size: "9", Text: `Text(Day(${cellDate}))`, Width: "Parent.Width - 8", X: "4", Y: "2" } },
+      { name: "lblDayNumber", control: "ModernText@1.0.0", properties: { Color: `If(${isCurrentMonth}, RGBA(23, 32, 27, 1), RGBA(148, 163, 184, 1))`, FontWeight: `If(${isToday}, FontWeight.Bold, FontWeight.Normal)`, Height: "14", Size: "9", Text: `Text(Day(${cellDate}))`, Width: "Parent.Width - 8", X: "4", Y: "2" } },
       { name: "lblHolidayName", control: "ModernText@1.0.0", properties: { Color: "RGBA(191, 54, 12, 1)", Height: "10", Size: "6", Text: `${holidayMatch}.Name`, Visible: `And(${self}.Config.ShowHolidayTint, !IsBlank(${holidayMatch}))`, Width: "Parent.Width - 8", X: "4", Y: "14" } },
       chipSlot(1), chipSlot(2), chipSlot(3),
       { name: "lblOverflow", control: "ModernText@1.0.0", properties: { Color: "RGBA(100, 116, 139, 1)", Height: "12", Size: "7", Text: `"+" & (CountRows(${dayEvents}) - ${self}.Config.ChipSlots) & " more"`, Visible: `CountRows(${dayEvents}) > ${self}.Config.ChipSlots`, Width: "Parent.Width - 8", X: "4", Y: "61" } },
@@ -1718,7 +1718,7 @@ function dataTable(pascal) {
     variant: "ManualLayout",
     properties: { BorderColor: "RGBA(226, 232, 240, 1)", BorderStyle: "BorderStyle.Solid", BorderThickness: "1", Fill: "Color.White", Height: "Parent.Height", Width: "Parent.Width" },
     children: [
-      { name: "btnCheck", control: "Classic/Button@2.2.0", properties: { BorderColor: "RGBA(148, 163, 184, 1)", BorderStyle: "BorderStyle.Solid", BorderThickness: "1", Fill: `If(${isSelected}, "#168326", "Color.White")`, Height: "16", OnSelect: `If(${isSelected}, Remove(locSelectedKeys, LookUp(locSelectedKeys, Key = ThisItem.Id)), Collect(locSelectedKeys, {Key: ThisItem.Id})); ${self}.OnSelectionChange(CountRows(locSelectedKeys))`, RadiusBottomLeft: "3", RadiusBottomRight: "3", RadiusTopLeft: "3", RadiusTopRight: "3", Text: '""', Visible: `${self}.SelectionMode = "Multiple"`, Width: "16", X: "8", Y: "12" } },
+      { name: "btnCheck", control: "Classic/Button@2.2.0", properties: { BorderColor: "RGBA(148, 163, 184, 1)", BorderStyle: "BorderStyle.Solid", BorderThickness: "1", Fill: `If(${isSelected}, "#168326", Color.White)`, Height: "16", OnSelect: `If(${isSelected}, Remove(locSelectedKeys, LookUp(locSelectedKeys, Key = ThisItem.Id)), Collect(locSelectedKeys, {Key: ThisItem.Id})); ${self}.OnSelectionChange(CountRows(locSelectedKeys))`, RadiusBottomLeft: "3", RadiusBottomRight: "3", RadiusTopLeft: "3", RadiusTopRight: "3", Text: '""', Visible: `${self}.SelectionMode = "Multiple"`, Width: "16", X: "8", Y: "12" } },
       { name: "lblName", control: "ModernText@1.0.0", properties: { FontWeight: "FontWeight.Bold", Height: "20", Size: "10", Text: "ThisItem.Name", Width: "140", X: `If(${self}.SelectionMode = "Multiple", 32, 8)`, Y: "10" } },
       { name: "lblStatus", control: "ModernText@1.0.0", properties: { Color: statusColor, FontWeight: "FontWeight.Bold", Height: "20", Size: "9", Text: "ThisItem.Status", Width: "80", X: "180", Y: "10" } },
       { name: "lblPriority", control: "ModernText@1.0.0", properties: { Color: priorityColor, FontWeight: "FontWeight.Bold", Height: "20", Size: "9", Text: "ThisItem.Priority", Width: "70", X: "266", Y: "10" } },
@@ -1870,8 +1870,8 @@ function emailComposer(pascal) {
     control: "Classic/Button@2.2.0",
     properties: {
       BorderColor: "RGBA(226, 232, 240, 1)", BorderStyle: "BorderStyle.Solid", BorderThickness: "1",
-      Color: `If(${self}.DefaultPriority = "${val}", "Color.White", "RGBA(71, 85, 105, 1)")`,
-      Fill: `If(${self}.DefaultPriority = "${val}", "RGBA(23, 32, 27, 1)", "Color.White")`,
+      Color: `If(${self}.DefaultPriority = "${val}", Color.White, RGBA(71, 85, 105, 1))`,
+      Fill: `If(${self}.DefaultPriority = "${val}", RGBA(23, 32, 27, 1), Color.White)`,
       FontWeight: "FontWeight.Bold",
       Height: "24",
       OnSelect: `${self}.OnSend(${self}.Directory, txtSubject.Text, txtBody.Text, "${val}", ${self}.Attachments)`,
@@ -1943,7 +1943,7 @@ function dialog(pascal) {
       { name: "lblSubtitle", control: "ModernText@1.0.0", properties: { Color: "RGBA(100, 116, 139, 1)", Height: "16", Size: "10", Text: `${self}.Subtitle`, Visible: `${self}.Subtitle <> ""`, Width: "Parent.Width - 32", X: "16", Y: "38" } },
       { name: "lblMessage", control: "ModernText@1.0.0", properties: { AutoHeight: "false", Height: "48", Size: "11", Text: `${self}.Message`, Width: "Parent.Width - 32", Wrap: "true", X: "16", Y: `If(${self}.Subtitle <> "", 58, 44)` } },
       { name: "btnCancel", control: "Classic/Button@2.2.0", properties: { BorderColor: "RGBA(226, 232, 240, 1)", BorderStyle: "BorderStyle.Solid", BorderThickness: "1", Fill: "Color.White", FontWeight: "FontWeight.Bold", Height: "34", OnSelect: `${self}.OnCancel()`, RadiusBottomLeft: "17", RadiusBottomRight: "17", RadiusTopLeft: "17", RadiusTopRight: "17", Size: "11", Text: `${self}.CancelButtonText`, Visible: `${self}.ShowCancel`, Width: "Parent.Width / 2 - 24", X: "16", Y: "Parent.Height - 50" } },
-      { name: "btnConfirm", control: "Classic/Button@2.2.0", properties: { BorderStyle: "BorderStyle.None", Color: "Color.White", Fill: `If(${isDestructive}, "RGBA(197, 58, 58, 1)", "RGBA(22, 131, 38, 1)")`, FontWeight: "FontWeight.Bold", Height: "34", OnSelect: `${self}.OnConfirm()`, RadiusBottomLeft: "17", RadiusBottomRight: "17", RadiusTopLeft: "17", RadiusTopRight: "17", Size: "11", Text: `${self}.ConfirmButtonText`, Width: `If(${self}.ShowCancel, "Parent.Width / 2 - 24", "Parent.Width - 32")`, X: `If(${self}.ShowCancel, "Parent.Width / 2 + 8", 16)`, Y: "Parent.Height - 50" } }
+      { name: "btnConfirm", control: "Classic/Button@2.2.0", properties: { BorderStyle: "BorderStyle.None", Color: "Color.White", Fill: `If(${isDestructive}, RGBA(197, 58, 58, 1), RGBA(22, 131, 38, 1))`, FontWeight: "FontWeight.Bold", Height: "34", OnSelect: `${self}.OnConfirm()`, RadiusBottomLeft: "17", RadiusBottomRight: "17", RadiusTopLeft: "17", RadiusTopRight: "17", Size: "11", Text: `${self}.ConfirmButtonText`, Width: `If(${self}.ShowCancel, Parent.Width / 2 - 24, Parent.Width - 32)`, X: `If(${self}.ShowCancel, Parent.Width / 2 + 8, 16)`, Y: "Parent.Height - 50" } }
     ]
   };
 
@@ -2052,7 +2052,7 @@ function sidebar(pascal) {
     name: `lblChild${n}`,
     control: "ModernText@1.0.0",
     properties: {
-      Color: `If(${isDark}, "RGBA(226, 232, 240, 1)", "RGBA(71, 85, 105, 1)")`,
+      Color: `If(${isDark}, RGBA(226, 232, 240, 1), RGBA(71, 85, 105, 1))`,
       Height: "24",
       Size: "9",
       Text: `Index(${childrenFor("ThisItem.Id")}, ${n}).Label`,
@@ -2067,10 +2067,10 @@ function sidebar(pascal) {
     name: "cntNavItem",
     control: "GroupContainer@1.5.0",
     variant: "ManualLayout",
-    properties: { BorderStyle: "BorderStyle.None", Fill: `If(ThisItem.Key = ${self}.SelectedKey, If(${isDark}, "RGBA(255,255,255,0.08)", "RGBA(22, 131, 38, 0.08)"), "Color.Transparent")`, Height: "Parent.Height", Width: "Parent.Width" },
+    properties: { BorderStyle: "BorderStyle.None", Fill: `If(ThisItem.Key = ${self}.SelectedKey, If(${isDark}, RGBA(255,255,255,0.08), RGBA(22, 131, 38, 0.08)), Color.Transparent)`, Height: "Parent.Height", Width: "Parent.Width" },
     children: [
       { name: "btnIconDot", control: "Classic/Button@2.2.0", properties: { BorderStyle: "BorderStyle.None", Fill: "ThisItem.ItemIconColor", Height: "10", RadiusBottomLeft: "5", RadiusBottomRight: "5", RadiusTopLeft: "5", RadiusTopRight: "5", Text: '""', Width: "10", X: "16", Y: "13" } },
-      { name: "lblItemLabel", control: "ModernText@1.0.0", properties: { Color: `If(${isDark}, "Color.White", "RGBA(23, 32, 27, 1)")`, FontWeight: "FontWeight.Bold", Height: "20", Size: "10", Text: "ThisItem.Label", Visible: `${self}.IsExpanded`, Width: "Parent.Width - 90", X: "36", Y: "10" } },
+      { name: "lblItemLabel", control: "ModernText@1.0.0", properties: { Color: `If(${isDark}, Color.White, RGBA(23, 32, 27, 1))`, FontWeight: "FontWeight.Bold", Height: "20", Size: "10", Text: "ThisItem.Label", Visible: `${self}.IsExpanded`, Width: "Parent.Width - 90", X: "36", Y: "10" } },
       { name: "lblBadge", control: "ModernText@1.0.0", properties: { Align: "Align.Center", Color: "Color.White", FontWeight: "FontWeight.Bold", Height: "16", Size: "8", Text: "Text(ThisItem.ItemBadgeCount)", Visible: `And(${self}.IsExpanded, ThisItem.ItemBadgeCount > 0)`, Width: "20", X: "Parent.Width - 32", Y: "12" } },
       childSlot(1), childSlot(2), childSlot(3), childSlot(4),
       { name: "btnItemTap", control: "Classic/Button@2.2.0", properties: { BorderStyle: "BorderStyle.None", Fill: "Color.Transparent", Height: "36", OnSelect: `${self}.OnItemSelect(ThisItem)`, Text: '""', Width: "Parent.Width" } }
@@ -2089,16 +2089,16 @@ function sidebar(pascal) {
     name: "cntRoot",
     control: "GroupContainer@1.5.0",
     variant: "ManualLayout",
-    properties: { BorderStyle: "BorderStyle.None", Fill: `If(${isDark}, "RGBA(11, 17, 16, 1)", "Color.White")`, Height: "Parent.Height", Width: railWidth },
+    properties: { BorderStyle: "BorderStyle.None", Fill: `If(${isDark}, RGBA(11, 17, 16, 1), Color.White)`, Height: "Parent.Height", Width: railWidth },
     children: [
       galItems,
-      { name: "cntFooter", control: "GroupContainer@1.5.0", variant: "ManualLayout", properties: { BorderStyle: "BorderStyle.None", Fill: `If(${isDark}, "RGBA(255,255,255,0.06)", "RGBA(248, 250, 252, 1)")`, Height: "48", RadiusBottomLeft: "8", RadiusBottomRight: "8", RadiusTopLeft: "8", RadiusTopRight: "8", Width: railWidth + " - 16", X: "8", Y: "Parent.Height - 56" },
+      { name: "cntFooter", control: "GroupContainer@1.5.0", variant: "ManualLayout", properties: { BorderStyle: "BorderStyle.None", Fill: `If(${isDark}, RGBA(255,255,255,0.06), RGBA(248, 250, 252, 1))`, Height: "48", RadiusBottomLeft: "8", RadiusBottomRight: "8", RadiusTopLeft: "8", RadiusTopRight: "8", Width: railWidth + " - 16", X: "8", Y: "Parent.Height - 56" },
         children: [
           { name: "lblInitials", control: "ModernText@1.0.0", properties: { Align: "Align.Center", Color: "Color.White", FontWeight: "FontWeight.Bold", Height: "32", Size: "11", Text: `Upper(Left(${self}.UserName, 1) & Left(Last(Split(${self}.UserName, " ")).Result, 1))`, Width: "32", X: "8", Y: "8" } },
           { name: "lblUserName", control: "ModernText@1.0.0", properties: { FontWeight: "FontWeight.Bold", Height: "32", Size: "10", Text: `${self}.UserName`, Visible: `${self}.IsExpanded`, Width: "Parent.Width - 56", X: "48", Y: "12" } }
         ]
       },
-      { name: "btnExpandToggle", control: "Classic/Button@2.2.0", properties: { BorderStyle: "BorderStyle.None", Color: `If(${isDark}, "Color.White", "RGBA(71, 85, 105, 1)")`, Fill: "Color.Transparent", FontWeight: "FontWeight.Bold", Height: "24", OnSelect: `${self}.OnExpandToggle(!${self}.IsExpanded)`, Size: "10", Text: `If(${self}.IsExpanded, "<", ">")`, Width: "24", X: "8", Y: "-8" } }
+      { name: "btnExpandToggle", control: "Classic/Button@2.2.0", properties: { BorderStyle: "BorderStyle.None", Color: `If(${isDark}, Color.White, RGBA(71, 85, 105, 1))`, Fill: "Color.Transparent", FontWeight: "FontWeight.Bold", Height: "24", OnSelect: `${self}.OnExpandToggle(!${self}.IsExpanded)`, Size: "10", Text: `If(${self}.IsExpanded, "<", ">")`, Width: "24", X: "8", Y: "-8" } }
     ]
   };
 
@@ -2132,7 +2132,7 @@ function responsiveBreadcrumbs(pascal) {
     variant: "ManualLayout",
     properties: { BorderStyle: "BorderStyle.None", Fill: "Color.Transparent", Height: "24", Visible: `And(${i} <= ${n}, ${crumbVisible(i)})`, Width: "120" },
     children: [
-      { name: "lblCrumbLabel", control: "Label@2.5.1", properties: { Color: `If(${i} = ${n}, "RGBA(23, 32, 27, 1)", "RGBA(15, 108, 189, 1)")`, FontWeight: `If(${i} = ${n}, "FontWeight.Bold", "FontWeight.Normal")`, Height: "20", Size: "10", Text: `Left(Index(${self}.Items, ${i}).Label, ${self}.TruncateAt) & If(Len(Index(${self}.Items, ${i}).Label) > ${self}.TruncateAt, "...", "")`, Width: "90", X: "0", Y: "2" } },
+      { name: "lblCrumbLabel", control: "Label@2.5.1", properties: { Color: `If(${i} = ${n}, RGBA(23, 32, 27, 1), RGBA(15, 108, 189, 1))`, FontWeight: `If(${i} = ${n}, FontWeight.Bold, FontWeight.Normal)`, Height: "20", Size: "10", Text: `Left(Index(${self}.Items, ${i}).Label, ${self}.TruncateAt) & If(Len(Index(${self}.Items, ${i}).Label) > ${self}.TruncateAt, "...", "")`, Width: "90", X: "0", Y: "2" } },
       { name: "lblChevron", control: "Label@2.5.1", properties: { Color: "RGBA(148, 163, 184, 1)", Height: "20", Size: "10", Text: '">"', Visible: `${i} < ${n}`, Width: "12", X: "94", Y: "2" } },
       { name: "btnCrumbTap", control: "Classic/Button@2.2.0", properties: { BorderStyle: "BorderStyle.None", Fill: "Color.Transparent", Height: "20", OnSelect: `${self}.OnItemSelect(Index(${self}.Items, ${i}).Key)`, Text: '""', Visible: `And(${i} <> ${n}, Coalesce(Index(${self}.Items, ${i}).ItemClickable, true))`, Width: "90", X: "0" } }
     ]
@@ -2244,6 +2244,151 @@ function megaMenu(pascal) {
   };
 }
 
+/* Approval Journey — real per-position "which stage is active" logic
+   via the same Sequence(n)-bound-Gallery-plus-Index(Stages, N)
+   technique Risk Matrix's own grid uses, since Stages has no built-in
+   position column of its own. Sequential locks every Pending stage
+   except the *first* one (Min over the Pending positions); Everyone/
+   First-to-respond treat every Pending stage as active at once,
+   matching this component's own architecture note that the layout
+   itself communicates which real approval type is running. */
+function approvalJourney(pascal) {
+  const self = `cmp${pascal}`;
+  const idx = "ThisItem.Value";
+  const row = `Index(${self}.Stages, ${idx})`;
+  const firstPendingIdx = `Min(Filter(Sequence(CountRows(${self}.Stages)), Index(${self}.Stages, Value).Status = "Pending"), Value)`;
+  const isActionable = `And(${row}.Status = "Pending", Or(${self}.ApprovalType <> "Sequential", ${idx} = ${firstPendingIdx}))`;
+  const statusColor = `Switch(${row}.Status, "Approved", "#2E7D32", "Rejected", "#C62828", If(${isActionable}, "#1565C0", "#94A3B8"))`;
+
+  const cntStage = {
+    name: "cntStage",
+    control: "GroupContainer@1.5.0",
+    variant: "ManualLayout",
+    properties: { BorderColor: "RGBA(226, 232, 240, 1)", BorderStyle: "BorderStyle.Solid", BorderThickness: "1", Fill: `If(${isActionable}, RGBA(235, 245, 255, 1), Color.White)`, Height: "Parent.Height", Width: "Parent.Width" },
+    children: [
+      { name: "btnStatusDot", control: "Classic/Button@2.2.0", properties: { BorderStyle: "BorderStyle.None", Fill: statusColor, Height: "10", RadiusBottomLeft: "5", RadiusBottomRight: "5", RadiusTopLeft: "5", RadiusTopRight: "5", Text: '""', Width: "10", X: "10", Y: "10" } },
+      { name: "lblApprover", control: "ModernText@1.0.0", properties: { FontWeight: "FontWeight.Bold", Height: "16", Size: "10", Text: `${row}.Approver & If(!IsBlank(${row}.DelegatedTo), " -> " & ${row}.DelegatedTo, "")`, Width: "160", X: "26", Y: "6" } },
+      { name: "lblStatus", control: "ModernText@1.0.0", properties: { Color: statusColor, FontWeight: "FontWeight.Bold", Height: "14", Size: "9", Text: `${row}.Status`, Width: "80", X: "26", Y: "22" } },
+      { name: "btnApprove", control: "Classic/Button@2.2.0", properties: { BorderStyle: "BorderStyle.None", Color: "Color.White", Fill: "RGBA(22, 131, 38, 1)", FontWeight: "FontWeight.Bold", Height: "22", OnSelect: `${self}.OnApprove("Approve")`, RadiusBottomLeft: "11", RadiusBottomRight: "11", RadiusTopLeft: "11", RadiusTopRight: "11", Size: "9", Text: '"Approve"', Visible: isActionable, Width: "60", X: "Parent.Width - 194", Y: "9" } },
+      { name: "btnReject", control: "Classic/Button@2.2.0", properties: { BorderStyle: "BorderStyle.None", Color: "Color.White", Fill: "RGBA(197, 58, 58, 1)", FontWeight: "FontWeight.Bold", Height: "22", OnSelect: `${self}.OnReject("Reject")`, RadiusBottomLeft: "11", RadiusBottomRight: "11", RadiusTopLeft: "11", RadiusTopRight: "11", Size: "9", Text: '"Reject"', Visible: isActionable, Width: "52", X: "Parent.Width - 128", Y: "9" } },
+      { name: "btnDelegate", control: "Classic/Button@2.2.0", properties: { BorderColor: "RGBA(226, 232, 240, 1)", BorderStyle: "BorderStyle.Solid", BorderThickness: "1", Fill: "Color.White", FontWeight: "FontWeight.Bold", Height: "22", OnSelect: `${self}.OnDelegate(${row}, "")`, RadiusBottomLeft: "11", RadiusBottomRight: "11", RadiusTopLeft: "11", RadiusTopRight: "11", Size: "9", Text: '"Delegate"', Visible: isActionable, Width: "64", X: "Parent.Width - 72", Y: "9" } },
+      { name: "btnStageTap", control: "Classic/Button@2.2.0", properties: { BorderStyle: "BorderStyle.None", Fill: "Color.Transparent", Height: "Parent.Height", OnSelect: `${self}.OnStageSelect(${row})`, Text: '""', Width: "Parent.Width - 200" } }
+    ]
+  };
+
+  const galStages = { name: "galStages", control: "Gallery@2.15.0", variant: "Vertical", properties: { Height: `CountRows(${self}.Stages) * 40`, Items: `Sequence(CountRows(${self}.Stages))`, TemplateSize: "40", Width: "Parent.Width - 16", WrapCount: "1", X: "8", Y: "40" }, children: [cntStage] };
+
+  const cntRoot = {
+    name: "cntRoot",
+    control: "GroupContainer@1.5.0",
+    variant: "ManualLayout",
+    properties: { BorderStyle: "BorderStyle.None", Fill: "RGBA(248, 250, 252, 1)", Height: "Parent.Height", RadiusBottomLeft: "14", RadiusBottomRight: "14", RadiusTopLeft: "14", RadiusTopRight: "14", Width: "Parent.Width" },
+    children: [
+      { name: "lblDetails", control: "ModernText@1.0.0", properties: { AutoHeight: "false", Height: "32", Size: "10", Text: `${self}.Details`, Width: "Parent.Width - 16", Wrap: "true", X: "8", Y: "6" } },
+      galStages
+    ]
+  };
+
+  return {
+    properties: { Height: `40 + CountRows(${self}.Stages) * 40`, Width: "360" },
+    children: [cntRoot],
+    eventParameters: {
+      OnApprove: [{ name: "Response", dataType: "Text", defaultFormula: '"Approve"' }],
+      OnReject: [{ name: "Response", dataType: "Text", defaultFormula: '"Reject"' }],
+      OnDelegate: [{ name: "Stage", dataType: "Record", defaultFormula: '{Approver: ""}' }, { name: "RequestedDelegate", dataType: "Text", defaultFormula: '""' }]
+    }
+  };
+}
+
+/* Process Stepper — a real horizontal Gallery of step dots reading
+   position via the same Sequence(n)-plus-Index technique Approval
+   Journey's own Children tree just used. OnResume has no real trigger
+   wired: the component has no storage access to actually retrieve a
+   value ResumeKey might point to, so there's nothing genuine to fire
+   it from — disclosed in componentLibrary.js's own Limitations rather
+   than faked with a Timer that fires on every load regardless of
+   whether anything was actually saved. */
+function processStepper(pascal) {
+  const self = `cmp${pascal}`;
+  const idx = "ThisItem.Value";
+  const row = `Index(${self}.Steps, ${idx})`;
+  const dotColor = `Switch(${row}.Status, "Complete", "#2E7D32", "Current", "#168326", "#CBD5E1")`;
+  const isReachable = `Or(${idx} = ${self}.CurrentStep, And(${row}.Status = "Complete", ${self}.AllowStepBack))`;
+
+  const cntStep = {
+    name: "cntStep",
+    control: "GroupContainer@1.5.0",
+    variant: "ManualLayout",
+    properties: { BorderStyle: "BorderStyle.None", Fill: "Color.Transparent", Height: "Parent.Height", Width: "Parent.Width" },
+    children: [
+      { name: "btnDot", control: "Classic/Button@2.2.0", properties: { BorderColor: `If(${idx} = ${self}.CurrentStep, "#168326", Color.White)`, BorderStyle: "BorderStyle.Solid", BorderThickness: "2", Color: "Color.White", Fill: dotColor, FontWeight: "FontWeight.Bold", Height: "24", OnSelect: `If(${isReachable}, ${self}.OnStepChange(${idx}))`, RadiusBottomLeft: "12", RadiusBottomRight: "12", RadiusTopLeft: "12", RadiusTopRight: "12", Size: "10", Text: `Text(${idx})`, Width: "24", X: "Parent.Width / 2 - 12", Y: "0" } },
+      { name: "lblStepLabel", control: "ModernText@1.0.0", properties: { Align: "Align.Center", FontWeight: `If(${idx} = ${self}.CurrentStep, FontWeight.Bold, FontWeight.Normal)`, Height: "16", Size: "8", Text: `${row}.Label`, Width: "Parent.Width", X: "0", Y: "28" } }
+    ]
+  };
+
+  const galSteps = { name: "galSteps", control: "Gallery@2.15.0", variant: "Vertical", properties: { Height: "48", Items: `Sequence(CountRows(${self}.Steps))`, TemplateSize: `(Parent.Width - 16) / CountRows(${self}.Steps)`, Width: "Parent.Width - 16", WrapCount: `CountRows(${self}.Steps)`, X: "8", Y: "8" }, children: [cntStep] };
+
+  const cntRail = { name: "cntRail", control: "GroupContainer@1.5.0", variant: "ManualLayout", properties: { BorderStyle: "BorderStyle.None", Fill: "RGBA(226, 232, 240, 1)", Height: "2", Width: "Parent.Width - 60", X: "30", Y: "20" } };
+
+  const cntRoot = {
+    name: "cntRoot",
+    control: "GroupContainer@1.5.0",
+    variant: "ManualLayout",
+    properties: { BorderStyle: "BorderStyle.None", Fill: "Color.Transparent", Height: "Parent.Height", Width: "Parent.Width" },
+    children: [
+      cntRail, galSteps,
+      { name: "lblCanAdvanceHint", control: "ModernText@1.0.0", properties: { Align: "Align.Center", Color: "RGBA(191, 54, 12, 1)", Height: "16", Size: "9", Text: '"Complete the required fields to continue"', Visible: `!${self}.CanAdvance`, Width: "Parent.Width", X: "0", Y: "60" } }
+    ]
+  };
+
+  return {
+    properties: { Fill: "Color.Transparent", Height: "78", Width: "440" },
+    children: [cntRoot]
+  };
+}
+
+/* Route Map — nodes ordered along one rail (per Nodes' own real Order
+   field), reusing Milestone Tracker's rail-and-dot layout technique.
+   A real branch (a node with more than one outgoing Connection) shows
+   as a small "splits into N" indicator rather than literal diverging
+   diagonal lines — no CONFIRMED/STRONG-EVIDENCE control-level rotation
+   property was researched for drawing an angled connector between two
+   arbitrary node positions, so this is a disclosed, real, working
+   simplification instead of a guessed rotation formula. Lane renders
+   as a small band label under each node rather than full swimlane
+   grouping. */
+function routeMap(pascal) {
+  const self = `cmp${pascal}`;
+  const isVertical = `${self}.Orientation = "vertical"`;
+  const sorted = `SortByColumns(${self}.Nodes, "Order", SortOrder.Ascending)`;
+  const idx = "ThisItem.Value";
+  const row = `Index(${sorted}, ${idx})`;
+  const outCount = `CountRows(Filter(${self}.Connections, From = ${row}.Order))`;
+  const statusColor = `Switch(${row}.Status, "Complete", "#2E7D32", "Active", "#168326", "Blocked", "#C62828", "#94A3B8")`;
+
+  const cntNode = {
+    name: "cntNode",
+    control: "GroupContainer@1.5.0",
+    variant: "ManualLayout",
+    properties: { BorderStyle: "BorderStyle.None", Fill: "Color.Transparent", Height: "Parent.Height", Width: "Parent.Width" },
+    children: [
+      { name: "btnNodeDot", control: "Classic/Button@2.2.0", properties: { BorderColor: "Color.White", BorderStyle: "BorderStyle.Solid", BorderThickness: "2", Fill: statusColor, Height: "18", OnSelect: `${self}.OnNodeSelect(${row})`, RadiusBottomLeft: "9", RadiusBottomRight: "9", RadiusTopLeft: "9", RadiusTopRight: "9", Text: '""', Width: "18", X: `If(${isVertical}, 0, Parent.Width / 2 - 9)`, Y: `If(${isVertical}, Parent.Height / 2 - 9, 0)` } },
+      { name: "lblNodeLabel", control: "ModernText@1.0.0", properties: { Align: `If(${isVertical}, Align.Left, Align.Center)`, FontWeight: "FontWeight.Bold", Height: "16", Size: "9", Text: `${row}.Label`, Width: `If(${isVertical}, Parent.Width - 26, Parent.Width)`, X: `If(${isVertical}, 26, 0)`, Y: `If(${isVertical}, Parent.Height / 2 - 8, 22)` } },
+      { name: "lblBranchHint", control: "ModernText@1.0.0", properties: { Align: `If(${isVertical}, Align.Left, Align.Center)`, Color: "RGBA(100, 116, 139, 1)", Height: "12", Size: "7", Text: `"splits into " & ${outCount}`, Visible: `${outCount} > 1`, Width: `If(${isVertical}, Parent.Width - 26, Parent.Width)`, X: `If(${isVertical}, 26, 0)`, Y: `If(${isVertical}, Parent.Height / 2 + 8, 36)` } },
+      { name: "lblLane", control: "Label@2.5.1", properties: { Align: `If(${isVertical}, Align.Left, Align.Center)`, Color: "RGBA(148, 163, 184, 1)", Height: "10", Size: "6", Text: `${row}.Lane`, Visible: `!IsBlank(${row}.Lane)`, Width: `If(${isVertical}, 100, 90)`, X: `If(${isVertical}, 26, 0)`, Y: `If(${isVertical}, Parent.Height / 2 + 20, 48)` } }
+    ]
+  };
+
+  const cntRail = { name: "cntRail", control: "GroupContainer@1.5.0", variant: "ManualLayout", properties: { BorderStyle: "BorderStyle.None", Fill: "RGBA(226, 232, 240, 1)", Height: `If(${isVertical}, Parent.Height - 20, 2)`, Width: `If(${isVertical}, 2, Parent.Width - 40)`, X: `If(${isVertical}, 9, 20)`, Y: `If(${isVertical}, 10, Parent.Height / 2 - 1)` } };
+
+  const galNodes = { name: "galNodes", control: "Gallery@2.15.0", variant: "Vertical", properties: { Height: `If(${isVertical}, Parent.Height, 60)`, Items: `Sequence(CountRows(${self}.Nodes))`, TemplateSize: `If(${isVertical}, 60, (Parent.Width - 40) / CountRows(${self}.Nodes))`, Width: `If(${isVertical}, Parent.Width, Parent.Width - 40)`, WrapCount: `If(${isVertical}, 1, CountRows(${self}.Nodes))`, X: `If(${isVertical}, 0, 20)`, Y: "0" }, children: [cntNode] };
+
+  return {
+    properties: { Fill: "Color.Transparent", Height: `If(${isVertical}, 320, 60)`, Width: `If(${isVertical}, 200, 480)` },
+    children: [cntRail, galNodes]
+  };
+}
+
 export const CHILDREN_BUILDERS = {
   "KPI Card": kpiCard,
   "Notification Badge": notificationBadge,
@@ -2266,5 +2411,8 @@ export const CHILDREN_BUILDERS = {
   "Comments & Mentions": commentsAndMentions,
   "Sidebar": sidebar,
   "Responsive Breadcrumbs": responsiveBreadcrumbs,
-  "Mega Menu": megaMenu
+  "Mega Menu": megaMenu,
+  "Approval Journey": approvalJourney,
+  "Process Stepper": processStepper,
+  "Route Map": routeMap
 };
