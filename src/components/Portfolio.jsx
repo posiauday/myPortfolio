@@ -21,6 +21,7 @@ import ComponentCard from "./ComponentCard.jsx";
 import Catalog from "./Catalog.jsx";
 import Detail from "./ComponentDetail.jsx";
 import CheatSheet from "./CheatSheet.jsx";
+import Clipboard from "./Clipboard.jsx";
 
 /* Real, already-stated figures pulled together into one skimmable strip
    right under the hero, rather than left scattered across Experience and
@@ -40,20 +41,23 @@ const IMPACT_STATS = [
 // Module scope so both the nav labels and the scroll-spy's ids array
 // stay referentially stable across renders (an inline literal would
 // re-run useActiveSection's IntersectionObserver setup every render).
-// "All Components" and "Cheat Sheet" are the odd ones out: each
-// navigates to a different view (the Catalog or Cheat Sheet page)
-// rather than scrolling to a section on this one, so neither carries
-// an `href` — scroll-spy only watches the other four, real, in-page
-// section ids. `action` picks which of openCatalog/openCheatSheet an
-// href-less item calls, rather than both sharing one handler.
+// "All Components", "Cheat Sheet" and "Clipboard" are the odd ones
+// out: each navigates to a different view (the Catalog, Cheat Sheet or
+// Clipboard page) rather than scrolling to a section on this one, so
+// none of the three carries an `href` — scroll-spy only watches the
+// other four, real, in-page section ids. `action` picks which of
+// openCatalog/openCheatSheet/openClipboard an href-less item calls,
+// rather than all three sharing one handler.
 const NAV_ITEMS = [
   { label: "Projects", href: "#projects" },
   { label: "Experience", href: "#experience" },
   { label: "Components", href: "#components" },
   { label: "All Components", action: "catalog" },
   { label: "Cheat Sheet", action: "cheatsheet" },
+  { label: "Clipboard", action: "clipboard" },
   { label: "Recognition", href: "#recognition" }
 ];
+const NAV_ACTIONS = { catalog: "openCatalog", cheatsheet: "openCheatSheet", clipboard: "openClipboard" };
 const NAV_SECTION_IDS = NAV_ITEMS.filter(x => x.href).map(x => x.href.slice(1));
 
 /* ============================================================
@@ -65,7 +69,8 @@ const NAV_SECTION_IDS = NAV_ITEMS.filter(x => x.href).map(x => x.href.slice(1));
    ============================================================ */
 export default function Portfolio() {
   const [dark, setDark] = useState(false);
-  const { view, openComponent, switchComponent, openCatalog, openCheatSheet, goHome, closeDetail } = useComponentRoute(components);
+  const { view, openComponent, switchComponent, openCatalog, openCheatSheet, openClipboard, goHome, closeDetail } = useComponentRoute(components);
+  const navHandlers = { openCatalog, openCheatSheet, openClipboard };
   const [menuOpen, setMenuOpen] = useState(false);
   const scrolledPastHero = useScrollThreshold(40);
   const activeSection = useActiveSection(NAV_SECTION_IDS);
@@ -107,6 +112,7 @@ export default function Portfolio() {
   if (view.name === "detail") return <Detail item={view.item} items={components} dark={dark} onBack={closeDetail} onSwitch={switchComponent} />;
   if (view.name === "catalog") return <Catalog dark={dark} onSelect={openComponent} onBack={goHome} />;
   if (view.name === "cheatsheet") return <CheatSheet dark={dark} onBack={goHome} />;
+  if (view.name === "clipboard") return <Clipboard dark={dark} onBack={goHome} />;
 
   return (
     <main className={dark ? "dark min-h-screen bg-[#0B1110] text-white" : "min-h-screen bg-[#FBFDFB] text-[#17201B]"}>
@@ -153,7 +159,7 @@ export default function Portfolio() {
                   return (
                     <button
                       key={label}
-                      onClick={action === "cheatsheet" ? openCheatSheet : openCatalog}
+                      onClick={navHandlers[NAV_ACTIONS[action]]}
                       className="rounded-full px-4 py-2 text-sm font-bold transition-colors hover:bg-green-50 hover:text-[#168326] dark:hover:bg-white/10"
                     >
                       {label}
@@ -201,7 +207,7 @@ export default function Portfolio() {
                       key={label}
                       onClick={() => {
                         setMenuOpen(false);
-                        (action === "cheatsheet" ? openCheatSheet : openCatalog)();
+                        navHandlers[NAV_ACTIONS[action]]();
                       }}
                       className="rounded-xl px-4 py-3 text-left text-sm font-bold transition-colors hover:bg-green-50 hover:text-[#168326] dark:hover:bg-white/10"
                     >

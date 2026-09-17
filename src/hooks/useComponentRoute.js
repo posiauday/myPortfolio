@@ -3,12 +3,13 @@ import { useCallback, useEffect, useRef, useState } from "react";
 const DETAIL_PREFIX = "#components/";
 const CATALOG_HASH = "#catalog";
 const CHEATSHEET_HASH = "#cheatsheet";
+const CLIPBOARD_HASH = "#clipboard";
 const HOME_HASH = "#components";
 
-/* Resolves the current URL hash into one of four views: a component
+/* Resolves the current URL hash into one of five views: a component
    Detail page, the full Catalog page, the Power Fx Cheat Sheet page,
-   or the homepage. An unrecognized #components/<id> falls back to
-   home rather than erroring. */
+   the Clipboard page, or the homepage. An unrecognized #components/<id>
+   falls back to home rather than erroring. */
 function resolveView(hash, components) {
   if (hash.startsWith(DETAIL_PREFIX)) {
     const item = components.find(c => c.id === decodeURIComponent(hash.slice(DETAIL_PREFIX.length)));
@@ -16,6 +17,7 @@ function resolveView(hash, components) {
   }
   if (hash === CATALOG_HASH) return { name: "catalog" };
   if (hash === CHEATSHEET_HASH) return { name: "cheatsheet" };
+  if (hash === CLIPBOARD_HASH) return { name: "clipboard" };
   return { name: "home" };
 }
 
@@ -79,6 +81,11 @@ function useComponentRoute(components) {
     setView({ name: "cheatsheet" });
   }, []);
 
+  const openClipboard = useCallback(() => {
+    window.history.pushState(null, "", CLIPBOARD_HASH);
+    setView({ name: "clipboard" });
+  }, []);
+
   const goHome = useCallback(() => {
     window.history.pushState(null, "", HOME_HASH);
     setView({ name: "home" });
@@ -94,7 +101,7 @@ function useComponentRoute(components) {
     setView(resolveView(target, components));
   }, [components]);
 
-  return { view, openComponent, switchComponent, openCatalog, openCheatSheet, goHome, closeDetail };
+  return { view, openComponent, switchComponent, openCatalog, openCheatSheet, openClipboard, goHome, closeDetail };
 }
 
 export default useComponentRoute;
