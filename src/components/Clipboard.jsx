@@ -320,8 +320,7 @@ function Clipboard({ dark, onBack }) {
                 <div className="mt-3 flex flex-col gap-2">
                   {items.map(row => (
                     <article key={row.id} className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm dark:border-white/10 dark:bg-white/5">
-                      <p className="whitespace-pre-wrap break-words text-sm leading-6">{row.content}</p>
-                      <div className="mt-2 flex items-center justify-between gap-3">
+                      <div className="flex items-center justify-between gap-3 border-b border-slate-100 pb-2 dark:border-white/10">
                         <span className="font-mono text-[11px] text-slate-500 dark:text-slate-400">{formatTime(row.created_at)}</span>
                         <div className="flex gap-1.5">
                           <button type="button" onClick={() => copy(row.content, row.id)} className="copy-btn light">
@@ -332,6 +331,7 @@ function Clipboard({ dark, onBack }) {
                           </button>
                         </div>
                       </div>
+                      <p className="mt-2 whitespace-pre-wrap break-words text-sm leading-6">{row.content}</p>
                     </article>
                   ))}
                 </div>
