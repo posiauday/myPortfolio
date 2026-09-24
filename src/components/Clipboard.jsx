@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { ArrowLeft, Check, Clipboard as ClipboardIcon, Copy, Lock, Trash2 } from "lucide-react";
+import { ArrowLeft, Check, Clipboard as ClipboardIcon, Copy, Download, File, Lock, Paperclip, Trash2 } from "lucide-react";
 import { supabase } from "../lib/supabaseClient.js";
 import useCopyFeedback from "../hooks/useCopyFeedback.js";
 
@@ -7,6 +7,19 @@ const SETTINGS_ID = "main";
 const MAX_VISIBLE = 30;
 const PRUNE_AFTER = 40;
 const LOCK_STORAGE_KEY = "clipboard_unlocked";
+const FILES_BUCKET = "clipboard-files";
+const MAX_FILE_BYTES = 50 * 1024 * 1024;
+
+function formatBytes(bytes) {
+  if (!bytes && bytes !== 0) return "";
+  if (bytes < 1024) return `${bytes} B`;
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+}
+
+function publicFileUrl(path) {
+  return supabase.storage.from(FILES_BUCKET).getPublicUrl(path).data.publicUrl;
+}
 
 /* Relative time, same shape as the rest of this site's own "Xm ago"
    labels (see Experience section) rather than a raw timestamp. */
@@ -50,11 +63,14 @@ function Clipboard({ dark, onBack }) {
   const [items, setItems] = useState([]);
   const [draft, setDraft] = useState("");
   const [sending, setSending] = useState(false);
+  const [uploading, setUploading] = useState(false);
+  const [uploadError, setUploadError] = useState("");
   const [syncState, setSyncState] = useState("connecting"); // connecting | synced | offline
   const [copied, copy] = useCopyFeedback();
   const pinInputRef = useRef(null);
   const textareaRef = useRef(null);
   const channelRef = useRef(null);
+  const fileInputRef = useRef(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -93,7 +109,7 @@ function Clipboard({ dark, onBack }) {
   function fetchItems() {
     return supabase
       .from("clipboard_items")
-      .select("id, content, created_at")
+      .select("id, content, created_at, file_path, file_name, file_size, file_type")
       .order("created_at", { ascending: false })
       .limit(MAX_VISIBLE)
       .then(({ data, error: fetchError }) => {
@@ -120,12 +136,14 @@ function Clipboard({ dark, onBack }) {
   function pruneIfNeeded() {
     supabase
       .from("clipboard_items")
-      .select("id")
+      .select("id, file_path")
       .order("created_at", { ascending: false })
       .range(PRUNE_AFTER, PRUNE_AFTER + 50)
       .then(({ data }) => {
         if (!data || data.length === 0) return;
         supabase.from("clipboard_items").delete().in("id", data.map(row => row.id)).then(() => {});
+        const paths = data.filter(row => row.file_path).map(row => row.file_path);
+        if (paths.length > 0) supabase.storage.from(FILES_BUCKET).remove(paths);
       });
   }
 
@@ -197,11 +215,47 @@ function Clipboard({ dark, onBack }) {
       });
   }
 
-  function handleDelete(id) {
-    setItems(current => current.filter(row => row.id !== id));
-    supabase.from("clipboard_items").delete().eq("id", id).then(({ error: deleteError }) => {
-      if (deleteError) fetchItems();
+  function handleDelete(row) {
+    setItems(current => current.filter(item => item.id !== row.id));
+    supabase.from("clipboard_items").delete().eq("id", row.id).then(({ error: deleteError }) => {
+      if (deleteError) { fetchItems(); return; }
+      if (row.file_path) supabase.storage.from(FILES_BUCKET).remove([row.file_path]);
     });
+  }
+
+  function handleFilePick(e) {
+    const file = e.target.files && e.target.files[0];
+    e.target.value = "";
+    if (!file) return;
+    if (file.size > MAX_FILE_BYTES) {
+      setUploadError(`"${file.name}" is over the 50 MB limit.`);
+      return;
+    }
+    setUploadError("");
+    setUploading(true);
+    const path = `${crypto.randomUUID()}-${file.name}`;
+    supabase.storage
+      .from(FILES_BUCKET)
+      .upload(path, file, { contentType: file.type || "application/octet-stream" })
+      .then(({ error: uploadErr }) => {
+        if (uploadErr) {
+          setUploading(false);
+          setUploadError("Upload failed. Try again.");
+          return;
+        }
+        supabase
+          .from("clipboard_items")
+          .insert({ file_path: path, file_name: file.name, file_size: file.size, file_type: file.type || null })
+          .then(({ error: insertError }) => {
+            setUploading(false);
+            if (insertError) {
+              supabase.storage.from(FILES_BUCKET).remove([path]);
+              setUploadError("Couldn't save the file. Try again.");
+              return;
+            }
+            pruneIfNeeded();
+          });
+      });
   }
 
   return (
@@ -300,13 +354,26 @@ function Clipboard({ dark, onBack }) {
                 className="w-full resize-y bg-transparent text-sm leading-6 outline-none placeholder:text-slate-400 dark:placeholder:text-slate-500"
               />
               <div className="mt-3 flex items-center justify-between gap-3 border-t border-slate-100 pt-3 dark:border-white/10">
-                <span className="text-xs text-slate-500 dark:text-slate-400">
-                  <kbd className="rounded bg-slate-100 px-1.5 py-0.5 font-mono text-[10px] dark:bg-white/10">Ctrl/&#8984;</kbd>+<kbd className="rounded bg-slate-100 px-1.5 py-0.5 font-mono text-[10px] dark:bg-white/10">Enter</kbd> to send
-                </span>
+                <div className="flex items-center gap-3">
+                  <span className="hidden text-xs text-slate-500 dark:text-slate-400 sm:inline">
+                    <kbd className="rounded bg-slate-100 px-1.5 py-0.5 font-mono text-[10px] dark:bg-white/10">Ctrl/&#8984;</kbd>+<kbd className="rounded bg-slate-100 px-1.5 py-0.5 font-mono text-[10px] dark:bg-white/10">Enter</kbd> to send
+                  </span>
+                  <input ref={fileInputRef} type="file" onChange={handleFilePick} className="sr-only" aria-label="Attach a file" />
+                  <button
+                    type="button"
+                    disabled={uploading}
+                    onClick={() => fileInputRef.current?.click()}
+                    className="flex items-center gap-1.5 rounded-full border border-slate-200 px-3 py-1.5 text-xs font-bold text-slate-500 hover:text-[#17201B] disabled:cursor-not-allowed disabled:opacity-50 dark:border-white/10 dark:text-slate-400 dark:hover:text-white"
+                  >
+                    <Paperclip size={13} /> {uploading ? "Uploading…" : "Attach file"}
+                  </button>
+                </div>
                 <button type="submit" disabled={sending || !draft.trim()} className="rounded-full bg-[#168326] px-5 py-2.5 text-sm font-bold text-white hover:bg-[#126b1f] disabled:cursor-not-allowed disabled:opacity-50">
                   Send to devices
                 </button>
               </div>
+              {uploadError && <p className="mt-2 text-xs font-bold text-red-600 dark:text-red-400">{uploadError}</p>}
+              <p className="mt-2 text-[11px] text-slate-400 dark:text-slate-500">Any file type, up to 50 MB.</p>
             </form>
 
             <div>
@@ -323,15 +390,36 @@ function Clipboard({ dark, onBack }) {
                       <div className="flex items-center justify-between gap-3 border-b border-slate-100 pb-2 dark:border-white/10">
                         <span className="font-mono text-[11px] text-slate-500 dark:text-slate-400">{formatTime(row.created_at)}</span>
                         <div className="flex gap-1.5">
-                          <button type="button" onClick={() => copy(row.content, row.id)} className="copy-btn light">
-                            {copied === row.id ? <Check size={13} /> : <Copy size={13} />} {copied === row.id ? "Copied" : "Copy"}
-                          </button>
-                          <button type="button" onClick={() => handleDelete(row.id)} aria-label="Delete" className="copy-btn light">
+                          {row.file_path ? (
+                            <>
+                              <button type="button" onClick={() => copy(publicFileUrl(row.file_path), row.id)} className="copy-btn light">
+                                {copied === row.id ? <Check size={13} /> : <Copy size={13} />} {copied === row.id ? "Copied" : "Copy link"}
+                              </button>
+                              <a href={publicFileUrl(row.file_path)} download={row.file_name} className="copy-btn light">
+                                <Download size={13} /> Download
+                              </a>
+                            </>
+                          ) : (
+                            <button type="button" onClick={() => copy(row.content, row.id)} className="copy-btn light">
+                              {copied === row.id ? <Check size={13} /> : <Copy size={13} />} {copied === row.id ? "Copied" : "Copy"}
+                            </button>
+                          )}
+                          <button type="button" onClick={() => handleDelete(row)} aria-label="Delete" className="copy-btn light">
                             <Trash2 size={13} />
                           </button>
                         </div>
                       </div>
-                      <p className="mt-2 whitespace-pre-wrap break-words text-sm leading-6">{row.content}</p>
+                      {row.file_path ? (
+                        <a href={publicFileUrl(row.file_path)} target="_blank" rel="noreferrer" className="mt-2 flex items-center gap-3">
+                          <span className="grid h-9 w-9 shrink-0 place-items-center rounded-lg bg-green-50 text-[#168326] dark:bg-white/10 dark:text-[#4ADE80]"><File size={16} /></span>
+                          <span className="min-w-0">
+                            <span className="block truncate text-sm font-bold leading-5">{row.file_name}</span>
+                            <span className="block text-xs text-slate-500 dark:text-slate-400">{formatBytes(row.file_size)}</span>
+                          </span>
+                        </a>
+                      ) : (
+                        <p className="mt-2 whitespace-pre-wrap break-words text-sm leading-6">{row.content}</p>
+                      )}
                     </article>
                   ))}
                 </div>
